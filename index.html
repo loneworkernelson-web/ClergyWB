@@ -4,6 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Taha Hinengaro Check</title>
+    
+    <!-- PWA Links Added -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0284c7">
+    <link rel="apple-touch-icon" href="https://placehold.co/192x192/0284c7/ffffff?text=App">
+    <!-- End of PWA Links -->
+
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -43,6 +50,13 @@
         }
         .btn-primary {
             @apply bg-sky-600 text-white hover:bg-sky-700 focus:ring-2 focus:ring-sky-500 focus:ring-opacity-50;
+        }
+        .btn-positive {
+            @apply bg-emerald-600 text-white hover:bg-emerald-700 focus:ring-2 focus:ring-emerald-500 focus:ring-opacity-50;
+        }
+        /* New Gratitude Button Style */
+        .btn-gratitude {
+            @apply bg-amber-600 text-white hover:bg-amber-700 focus:ring-2 focus:ring-amber-500 focus:ring-opacity-50;
         }
         .btn-secondary {
             @apply bg-slate-200 text-slate-700 hover:bg-slate-300 focus:ring-2 focus:ring-slate-400 focus:ring-opacity-50;
@@ -84,6 +98,10 @@
         .notes-display {
             @apply mt-4 p-3 bg-amber-50 border border-amber-200 rounded-md text-sm text-slate-700 whitespace-pre-wrap;
         }
+        /* Gratitude Entry Display */
+        .gratitude-entry-display {
+            @apply p-3 bg-white border border-slate-200 rounded-md text-sm text-slate-700 whitespace-pre-wrap shadow-sm;
+        }
     </style>
 </head>
 <body class="text-slate-800">
@@ -102,17 +120,23 @@
                     <h2 class="text-xl font-semibold text-sky-800 mb-3">Nau Mai, Haere Mai</h2>
                     <p class="italic text-slate-600">"Mā te kimi ka kite, Mā te kite ka mōhio, Mā te mōhio ka mārama."</p>
                     <p class="text-slate-600 mb-4">(Seek and discover, discover and know, know and become enlightened.)</p>
-                    <p class="mb-2">This app is a private tool to help you reflect on your wellbeing. It's recommended to do a check-in weekly.</p>
+                    <p class="mb-2">This app is a private tool to help you reflect on your wellbeing.</p>
                     <p class="text-sm text-slate-500 mb-4">All your data is stored locally in this browser and is not shared.</p>
-                    <button id="startCheckinBtn" class="btn btn-primary w-full py-3 font-semibold">Start Weekly Check-in</button>
+                    
+                    <div class="space-y-3">
+                        <button id="startWarningCheckinBtn" class="btn btn-primary w-full py-3 font-semibold">Start Warning Signs Check-in</button>
+                        <button id="startPositiveCheckinBtn" class="btn btn-positive w-full py-3 font-semibold">Start Positive Signs Check-in</button>
+                        <button id="startGratitudeBtn" class="btn btn-gratitude w-full py-3 font-semibold">Add Gratitude Entry</button>
+                    </div>
                 </div>
                 <div class="text-center">
                     <button onclick="navigateTo('privacyView')" class="btn btn-secondary btn-sm py-1 px-2 text-xs rounded-full">Privacy Information</button>
                 </div>
             </div>
 
+            <!-- Warning Signs Check-in View -->
             <div id="checkinView" class="view space-y-6">
-                <h2 id="categoryTitle" class="text-xl font-semibold text-sky-800">Wellbeing Signs</h2>
+                <h2 id="categoryTitle" class="text-xl font-semibold text-sky-800">Warning Signs</h2>
                 <div id="questionsContainer" class="space-y-4">
                     </div>
                 <div id="checkinButtonContainer" class="flex flex-col sm:flex-row sm:justify-between space-y-3 sm:space-y-0 sm:space-x-3">
@@ -121,18 +145,55 @@
                     <button id="finishCheckinBtn" class="btn btn-primary w-full sm:w-auto" style="display:none;">Finish Check-in</button>
                 </div>
                  <div class="mt-4 text-center">
-                    <progress id="checkinProgress" value="0" max="100" class="w-full h-2 rounded-full overflow-hidden"></progress>
+                    <progress id="checkinProgress" value="0" max="100" class="w-full h-2 rounded-full overflow-hidden [&::-webkit-progress-bar]:bg-slate-200 [&::-webkit-progress-value]:bg-sky-600"></progress>
                     <p id="progressText" class="text-sm text-slate-500 mt-1"></p>
                 </div>
             </div>
+
+            <!-- Positive Signs Check-in View -->
+            <div id="positiveCheckinView" class="view space-y-6">
+                <h2 id="positiveCategoryTitle" class="text-xl font-semibold text-emerald-800">Positive Signs</h2>
+                <div id="positiveQuestionsContainer" class="space-y-4">
+                    </div>
+                <div id="positiveCheckinButtonContainer" class="flex flex-col sm:flex-row sm:justify-between space-y-3 sm:space-y-0 sm:space-x-3">
+                    <button id="positivePrevCategoryBtn" class="btn btn-secondary w-full sm:w-auto">Previous</button>
+                    <button id="positiveNextCategoryBtn" class="btn btn-positive w-full sm:w-auto py-3 font-semibold">Next</button>
+                    <button id="positiveFinishCheckinBtn" class="btn btn-positive w-full sm:w-auto" style="display:none;">Finish Check-in</button>
+                </div>
+                 <div class="mt-4 text-center">
+                    <progress id="positiveCheckinProgress" value="0" max="100" class="w-full h-2 rounded-full overflow-hidden [&::-webkit-progress-bar]:bg-slate-200 [&::-webkit-progress-value]:bg-emerald-600"></progress>
+                    <p id="positiveProgressText" class="text-sm text-slate-500 mt-1"></p>
+                </div>
+            </div>
+
+            <!-- Gratitude Journal View (New) -->
+            <div id="gratitudeView" class="view space-y-4">
+                <h2 class="text-xl font-semibold text-amber-800">Gratitude Journal</h2>
+                <p class="text-sm text-slate-600">Take a moment to note 1-3 things you are grateful to God for today.</p>
+                <textarea id="gratitudeEntryArea" rows="6" class="w-full p-3 border border-slate-300 rounded-lg shadow-sm focus:ring-amber-500 focus:border-amber-500" placeholder="Today I am grateful for..."></textarea>
+                <button id="saveGratitudeBtn" class="btn btn-gratitude w-full">Save Today's Entry</button>
+                <button id="viewPastGratitudeBtn" class="btn btn-secondary w-full mt-2">View Past Entries</button>
+            </div>
+
+            <!-- Past Gratitude Entries View (New) -->
+            <div id="pastGratitudeView" class="view space-y-4">
+                <h2 class="text-xl font-semibold text-amber-800">Past Gratitude Entries</h2>
+                <button onclick="navigateTo('gratitudeView')" class="btn btn-secondary w-full mb-3">Back to Journal</button>
+                <div id="pastGratitudeContainer" class="space-y-3">
+                    <!-- Past entries will be injected here -->
+                </div>
+            </div>
+
 
             <div id="summaryView" class="view space-y-6">
                 <h2 class="text-xl font-semibold text-sky-800">This Week's Reflection</h2>
                 <button id="backToTrendsBtn" class="btn btn-secondary w-full mb-3" style="display:none;">Back to Trends</button>
                 <div id="summaryContent" class="bg-sky-50 p-4 rounded-lg shadow space-y-2">
-                    </div>
+                    <!-- Summary and notes will be injected here -->
+                </div>
                 <div id="summaryPrompt" class="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-md shadow text-yellow-800" style="display:none;">
-                    </div>
+                    <!-- Prompt will be injected here -->
+                </div>
                 <button id="notesForSummaryBtn" class="btn btn-primary w-full">Add/Edit Personal Notes for this Summary</button>
             </div>
 
@@ -197,8 +258,16 @@
                     <p class="text-sm text-slate-600">This web app cannot set system reminders. Please use your phone or computer's calendar app to set a weekly reminder for your Taha Hinengaro Check.</p>
 
                     <p class="font-medium mt-4">Manage Your Data:</p>
-                    <button id="viewDataBtn" class="btn btn-secondary w-full mb-2">View My Raw Data (JSON)</button>
-                    <button id="clearDataBtn" class="btn bg-red-500 text-white hover:bg-red-600 w-full">Clear All My Data</button>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <button id="exportDataBtn" class="btn btn-secondary w-full">Export My Data</button>
+                        <!-- Styled file input for import -->
+                        <label for="importDataInput" class="btn btn-secondary w-full text-center cursor-pointer">
+                            Import My Data
+                        </label>
+                        <input type="file" id="importDataInput" class="hidden" accept=".json,application/json">
+                    </div>
+                    <button id="viewDataBtn" class="btn btn-secondary w-full mt-2">View My Raw Data (JSON)</button>
+                    <button id="clearDataBtn" class="btn bg-red-500 text-white hover:bg-red-600 w-full mt-2">Clear All My Data</button>
                     <p class="text-xs text-slate-500 mt-1">Warning: Clearing data is permanent and cannot be undone.</p>
                     <div id="rawDataDisplay" class="mt-3 p-2 bg-slate-100 rounded border border-slate-300 text-xs overflow-auto max-h-60" style="display:none;"></div>
                  </div>
@@ -233,45 +302,86 @@
             spiritual: ["Feeling disconnected from God or your faith", "Finding prayer or spiritual practices a burden rather than a source of strength", "Loss of meaning or purpose in your ministry", "Questioning your calling"],
             behaviouralRelational: ["Withdrawal from colleagues, friends, or family", "Increased conflict in relationships", "Neglecting personal needs or hobbies", "Increased use of alcohol, medication, or other coping mechanisms (e.g., overeating, excessive screen time, escapist behaviours)", "Procrastination or avoidance of tasks", "Working longer hours but feeling less effective", "Reduced empathy or compassion for others (depersonalisation)"]
         };
-
         const categoryDisplayNames = {
             emotional: "Emotional Signs", mentalCognitive: "Mental/Cognitive Signs", physical: "Physical Signs", spiritual: "Spiritual Signs", behaviouralRelational: "Behavioural/Relational Signs"
         };
         const categoryOrder = ["emotional", "mentalCognitive", "physical", "spiritual", "behaviouralRelational"];
         
+        const positiveSigns = {
+            connection: ["Felt a sense of connection with others", "Had a positive interaction with a colleague", "Spent quality time with family or friends", "Felt connected to my community"],
+            purpose: ["Felt a sense of meaning or purpose in my work", "Felt I made a positive difference", "Engaged in an activity I find truly meaningful"],
+            engagement: ["Felt engaged and interested in a task (flow)", "Enjoyed a hobby or leisure activity", "Felt creative or generative"],
+            selfCare: ["Had a restful Sabbath or day off", "Got enough sleep", "Ate well", "Was physically active", "Took time for quiet reflection"],
+            spiritual: ["Felt a sense of connection to God", "Found prayer or spiritual practice life-giving", "Felt gratitude", "Experienced a moment of awe or wonder"]
+        };
+        const positiveCategoryDisplayNames = {
+            connection: "Connection & Relationships",
+            purpose: "Purpose & Meaning",
+            engagement: "Engagement & Joy",
+            selfCare: "Rest & Self-Care",
+            spiritual: "Spiritual Life"
+        };
+        const positiveCategoryOrder = ["connection", "purpose", "engagement", "selfCare", "spiritual"];
+
+        // Check-in History
         let currentCategoryIndex = 0;
+        let currentPositiveCategoryIndex = 0;
         let currentCheckinData = {}; 
         let allCheckinHistory = []; 
         let currentlyViewedSummaryIndex = -1; 
         let currentEditingNotesIndex = -1; 
+        // Gratitude History (New)
+        let gratitudeHistory = [];
 
         // --- DOM Elements ---
         const views = document.querySelectorAll('.view');
         const appElement = document.getElementById('app');
+        // Warning Check-in
         const categoryTitleEl = document.getElementById('categoryTitle');
         const questionsContainerEl = document.getElementById('questionsContainer');
         const prevCategoryBtn = document.getElementById('prevCategoryBtn');
         const nextCategoryBtn = document.getElementById('nextCategoryBtn');
         const finishCheckinBtn = document.getElementById('finishCheckinBtn');
-        const startCheckinBtn = document.getElementById('startCheckinBtn');
-        const summaryContentEl = document.getElementById('summaryContent');
-        const summaryPromptEl = document.getElementById('summaryPrompt');
-        const personalNotesArea = document.getElementById('personalNotesArea');
-        const saveNotesBtn = document.getElementById('saveNotesBtn');
-        const trendsChartEl = document.getElementById('trendsChart');
-        const clearDataBtn = document.getElementById('clearDataBtn');
-        const viewDataBtn = document.getElementById('viewDataBtn');
-        const rawDataDisplayEl = document.getElementById('rawDataDisplay');
-        const navButtons = document.querySelectorAll('.nav-btn');
+        const startWarningCheckinBtn = document.getElementById('startWarningCheckinBtn');
         const checkinProgressEl = document.getElementById('checkinProgress');
         const progressTextEl = document.getElementById('progressText');
+        const checkinButtonContainerEl = document.getElementById('checkinButtonContainer'); 
+        // Positive Check-in
+        const startPositiveCheckinBtn = document.getElementById('startPositiveCheckinBtn');
+        const positiveCategoryTitleEl = document.getElementById('positiveCategoryTitle');
+        const positiveQuestionsContainerEl = document.getElementById('positiveQuestionsContainer');
+        const positivePrevCategoryBtn = document.getElementById('positivePrevCategoryBtn');
+        const positiveNextCategoryBtn = document.getElementById('positiveNextCategoryBtn');
+        const positiveFinishCheckinBtn = document.getElementById('positiveFinishCheckinBtn');
+        const positiveCheckinProgressEl = document.getElementById('positiveCheckinProgress');
+        const positiveProgressTextEl = document.getElementById('positiveProgressText');
+        const positiveCheckinButtonContainerEl = document.getElementById('positiveCheckinButtonContainer'); 
+        // Gratitude (New)
+        const startGratitudeBtn = document.getElementById('startGratitudeBtn');
+        const gratitudeEntryArea = document.getElementById('gratitudeEntryArea');
+        const saveGratitudeBtn = document.getElementById('saveGratitudeBtn');
+        const viewPastGratitudeBtn = document.getElementById('viewPastGratitudeBtn');
+        const pastGratitudeContainer = document.getElementById('pastGratitudeContainer');
+        // Summary
+        const summaryContentEl = document.getElementById('summaryContent');
+        const summaryPromptEl = document.getElementById('summaryPrompt');
         const backToTrendsBtn = document.getElementById('backToTrendsBtn');
+        // Notes
+        const personalNotesArea = document.getElementById('personalNotesArea');
+        const saveNotesBtn = document.getElementById('saveNotesBtn');
         const notesForSummaryBtn = document.getElementById('notesForSummaryBtn');
         const notesForDateTextEl = document.getElementById('notesForDateText');
         const backToSummaryFromNotesBtn = document.getElementById('backToSummaryFromNotesBtn');
-        const checkinButtonContainerEl = document.getElementById('checkinButtonContainer'); 
-
-
+        // Trends
+        const trendsChartEl = document.getElementById('trendsChart');
+        // Settings
+        const clearDataBtn = document.getElementById('clearDataBtn');
+        const viewDataBtn = document.getElementById('viewDataBtn');
+        const rawDataDisplayEl = document.getElementById('rawDataDisplay');
+        const exportDataBtn = document.getElementById('exportDataBtn');
+        const importDataInput = document.getElementById('importDataInput');
+        // Other
+        const navButtons = document.querySelectorAll('.nav-btn');
         const promptModal = document.getElementById('promptModal');
         const promptModalTitle = document.getElementById('promptModalTitle');
         const promptModalMessage = document.getElementById('promptModalMessage');
@@ -296,13 +406,22 @@
             }
         }
 
+        // --- Data & History Functions ---
         function loadHistory() {
             let historyJson = null;
             try {
                 historyJson = localStorage.getItem('tahaHinengaroCheckHistory');
                 allCheckinHistory = historyJson ? JSON.parse(historyJson) : [];
             } catch (error) {
-                console.error("Error loading or parsing history from localStorage:", error); allCheckinHistory = []; 
+                console.error("Error loading or parsing check-in history:", error); allCheckinHistory = []; 
+            }
+            
+            let gratitudeJson = null;
+            try {
+                gratitudeJson = localStorage.getItem('tahaHinengaroGratitudeJournal');
+                gratitudeHistory = gratitudeJson ? JSON.parse(gratitudeJson) : [];
+            } catch (error) {
+                 console.error("Error loading or parsing gratitude history:", error); gratitudeHistory = []; 
             }
         }
 
@@ -310,11 +429,39 @@
             try {
                 localStorage.setItem('tahaHinengaroCheckHistory', JSON.stringify(allCheckinHistory));
             } catch (error) {
-                console.error("Error saving history to localStorage:", error);
-                showModal("Save Error", "Could not save your data. Your browser's storage might be full or unavailable.");
+                console.error("Error saving check-in history:", error);
+                showModal("Save Error", "Could not save your check-in data. Your browser's storage might be full or unavailable.");
+            }
+        }
+        
+        function saveGratitudeHistory() {
+             try {
+                localStorage.setItem('tahaHinengaroGratitudeJournal', JSON.stringify(gratitudeHistory));
+            } catch (error) {
+                console.error("Error saving gratitude history:", error);
+                showModal("Save Error", "Could not save your gratitude data. Your browser's storage might be full or unavailable.");
             }
         }
 
+        function findOrCreateEntryForToday() {
+            const todayDateString = new Date().toISOString().split('T')[0];
+            let entryIndex = allCheckinHistory.findIndex(entry => entry.date === todayDateString);
+            
+            if (entryIndex === -1) {
+                const newEntry = {
+                    date: todayDateString,
+                    warningResponses: {},
+                    positiveResponses: {},
+                    notes: ""
+                };
+                allCheckinHistory.push(newEntry);
+                entryIndex = allCheckinHistory.length - 1;
+            }
+            return allCheckinHistory[entryIndex];
+        }
+
+
+        // --- Navigation ---
         function navigateTo(viewId, params = {}) {
             views.forEach(view => view.classList.remove('active-view'));
             let targetViewId = viewId;
@@ -350,6 +497,10 @@
                     notesForDateTextEl.textContent = "Notes (no specific date selected)";
                     console.warn("Navigated to notesView without a valid currentEditingNotesIndex");
                 }
+            } else if (viewId === 'gratitudeView') {
+                loadGratitudeEntryForToday();
+            } else if (viewId === 'pastGratitudeView') {
+                renderPastGratitudeEntries();
             }
             
             const targetViewEl = document.getElementById(targetViewId);
@@ -387,12 +538,11 @@
 
         backToSummaryFromNotesBtn.onclick = () => {
             if (currentEditingNotesIndex !== -1) {
-                // Check if the "Back to Trends" button was visible, indicating we came from Trends
                 const wasViewingHistoricalFromTrends = document.getElementById('backToTrendsBtn').style.display.includes('block');
                 
                 if (wasViewingHistoricalFromTrends) {
                      navigateTo('summaryView', { entryIndex: currentEditingNotesIndex });
-                } else { // Otherwise, it was the latest summary
+                } else { 
                     navigateTo('summaryViewLast');
                 }
             } else {
@@ -401,10 +551,14 @@
         };
 
 
-        function startCheckin() {
+        // --- Warning Signs Check-in Logic ---
+        function startWarningCheckin() {
             currentCategoryIndex = 0;
-            currentCheckinData = { date: new Date().toISOString().split('T')[0], responses: {} }; 
-            categoryOrder.forEach(catKey => currentCheckinData.responses[catKey] = {});
+            currentCheckinData = findOrCreateEntryForToday();
+            if (!currentCheckinData.warningResponses || Object.keys(currentCheckinData.warningResponses).length === 0) {
+                 currentCheckinData.warningResponses = {};
+                 categoryOrder.forEach(catKey => currentCheckinData.warningResponses[catKey] = {});
+            }
             loadCategoryQuestions();
             navigateTo('checkinView');
         }
@@ -416,57 +570,35 @@
             questionsContainerEl.innerHTML = ''; 
 
             questions.forEach((q, index) => {
-                const questionId = `${categoryKey}-${index}`;
-                const existingResponse = currentCheckinData.responses[categoryKey] ? currentCheckinData.responses[categoryKey][q] : undefined;
+                const existingResponse = currentCheckinData.warningResponses[categoryKey] ? currentCheckinData.warningResponses[categoryKey][q] : undefined;
                 const isNoticed = existingResponse === true;
                 const isNotReally = existingResponse === false;
 
                 const questionDiv = document.createElement('div');
                 questionDiv.className = 'p-4 border border-slate-200 rounded-lg shadow-sm bg-white';
-                
                 const questionText = document.createElement('p');
                 questionText.className = 'mb-3 text-slate-700';
                 questionText.textContent = q;
                 questionDiv.appendChild(questionText);
-
                 const buttonGroup = document.createElement('div');
                 buttonGroup.className = 'flex flex-col sm:flex-row sm:space-x-2 space-y-2 sm:space-y-0';
-
                 const noticedBtn = document.createElement('button');
                 noticedBtn.textContent = 'Noticed this week';
                 noticedBtn.className = `btn btn-choice ${isNoticed ? 'bg-sky-500 text-white' : 'bg-sky-100 text-sky-700 hover:bg-sky-200'}`;
-                noticedBtn.onclick = () => selectAnswer(categoryKey, q, true, noticedBtn, notReallyBtn);
-                
+                noticedBtn.onclick = () => selectAnswer(categoryKey, q, true, noticedBtn, notReallyBtn, 'warning');
                 const notReallyBtn = document.createElement('button');
                 notReallyBtn.textContent = 'Not really this week';
                 notReallyBtn.className = `btn btn-choice ${isNotReally ? 'bg-slate-500 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`;
-                notReallyBtn.onclick = () => selectAnswer(categoryKey, q, false, noticedBtn, notReallyBtn);
-
+                notReallyBtn.onclick = () => selectAnswer(categoryKey, q, false, noticedBtn, notReallyBtn, 'warning');
                 buttonGroup.appendChild(noticedBtn);
                 buttonGroup.appendChild(notReallyBtn);
                 questionDiv.appendChild(buttonGroup);
                 questionsContainerEl.appendChild(questionDiv);
             });
-
             updateCheckinControls();
             updateProgress();
         }
         
-        function selectAnswer(categoryKey, question, value, noticedBtn, notReallyBtn) {
-            currentCheckinData.responses[categoryKey][question] = value;
-            if (value) { 
-                noticedBtn.classList.remove('bg-sky-100', 'text-sky-700', 'hover:bg-sky-200');
-                noticedBtn.classList.add('bg-sky-500', 'text-white');
-                notReallyBtn.classList.remove('bg-slate-500', 'text-white');
-                notReallyBtn.classList.add('bg-slate-100', 'text-slate-700', 'hover:bg-slate-200');
-            } else { 
-                noticedBtn.classList.remove('bg-sky-500', 'text-white');
-                noticedBtn.classList.add('bg-sky-100', 'text-sky-700', 'hover:bg-sky-200');
-                notReallyBtn.classList.remove('bg-slate-100', 'text-slate-700', 'hover:bg-slate-200');
-                notReallyBtn.classList.add('bg-slate-500', 'text-white');
-            }
-        }
-
         function updateCheckinControls() {
             prevCategoryBtn.style.display = currentCategoryIndex > 0 ? 'inline-block' : 'none';
             nextCategoryBtn.style.display = currentCategoryIndex < categoryOrder.length - 1 ? 'inline-block' : 'none';
@@ -491,146 +623,320 @@
         }
 
         prevCategoryBtn.onclick = () => {
-            if (currentCategoryIndex > 0) {
-                currentCategoryIndex--;
-                loadCategoryQuestions();
-            }
+            if (currentCategoryIndex > 0) { currentCategoryIndex--; loadCategoryQuestions(); }
         };
-
         nextCategoryBtn.onclick = () => {
-            const currentCatKey = categoryOrder[currentCategoryIndex];
-            const currentCatQuestions = warningSigns[currentCatKey];
-            let allAnswered = true;
-            for (const q of currentCatQuestions) {
-                if (typeof currentCheckinData.responses[currentCatKey][q] === 'undefined') {
-                    allAnswered = false;
-                    break;
-                }
-            }
-            if (!allAnswered) {
-                 showModal("Incomplete Section", "Please answer all questions in this category before proceeding.");
-                return;
-            }
-
-            if (currentCategoryIndex < categoryOrder.length - 1) {
-                currentCategoryIndex++;
-                loadCategoryQuestions();
-            }
+            if (!checkAllQuestionsAnswered('warning')) return;
+            if (currentCategoryIndex < categoryOrder.length - 1) { currentCategoryIndex++; loadCategoryQuestions(); }
         };
-
         finishCheckinBtn.onclick = () => {
-            const currentCatKey = categoryOrder[currentCategoryIndex];
-            const currentCatQuestions = warningSigns[currentCatKey];
-            let allAnswered = true;
-            for (const q of currentCatQuestions) {
-                if (typeof currentCheckinData.responses[currentCatKey][q] === 'undefined') {
-                    allAnswered = false;
-                    break;
-                }
-            }
-
-            if (!allAnswered) {
-                 showModal("Incomplete Section", "Please answer all questions in the final category before finishing.");
-                return;
-            }
-            
-            currentCheckinData.notes = ""; 
-            allCheckinHistory.push(currentCheckinData);
+            if (!checkAllQuestionsAnswered('warning')) return;
             saveHistory();
-            currentlyViewedSummaryIndex = allCheckinHistory.length - 1; 
+            currentlyViewedSummaryIndex = allCheckinHistory.findIndex(entry => entry.date === currentCheckinData.date);
             renderSummary(currentCheckinData);
             navigateTo('summaryView'); 
         };
-        
-        startCheckinBtn.onclick = startCheckin;
+        startWarningCheckinBtn.onclick = startWarningCheckin;
 
+        // --- Positive Signs Check-in Logic ---
+        function startPositiveCheckin() {
+            currentPositiveCategoryIndex = 0;
+            currentCheckinData = findOrCreateEntryForToday();
+            if (!currentCheckinData.positiveResponses || Object.keys(currentCheckinData.positiveResponses).length === 0) {
+                 currentCheckinData.positiveResponses = {};
+                 positiveCategoryOrder.forEach(catKey => currentCheckinData.positiveResponses[catKey] = {});
+            }
+            loadPositiveCategoryQuestions();
+            navigateTo('positiveCheckinView');
+        }
+
+        function loadPositiveCategoryQuestions() {
+            const categoryKey = positiveCategoryOrder[currentPositiveCategoryIndex];
+            const questions = positiveSigns[categoryKey];
+            positiveCategoryTitleEl.textContent = positiveCategoryDisplayNames[categoryKey];
+            positiveQuestionsContainerEl.innerHTML = ''; 
+
+            questions.forEach((q, index) => {
+                const existingResponse = currentCheckinData.positiveResponses[categoryKey] ? currentCheckinData.positiveResponses[categoryKey][q] : undefined;
+                const isNoticed = existingResponse === true;
+                const isNotReally = existingResponse === false;
+                const questionDiv = document.createElement('div');
+                questionDiv.className = 'p-4 border border-slate-200 rounded-lg shadow-sm bg-white';
+                const questionText = document.createElement('p');
+                questionText.className = 'mb-3 text-slate-700';
+                questionText.textContent = q;
+                questionDiv.appendChild(questionText);
+                const buttonGroup = document.createElement('div');
+                buttonGroup.className = 'flex flex-col sm:flex-row sm:space-x-2 space-y-2 sm:space-y-0';
+                const noticedBtn = document.createElement('button');
+                noticedBtn.textContent = 'Noticed this week';
+                noticedBtn.className = `btn btn-choice ${isNoticed ? 'bg-emerald-500 text-white' : 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200'}`;
+                noticedBtn.onclick = () => selectAnswer(categoryKey, q, true, noticedBtn, notReallyBtn, 'positive');
+                const notReallyBtn = document.createElement('button');
+                notReallyBtn.textContent = 'Not really this week';
+                notReallyBtn.className = `btn btn-choice ${isNotReally ? 'bg-slate-500 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`;
+                notReallyBtn.onclick = () => selectAnswer(categoryKey, q, false, noticedBtn, notReallyBtn, 'positive');
+                buttonGroup.appendChild(noticedBtn);
+                buttonGroup.appendChild(notReallyBtn);
+                questionDiv.appendChild(buttonGroup);
+                positiveQuestionsContainerEl.appendChild(questionDiv);
+            });
+            updatePositiveCheckinControls();
+            updatePositiveProgress();
+        }
+
+        function updatePositiveCheckinControls() {
+            positivePrevCategoryBtn.style.display = currentPositiveCategoryIndex > 0 ? 'inline-block' : 'none';
+            positiveNextCategoryBtn.style.display = currentPositiveCategoryIndex < positiveCategoryOrder.length - 1 ? 'inline-block' : 'none';
+            positiveFinishCheckinBtn.style.display = currentPositiveCategoryIndex === positiveCategoryOrder.length - 1 ? 'inline-block' : 'none';
+            if (positiveCheckinButtonContainerEl) { 
+                if (currentPositiveCategoryIndex === 0) {
+                    positiveCheckinButtonContainerEl.classList.remove('sm:justify-between');
+                    positiveCheckinButtonContainerEl.classList.add('sm:justify-end');
+                } else {
+                    positiveCheckinButtonContainerEl.classList.remove('sm:justify-end');
+                    positiveCheckinButtonContainerEl.classList.add('sm:justify-between');
+                }
+            }
+        }
+        
+        function updatePositiveProgress() {
+            const totalCategories = positiveCategoryOrder.length;
+            const progressPercentage = ((currentPositiveCategoryIndex + 1) / totalCategories) * 100;
+            positiveCheckinProgressEl.value = progressPercentage;
+            positiveProgressTextEl.textContent = `Category ${currentPositiveCategoryIndex + 1} of ${totalCategories}`;
+        }
+
+        positivePrevCategoryBtn.onclick = () => {
+            if (currentPositiveCategoryIndex > 0) { currentPositiveCategoryIndex--; loadPositiveCategoryQuestions(); }
+        };
+        positiveNextCategoryBtn.onclick = () => {
+            if (!checkAllQuestionsAnswered('positive')) return;
+            if (currentPositiveCategoryIndex < positiveCategoryOrder.length - 1) { currentPositiveCategoryIndex++; loadPositiveCategoryQuestions(); }
+        };
+        positiveFinishCheckinBtn.onclick = () => {
+            if (!checkAllQuestionsAnswered('positive')) return;
+            saveHistory();
+            currentlyViewedSummaryIndex = allCheckinHistory.findIndex(entry => entry.date === currentCheckinData.date);
+            renderSummary(currentCheckinData);
+            navigateTo('summaryView'); 
+        };
+        startPositiveCheckinBtn.onclick = startPositiveCheckin;
+
+        // --- Gratitude Journal Logic (New) ---
+        startGratitudeBtn.onclick = () => navigateTo('gratitudeView');
+        
+        function loadGratitudeEntryForToday() {
+            const todayDateString = new Date().toISOString().split('T')[0];
+            const entry = gratitudeHistory.find(g => g.date === todayDateString);
+            if (entry) {
+                gratitudeEntryArea.value = entry.entry;
+            } else {
+                gratitudeEntryArea.value = '';
+            }
+        }
+        
+        saveGratitudeBtn.onclick = () => {
+            const todayDateString = new Date().toISOString().split('T')[0];
+            const entryText = gratitudeEntryArea.value;
+            let entry = gratitudeHistory.find(g => g.date === todayDateString);
+            
+            if (entry) {
+                entry.entry = entryText; // Update existing
+            } else {
+                gratitudeHistory.push({ date: todayDateString, entry: entryText }); // Add new
+            }
+            saveGratitudeHistory();
+            showModal("Gratitude Saved", "Your gratitude entry for today has been saved.");
+        };
+        
+        viewPastGratitudeBtn.onclick = () => navigateTo('pastGratitudeView');
+        
+        function renderPastGratitudeEntries() {
+            pastGratitudeContainer.innerHTML = '';
+            if (gratitudeHistory.length === 0) {
+                pastGratitudeContainer.innerHTML = '<p class="text-slate-500 italic">No past gratitude entries found. Start by adding one today!</p>';
+                return;
+            }
+            
+            const reversedHistory = [...gratitudeHistory].reverse();
+            reversedHistory.forEach(entry => {
+                if (!entry.entry || entry.entry.trim() === '') return; // Skip empty entries
+                
+                const entryWrapper = document.createElement('div');
+                entryWrapper.className = "mb-4";
+                
+                const dateEl = document.createElement('h3');
+                dateEl.className = "font-semibold text-amber-700";
+                const displayDate = parseDateString(entry.date);
+                dateEl.textContent = displayDate ? displayDate.toLocaleDateString('en-NZ', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) : 'Invalid Date';
+                
+                const entryEl = document.createElement('p');
+                entryEl.className = "gratitude-entry-display";
+                entryEl.textContent = entry.entry;
+                
+                entryWrapper.appendChild(dateEl);
+                entryWrapper.appendChild(entryEl);
+                pastGratitudeContainer.appendChild(entryWrapper);
+            });
+        }
+
+        // --- Generic Check-in Helper Functions ---
+        function selectAnswer(categoryKey, question, value, noticedBtn, notReallyBtn, type) {
+            const responseKey = type === 'warning' ? 'warningResponses' : 'positiveResponses';
+            const baseNoticedClass = type === 'warning' ? 'bg-sky-100 text-sky-700 hover:bg-sky-200' : 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200';
+            const activeNoticedClass = type === 'warning' ? 'bg-sky-500 text-white' : 'bg-emerald-500 text-white';
+            const baseNotReallyClass = 'bg-slate-100 text-slate-700 hover:bg-slate-200';
+            const activeNotReallyClass = 'bg-slate-500 text-white';
+            currentCheckinData[responseKey][categoryKey][question] = value;
+            if (value) { 
+                noticedBtn.className = `btn btn-choice ${activeNoticedClass}`;
+                notReallyBtn.className = `btn btn-choice ${baseNotReallyClass}`;
+            } else { 
+                noticedBtn.className = `btn btn-choice ${baseNoticedClass}`;
+                notReallyBtn.className = `btn btn-choice ${activeNotReallyClass}`;
+            }
+        }
+
+        function checkAllQuestionsAnswered(type) {
+            const [categoryIndex, categoryKey, questions, responses] = type === 'warning' 
+                ? [currentCategoryIndex, categoryOrder[currentCategoryIndex], warningSigns, currentCheckinData.warningResponses]
+                : [currentPositiveCategoryIndex, positiveCategoryOrder[currentPositiveCategoryIndex], positiveSigns, currentCheckinData.positiveResponses];
+            const currentCatQuestions = questions[categoryKey];
+            for (const q of currentCatQuestions) {
+                if (typeof responses[categoryKey][q] === 'undefined') {
+                    showModal("Incomplete Section", "Please answer all questions in this category before proceeding.");
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        // --- Summary, Notes, Trends (Updated) ---
         function renderSummary(checkinEntry) {
-            if (!checkinEntry || !checkinEntry.responses) {
+            if (!checkinEntry) {
                 summaryContentEl.innerHTML = "<p>No summary data available. Please complete a check-in.</p>";
                 summaryPromptEl.style.display = 'none';
                 return;
             }
-
-            summaryContentEl.innerHTML = ''; // Clear previous summary content
-            let totalNoticedSigns = 0;
+            summaryContentEl.innerHTML = ''; 
+            let totalWarningSigns = 0;
+            let totalPositiveSigns = 0;
             let promptNeeded = false;
             let promptMessages = [];
-
             const dateP = document.createElement('p');
             dateP.className = 'text-sm text-slate-500 mb-3';
-            if (checkinEntry && checkinEntry.date) {
+            if (checkinEntry.date) {
                 const displayDate = parseDateString(checkinEntry.date);
                 dateP.textContent = displayDate ? `Summary for: ${displayDate.toLocaleDateString('en-NZ', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}` : `Summary for: date unavailable (parsing error)`;
             } else {
                 dateP.textContent = `Summary for: date not recorded`;
             }
             summaryContentEl.appendChild(dateP);
-
-            categoryOrder.forEach(catKey => {
-                const categoryDiv = document.createElement('div');
-                categoryDiv.className = 'mb-2 p-3 bg-white rounded-md shadow-sm';
-                const catTitle = document.createElement('h3');
-                catTitle.className = 'font-semibold text-sky-700';
-                catTitle.textContent = categoryDisplayNames[catKey];
-                categoryDiv.appendChild(catTitle);
-
-                const ul = document.createElement('ul');
-                ul.className = 'list-disc list-inside text-sm text-slate-600';
-                let categoryNoticedCount = 0;
-                
-                if (checkinEntry.responses[catKey]) {
-                    Object.entries(checkinEntry.responses[catKey]).forEach(([question, noticed]) => {
-                        if (noticed) {
-                            categoryNoticedCount++;
-                            const li = document.createElement('li');
-                            li.textContent = question;
-                            ul.appendChild(li);
+            // --- Render Warning Signs ---
+            const warningTitle = document.createElement('h3');
+            warningTitle.className = "text-lg font-semibold text-sky-800 mb-2 border-b border-sky-200 pb-1";
+            warningTitle.textContent = "Warning Signs Noted";
+            summaryContentEl.appendChild(warningTitle);
+            let warningSignsCount = 0;
+            if (checkinEntry.warningResponses && Object.keys(checkinEntry.warningResponses).length > 0) {
+                categoryOrder.forEach(catKey => {
+                    const responses = checkinEntry.warningResponses[catKey];
+                    if (responses && Object.values(responses).some(v => v === true)) {
+                        const categoryDiv = document.createElement('div');
+                        categoryDiv.className = 'mb-2 p-3 bg-white rounded-md shadow-sm';
+                        const catTitle = document.createElement('h3');
+                        catTitle.className = 'font-semibold text-sky-700';
+                        catTitle.textContent = categoryDisplayNames[catKey];
+                        categoryDiv.appendChild(catTitle);
+                        const ul = document.createElement('ul');
+                        ul.className = 'list-disc list-inside text-sm text-slate-600';
+                        let categoryNoticedCount = 0;
+                        Object.entries(responses).forEach(([question, noticed]) => {
+                            if (noticed) {
+                                categoryNoticedCount++;
+                                const li = document.createElement('li');
+                                li.textContent = question;
+                                ul.appendChild(li);
+                            }
+                        });
+                        totalWarningSigns += categoryNoticedCount;
+                        warningSignsCount += categoryNoticedCount;
+                        categoryDiv.appendChild(ul);
+                        if (categoryNoticedCount >= 3) { 
+                            promptNeeded = true;
+                            promptMessages.push(`You noted ${categoryNoticedCount} signs in the "${categoryDisplayNames[catKey]}" category.`);
                         }
-                    });
-                }
-                totalNoticedSigns += categoryNoticedCount;
-
-                if (categoryNoticedCount === 0) {
-                    const p = document.createElement('p');
-                    p.className = 'text-sm text-slate-500 italic';
-                    p.textContent = 'No signs noted in this category.';
-                    categoryDiv.appendChild(p);
-                } else {
-                    categoryDiv.appendChild(ul);
-                }
-                if (categoryNoticedCount >= 3) { 
-                    promptNeeded = true;
-                    promptMessages.push(`You noted ${categoryNoticedCount} signs in the "${categoryDisplayNames[catKey]}" category.`);
-                }
-                summaryContentEl.appendChild(categoryDiv);
-            });
-            
+                        summaryContentEl.appendChild(categoryDiv);
+                    }
+                });
+            }
+            if (warningSignsCount === 0) {
+                 summaryContentEl.appendChild(document.createElement('p')).className = 'text-sm text-slate-500 italic mb-3';
+                 summaryContentEl.lastChild.textContent = 'No warning signs noted for this period.';
+            }
+            // --- Render Positive Signs ---
+            const positiveTitle = document.createElement('h3');
+            positiveTitle.className = "text-lg font-semibold text-emerald-800 mt-4 mb-2 border-b border-emerald-200 pb-1";
+            positiveTitle.textContent = "Positive Signs Noted";
+            summaryContentEl.appendChild(positiveTitle);
+            let positiveSignsCount = 0;
+             if (checkinEntry.positiveResponses && Object.keys(checkinEntry.positiveResponses).length > 0) {
+                positiveCategoryOrder.forEach(catKey => {
+                    const responses = checkinEntry.positiveResponses[catKey];
+                    if (responses && Object.values(responses).some(v => v === true)) {
+                        const categoryDiv = document.createElement('div');
+                        categoryDiv.className = 'mb-2 p-3 bg-white rounded-md shadow-sm';
+                        const catTitle = document.createElement('h3');
+                        catTitle.className = 'font-semibold text-emerald-700';
+                        catTitle.textContent = positiveCategoryDisplayNames[catKey];
+                        categoryDiv.appendChild(catTitle);
+                        const ul = document.createElement('ul');
+                        ul.className = 'list-disc list-inside text-sm text-slate-600';
+                        Object.entries(responses).forEach(([question, noticed]) => {
+                            if (noticed) {
+                                positiveSignsCount++;
+                                const li = document.createElement('li');
+                                li.textContent = question;
+                                ul.appendChild(li);
+                            }
+                        });
+                        totalPositiveSigns += positiveSignsCount;
+                        categoryDiv.appendChild(ul);
+                        summaryContentEl.appendChild(categoryDiv);
+                    }
+                });
+            }
+            if (positiveSignsCount === 0) {
+                 summaryContentEl.appendChild(document.createElement('p')).className = 'text-sm text-slate-500 italic mb-3';
+                 summaryContentEl.lastChild.textContent = 'No positive signs noted for this period.';
+            }
+            // --- Render Totals and Notes ---
             const totalP = document.createElement('p');
-            totalP.className = 'font-bold mt-3 text-md text-sky-800';
-            totalP.textContent = `Total signs noted this week: ${totalNoticedSigns}`;
+            totalP.className = 'font-bold mt-4 text-md text-sky-800';
+            totalP.textContent = `Total Warning Signs: ${totalWarningSigns}`;
             summaryContentEl.appendChild(totalP);
-
-            // Display notes if they exist
+            const totalPositiveP = document.createElement('p');
+            totalPositiveP.className = 'font-bold mt-1 text-md text-emerald-800';
+            totalPositiveP.textContent = `Total Positive Signs: ${positiveSignsCount}`;
+            summaryContentEl.appendChild(totalPositiveP);
             if (checkinEntry.notes && checkinEntry.notes.trim() !== "") {
                 const notesTitle = document.createElement('h3');
                 notesTitle.className = 'font-semibold text-amber-700 mt-4';
                 notesTitle.textContent = "Personal Notes for this Summary:";
                 summaryContentEl.appendChild(notesTitle);
-
                 const notesDisplayDiv = document.createElement('div');
                 notesDisplayDiv.className = 'notes-display'; 
                 notesDisplayDiv.textContent = checkinEntry.notes;
                 summaryContentEl.appendChild(notesDisplayDiv);
             }
-
-
-            if (totalNoticedSigns >= 7) { 
+            // --- Render Prompt ---
+            if (totalWarningSigns >= 7) { 
                  promptNeeded = true;
                  if (!promptMessages.some(msg => msg.includes("total of"))) { 
-                    promptMessages.push(`You noted a total of ${totalNoticedSigns} signs this week.`);
+                    promptMessages.push(`You noted a total of ${totalWarningSigns} warning signs this week.`);
                  }
             }
-
             if (promptNeeded) {
                 summaryPromptEl.innerHTML = `
                     <p class="font-semibold mb-1">A Moment for Reflection:</p>
@@ -661,52 +967,54 @@
                 trendsChartEl.innerHTML = '<p class="text-slate-500 italic">No check-in history yet. Complete a few weekly check-ins to see your trends.</p>';
                 return;
             }
-
             const ul = document.createElement('ul');
             ul.className = 'space-y-2';
-
             const recentHistory = [...allCheckinHistory].reverse(); 
-
             recentHistory.slice(0, 12).forEach((entry, indexInReversedArray) => { 
                 const originalIndex = allCheckinHistory.length - 1 - indexInReversedArray; 
-                
-                let totalNoticed = 0;
-                if (entry && entry.responses) {
+                let totalWarning = 0;
+                if (entry.warningResponses) {
                     categoryOrder.forEach(catKey => {
-                        if (entry.responses[catKey]) {
-                            Object.values(entry.responses[catKey]).forEach(noticed => {
-                                if (noticed) totalNoticed++;
+                        if (entry.warningResponses[catKey]) {
+                            Object.values(entry.warningResponses[catKey]).forEach(noticed => {
+                                if (noticed) totalWarning++;
                             });
                         }
                     });
                 }
-
+                let totalPositive = 0;
+                 if (entry.positiveResponses) {
+                    positiveCategoryOrder.forEach(catKey => {
+                        if (entry.positiveResponses[catKey]) {
+                            Object.values(entry.positiveResponses[catKey]).forEach(noticed => {
+                                if (noticed) totalPositive++;
+                            });
+                        }
+                    });
+                }
                 const li = document.createElement('li');
                 li.className = 'p-3 border border-slate-200 rounded-lg shadow-sm bg-white flex justify-between items-center';
-                
                 const dateAndCountDiv = document.createElement('div');
                 const dateSpan = document.createElement('span');
                 dateSpan.className = 'block text-slate-700';
-                
-                if (entry && entry.date) {
+                if (entry.date) {
                     const displayDate = parseDateString(entry.date);
                     dateSpan.textContent = displayDate ? displayDate.toLocaleDateString('en-NZ', { day: '2-digit', month: 'short', year: 'numeric' }) : 'Invalid Date';
                 } else {
                     dateSpan.textContent = 'Date not recorded';
                 }
-                
-                const countSpan = document.createElement('span');
-                countSpan.className = 'block text-sm text-sky-700 font-semibold';
-                countSpan.textContent = `${totalNoticed} signs noted`;
-                
+                const countSpan = document.createElement('div');
+                countSpan.className = 'text-sm mt-1';
+                countSpan.innerHTML = `
+                    <span class="font-semibold text-sky-700">${totalWarning} Warning</span> | 
+                    <span class="font-semibold text-emerald-700">${totalPositive} Positive</span>
+                `;
                 dateAndCountDiv.appendChild(dateSpan);
                 dateAndCountDiv.appendChild(countSpan);
-
                 const viewButton = document.createElement('button');
                 viewButton.textContent = "View Summary";
                 viewButton.className = "btn btn-secondary btn-sm py-1 px-3"; 
                 viewButton.onclick = () => navigateTo('summaryView', { entryIndex: originalIndex });
-                
                 li.appendChild(dateAndCountDiv);
                 li.appendChild(viewButton);
                 ul.appendChild(li);
@@ -714,26 +1022,116 @@
             trendsChartEl.appendChild(ul);
         }
 
+        // --- Data Export/Import ---
+        exportDataBtn.onclick = () => {
+            if (allCheckinHistory.length === 0 && gratitudeHistory.length === 0) {
+                showModal("No Data to Export", "There is no data to export.");
+                return;
+            }
+            try {
+                const exportObject = {
+                    checkinHistory: allCheckinHistory,
+                    gratitudeHistory: gratitudeHistory // Add gratitude history
+                };
+                const dataStr = JSON.stringify(exportObject, null, 2);
+                const blob = new Blob([dataStr], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `taha_hinengaro_check_backup_${new Date().toISOString().split('T')[0]}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                showModal("Export Successful", "Your data has been downloaded as a .json file.");
+            } catch (error) {
+                console.error("Error exporting data:", error);
+                showModal("Export Error", "Could not export your data. Please try again.");
+            }
+        };
+
+        importDataInput.onchange = (event) => {
+            const file = event.target.files[0];
+            if (!file) { return; }
+            
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                let importedCheckinHistory = [];
+                let importedGratitudeHistory = [];
+                try {
+                    const importedObject = JSON.parse(e.target.result);
+                    if (Array.isArray(importedObject)) { // Old format (only check-ins)
+                        importedCheckinHistory = importedObject;
+                        importedGratitudeHistory = [];
+                    } else if (importedObject.checkinHistory) { // New format
+                        importedCheckinHistory = importedObject.checkinHistory || [];
+                        importedGratitudeHistory = importedObject.gratitudeHistory || [];
+                    } else {
+                        throw new Error("File is not a valid backup file.");
+                    }
+                    
+                    showModal("Confirm Import", `This will overwrite your current data (${allCheckinHistory.length} check-in entries, ${gratitudeHistory.length} gratitude entries) with data from the file (${importedCheckinHistory.length} check-in, ${importedGratitudeHistory.length} gratitude). Are you sure?`);
+                    
+                    const confirmBtn = document.createElement('button');
+                    confirmBtn.textContent = "Yes, Overwrite and Import";
+                    confirmBtn.className = "btn bg-red-500 text-white hover:bg-red-600 w-full mt-2 btn-extra-modal"; 
+                    confirmBtn.onclick = () => {
+                        allCheckinHistory = importedCheckinHistory;
+                        gratitudeHistory = importedGratitudeHistory;
+                        saveHistory();
+                        saveGratitudeHistory();
+                        loadHistory();
+                        navigateTo('welcomeView');
+                        promptModal.style.display = 'none'; 
+                        showModal("Import Successful", `Successfully imported ${importedCheckinHistory.length} check-in and ${importedGratitudeHistory.length} gratitude entries.`);
+                    };
+                    const modalContent = promptModal.querySelector('.modal-content');
+                    const existingExtraButtons = modalContent.querySelectorAll('.btn-extra-modal');
+                    existingExtraButtons.forEach(btn => modalContent.removeChild(btn));
+                    modalContent.appendChild(confirmBtn);
+                    closePromptModalBtn.textContent = "Cancel"; 
+                    closePromptModalBtn.onclick = () => { 
+                        promptModal.style.display = 'none';
+                        if (modalContent.contains(confirmBtn)) {
+                            modalContent.removeChild(confirmBtn);
+                        }
+                        closePromptModalBtn.textContent = "Okay, I Understand"; 
+                        closePromptModalBtn.onclick = () => { promptModal.style.display = 'none'; }; 
+                    };
+                } catch (error) {
+                    console.error("Error importing data:", error);
+                    showModal("Import Failed", `Could not import data. ${error.message}`);
+                } finally {
+                    event.target.value = null;
+                }
+            };
+            reader.onerror = () => {
+                showModal("File Read Error", "Could not read the selected file.");
+                event.target.value = null;
+            };
+            reader.readAsText(file);
+        };
+
         clearDataBtn.onclick = () => {
-            showModal("Confirm Deletion", "Are you sure you want to clear all your check-in data? This action cannot be undone.");
+            showModal("Confirm Deletion", "Are you sure you want to clear ALL your check-in and gratitude data? This action cannot be undone.");
             const confirmBtn = document.createElement('button');
             confirmBtn.textContent = "Yes, Clear All Data";
             confirmBtn.className = "btn bg-red-500 text-white hover:bg-red-600 w-full mt-2 btn-extra-modal"; 
             confirmBtn.onclick = () => {
                 localStorage.removeItem('tahaHinengaroCheckHistory');
+                localStorage.removeItem('tahaHinengaroGratitudeJournal');
                 allCheckinHistory = [];
+                gratitudeHistory = [];
                 currentlyViewedSummaryIndex = -1;
                 currentEditingNotesIndex = -1;
                 renderTrends(); 
                 navigateTo('welcomeView');
                 promptModal.style.display = 'none'; 
-                showModal("Data Cleared", "All your check-in data has been removed from this browser.");
+                showModal("Data Cleared", "All your check-in and gratitude data has been removed from this browser.");
             };
-
             const modalContent = promptModal.querySelector('.modal-content');
             const existingExtraButtons = modalContent.querySelectorAll('.btn-extra-modal');
             existingExtraButtons.forEach(btn => modalContent.removeChild(btn));
-            
             modalContent.appendChild(confirmBtn);
             closePromptModalBtn.textContent = "Cancel"; 
             closePromptModalBtn.onclick = () => { 
@@ -748,7 +1146,11 @@
 
         viewDataBtn.onclick = () => {
             try {
-                rawDataDisplayEl.textContent = JSON.stringify(allCheckinHistory, null, 2);
+                const exportObject = { 
+                    checkinHistory: allCheckinHistory,
+                    gratitudeHistory: gratitudeHistory
+                };
+                rawDataDisplayEl.textContent = JSON.stringify(exportObject, null, 2);
                 rawDataDisplayEl.style.display = rawDataDisplayEl.style.display === 'none' ? 'block' : 'none';
             } catch (error) {
                 console.error("Error stringifying history for display:", error);
@@ -787,3 +1189,4 @@
 
 </body>
 </html>
+
