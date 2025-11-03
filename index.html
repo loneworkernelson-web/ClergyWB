@@ -121,9 +121,9 @@
         .resource-text.placeholder {
             @apply text-slate-400 italic font-normal;
         }
-        /* New Dashboard Button Style */
+        /* Updated Dashboard Button Style */
         .dashboard-btn {
-            @apply p-4 rounded-lg shadow-md transition-all duration-150 ease-in-out flex flex-col items-center justify-center text-center text-white;
+            @apply p-4 rounded-lg shadow-lg hover:shadow-xl transition-all duration-150 ease-in-out flex flex-col items-center justify-center text-center text-white;
         }
         .dashboard-btn svg {
             @apply w-8 h-8 mb-2;
@@ -147,8 +147,8 @@
 
     <div id="app" class="max-w-2xl mx-auto bg-white shadow-xl flex flex-col">
 
-        <!-- Updated Header with Koru Icon -->
-        <header class="bg-sky-700 text-white p-4 flex items-center justify-center sticky top-0 z-50 shadow-md">
+        <!-- Updated Header with Koru Icon and Gradient -->
+        <header class="bg-gradient-to-r from-sky-600 to-sky-800 text-white p-4 flex items-center justify-center sticky top-0 z-50 shadow-md">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-7 h-7 mr-2" width="28" height="28">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M12 21a9 9 0 009-9h-9" />
                 <path stroke-linecap="round" stroke-linejoin="round" d="M12 3a9 9 0 019 9h-9" />
@@ -166,42 +166,45 @@
                     <p class="text-slate-600 mb-4">Welcome to your private wellbeing hub. How are you today?</p>
                 </div>
                 
-                <!-- At a Glance Preview -->
-                <div class="bg-white p-4 rounded-lg shadow">
+                <!-- At a Glance Preview (Updated Styling) -->
+                <div class="bg-slate-50 border border-slate-200 p-4 rounded-lg shadow">
                     <h3 class="text-lg font-semibold text-slate-800 mb-3">At a Glance</h3>
                     <div id="dashboardPreview">
                         <!-- Dashboard preview will be rendered here by JS -->
                     </div>
                 </div>
 
-                <!-- Main Module Grid -->
+                <!-- Main Module Grid (Updated Button Gradients and Shadows) -->
                 <div class="grid grid-cols-2 gap-4">
-                    <button id="startWarningCheckinBtn" class="dashboard-btn bg-sky-600 hover:bg-sky-700">
+                    <button id="startWarningCheckinBtn" class="dashboard-btn bg-gradient-to-br from-sky-500 to-sky-700 hover:from-sky-600 hover:to-sky-800">
                         <svg id="icon-warning" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8 mb-2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" /></svg>
                         <span>Warning Signs</span>
                     </button>
-                    <button id="startPositiveCheckinBtn" class="dashboard-btn bg-emerald-600 hover:bg-emerald-700">
-                         <svg id="icon-positive" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8 mb-2"><path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18l-1.813-2.096a.5.5 0 00-.621-.194l-1.925.872a.5.5 0 01-.621-.194L3 13.75l-2.096-1.813a.5.5 0 01-.194-.621l.872-1.925a.5.5 0 00-.194-.621L.25 9 2.096 7.187a.5.5 0 01.194-.621l-.872-1.925a.5.5 0 01.194-.621L3 2.25l2.096 1.813a.5.5 0 00.621.194l1.925-.872a.5.5 0 01.621.194L9 5.25l1.813-2.096a.5.5 0 01.621-.194l1.925.872a.5.5 0 00.621.194L15 2.25l2.096 1.813a.5.5 0 01.194.621l-.872 1.925a.5.5 0 00.194.621L21.75 9l-2.096 1.813a.5.5 0 01-.194.621l.872 1.925a.5.5 0 01-.194.621L15 15.75l-2.096-1.813a.5.5 0 00-.621-.194l-1.925.872a.5.5 0 01-.621.194zM18 9l1.5-1.5-1.5-1.5-1.5 1.5 1.5 1.5zM3 9l1.5-1.5-1.5-1.5-1.5 1.5 1.5 1.5z" /></svg>
+                    <button id="startPositiveCheckinBtn" class="dashboard-btn bg-gradient-to-br from-emerald-500 to-emerald-700 hover:from-emerald-600 hover:to-emerald-800">
+                         <!-- Replaced Icon with Thumbs Up -->
+                         <svg id="icon-positive" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8 mb-2">
+                           <path stroke-linecap="round" stroke-linejoin="round" d="M6.633 10.5c.806 0 1.533-.446 2.031-1.08a9.041 9.041 0 012.861-2.4c.723-.384 1.35-.956 1.653-1.715a4.498 4.498 0 00.322-1.672V3a.75.75 0 01.75-.75A2.25 2.25 0 0116.5 4.5v.75c0 1.657-.223 3.293-.658 4.803l-1.036 4.143a.75.75 0 01-.75.642H8.25m-1.622-7.803a.75.75 0 00-.75-.75H3.75a.75.75 0 00-.75.75v10.5a.75.75 0 00.75.75h3.75a.75.75 0 00.75-.75V6.45z" />
+                         </svg>
                         <span>Positive Signs</span>
                     </button>
-                    <button id="startSabbathCheckinBtn" class="dashboard-btn bg-indigo-600 hover:bg-indigo-700">
+                    <button id="startSabbathCheckinBtn" class="dashboard-btn bg-gradient-to-br from-indigo-500 to-indigo-700 hover:from-indigo-600 hover:to-indigo-800">
                         <svg id="icon-sabbath" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8 mb-2"><path stroke-linecap="round" stroke-linejoin="round" d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" /></svg>
                         <span>Sabbath Quality</span>
                     </button>
-                    <button id="startRuleOfLifeBtn" class="dashboard-btn bg-teal-600 hover:bg-teal-700">
+                    <button id="startRuleOfLifeBtn" class="dashboard-btn bg-gradient-to-br from-teal-500 to-teal-700 hover:from-teal-600 hover:to-teal-800">
                         <svg id="icon-rule" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8 mb-2"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 3.75V16.5a2.25 2.25 0 01-2.25 2.25H15v-1.5a.75.75 0 00-.75-.75H9.75a.75.75 0 00-.75.75v1.5H7.5a2.25 2.25 0 01-2.25-2.25V3.75m.75 0H15.75c.414 0 .75.336.75.75v1.5H5.25v-1.5c0-.414.336-.75.75-.75zM15 3.75a.75.75 0 00-.75-.75H9.75a.75.75 0 00-.75.75V15H15V3.75z" /></svg>
                         <span>My Rule of Life</span>
                     </button>
                 </div>
 
-                <!-- Quick Add Gratitude -->
-                <button id="startGratitudeBtn" class="btn btn-gratitude w-full py-3 font-semibold flex items-center justify-center">
+                <!-- Quick Add Gratitude (Updated Styling) -->
+                <button id="startGratitudeBtn" class="btn btn-gratitude w-full py-3 font-semibold flex items-center justify-center shadow-lg hover:shadow-xl bg-gradient-to-br from-amber-500 to-amber-700 hover:from-amber-600 hover:to-amber-800">
                     <svg id="icon-gratitude" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 mr-2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.099 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" /></svg>
                     <span>Add Gratitude Entry</span>
                 </button>
                 
-                <!-- Rule of Life Preview -->
-                <div class="bg-white p-4 rounded-lg shadow">
+                <!-- Rule of Life Preview (Updated Styling) -->
+                <div class="bg-slate-50 border border-slate-200 p-4 rounded-lg shadow">
                     <h3 class="text-lg font-semibold text-slate-800 mb-3">My Rule of Life Intentions</h3>
                     <div id="dashboardRulePreview">
                         <!-- Rule of Life preview will be rendered here by JS -->
@@ -535,8 +538,8 @@
 
         </main>
 
-        <!-- Updated Footer Navigation -->
-        <nav class="bg-sky-600 text-white flex sticky bottom-0 shadow-t-md p-2 space-x-2">
+        <!-- Updated Footer Navigation with Gradient -->
+        <nav class="bg-gradient-to-r from-sky-600 to-sky-800 text-white flex sticky bottom-0 shadow-t-md p-2 space-x-2">
             <button onclick="navigateTo('welcomeView')" class="nav-btn active" data-view="welcomeView">
                 <svg id="icon-home" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 mx-auto"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" /></svg>
                 <span>Home</span>
