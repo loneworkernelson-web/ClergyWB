@@ -3,9 +3,9 @@
 const CACHE_NAME = 'taha-hinengaro-check-v1';
 // This is the list of files that make up the "app shell"
 const FILES_TO_CACHE = [
-  'clergy_wellbeing_app_html',
+  'index.html', // Updated from clergy_wellbeing_app_html
   'manifest.json',
-  'https://cdn.tailwindcss.com',
+  'https.cdn.tailwindcss.com',
   'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap'
   // Note: The icon files are from a CDN and will be cached by the browser,
   // but for a production app, you'd add your local icon paths here.
@@ -21,15 +21,18 @@ self.addEventListener('install', (event) => {
       // We use fetch with { cache: 'no-store' } for CDN resources
       // to ensure we get a fresh copy from the network for the cache.
       const cachePromises = FILES_TO_CACHE.map(urlToCache => {
-        if (urlToCache.startsWith('http')) {
-          return fetch(urlToCache, { cache: 'no-store' }).then(response => {
-            if (!response.ok) {
-              throw new Error(`Failed to fetch ${urlToCache}`);
-            }
-            return cache.put(urlToCache, response);
-          });
+        // Handle local files (like index.html and manifest.json)
+        if (!urlToCache.startsWith('http')) {
+          return cache.add(new Request(urlToCache, { cache: 'no-store' }));
         }
-        return cache.add(urlToCache);
+        
+        // Handle CDN files
+        return fetch(urlToCache, { cache: 'no-store' }).then(response => {
+          if (!response.ok) {
+            throw new Error(`Failed to fetch ${urlToCache}`);
+          }
+          return cache.put(urlToCache, response);
+        });
       });
       return Promise.all(cachePromises);
     })
@@ -81,3 +84,4 @@ self.addEventListener('fetch', (event) => {
     })
   );
 });
+
