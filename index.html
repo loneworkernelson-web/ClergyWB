@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Taha Hinengaro Check</title>
+    <title>Tōku Hauora</title>
     
     <!-- PWA Links Added -->
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#0284c7">
-    <link rel="apple-touch-icon" href="https://placehold.co/192x192/0284c7/ffffff?text=App">
+    <link rel="apple-touch-icon" href="https://placehold.co/192x192/0284c7/ffffff?text=Hauora">
     <!-- End of PWA Links -->
 
     <script src="https://cdn.tailwindcss.com"></script>
@@ -62,7 +62,6 @@
         .btn-sabbath {
             @apply bg-indigo-600 text-white hover:bg-indigo-700 focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-50;
         }
-        /* New Rule of Life Button Style */
         .btn-rule {
              @apply bg-teal-600 text-white hover:bg-teal-700 focus:ring-2 focus:ring-teal-500 focus:ring-opacity-50;
         }
@@ -80,8 +79,8 @@
             @apply w-full sm:w-auto text-sm sm:text-base;
         }
         .nav-btn {
-            /* Individual button styling */
-            @apply flex-1 text-center py-3 px-2 bg-sky-700 text-white hover:bg-sky-800 transition-colors rounded-md shadow-sm;
+            /* Updated nav button style for icon + text */
+            @apply flex-1 flex flex-col items-center justify-center text-center py-2 px-1 bg-sky-700 text-white hover:bg-sky-800 transition-colors rounded-md shadow-sm text-xs;
         }
         .nav-btn.active {
             /* Active button styling */
@@ -121,6 +120,16 @@
         .resource-text.placeholder {
             @apply text-slate-400 italic font-normal;
         }
+        /* New Dashboard Button Style */
+        .dashboard-btn {
+            @apply p-4 rounded-lg shadow-md transition-all duration-150 ease-in-out flex flex-col items-center justify-center text-center text-white;
+        }
+        .dashboard-btn svg {
+            @apply w-8 h-8 mb-2;
+        }
+        .dashboard-btn span {
+            @apply text-sm font-semibold;
+        }
     </style>
 </head>
 <body class="text-slate-800">
@@ -128,28 +137,61 @@
     <div id="app" class="max-w-2xl mx-auto bg-white shadow-xl flex flex-col">
 
         <header class="bg-sky-700 text-white p-4 text-center sticky top-0 z-50 shadow-md">
-            <h1 class="text-2xl font-bold">Taha Hinengaro Check</h1>
-            <p class="text-sm opacity-90">Mind & Heart Check for Clergy Wellbeing</p>
+            <h1 class="text-2xl font-bold">Tōku Hauora</h1>
+            <p class="text-sm opacity-90">My Clergy Wellbeing Hub</p>
         </header>
 
         <main class="flex-grow p-4 sm:p-6 space-y-6 overflow-y-auto">
 
+            <!-- Updated Welcome View (Dashboard) -->
             <div id="welcomeView" class="view active-view space-y-6">
                 <div class="bg-sky-50 p-6 rounded-lg shadow">
                     <h2 class="text-xl font-semibold text-sky-800 mb-3">Nau Mai, Haere Mai</h2>
-                    <p class="italic text-slate-600">"Mā te kimi ka kite, Mā te kite ka mōhio, Mā te mōhio ka mārama."</p>
-                    <p class="text-slate-600 mb-4">(Seek and discover, discover and know, know and become enlightened.)</p>
-                    <p class="mb-2">This app is a private tool to help you reflect on your wellbeing.</p>
-                    <p class="text-sm text-slate-500 mb-4">All your data is stored locally in this browser and is not shared.</p>
-                    
-                    <div class="space-y-3">
-                        <button id="startWarningCheckinBtn" class="btn btn-primary w-full py-3 font-semibold">Start Warning Signs Check-in</button>
-                        <button id="startPositiveCheckinBtn" class="btn btn-positive w-full py-3 font-semibold">Start Positive Signs Check-in</button>
-                        <button id="startGratitudeBtn" class="btn btn-gratitude w-full py-3 font-semibold">Add Gratitude Entry</button>
-                        <button id="startSabbathCheckinBtn" class="btn btn-sabbath w-full py-3 font-semibold">Sabbath Quality Check-in</button>
-                        <button id="startRuleOfLifeBtn" class="btn btn-rule w-full py-3 font-semibold">My Rule of Life</button>
+                    <p class="text-slate-600 mb-4">Welcome to your private wellbeing hub. How are you today?</p>
+                </div>
+                
+                <!-- At a Glance Preview -->
+                <div class="bg-white p-4 rounded-lg shadow">
+                    <h3 class="text-lg font-semibold text-slate-800 mb-3">At a Glance</h3>
+                    <div id="dashboardPreview">
+                        <!-- Dashboard preview will be rendered here by JS -->
                     </div>
                 </div>
+
+                <!-- Main Module Grid -->
+                <div class="grid grid-cols-2 gap-4">
+                    <button id="startWarningCheckinBtn" class="dashboard-btn bg-sky-600 hover:bg-sky-700">
+                        <svg id="icon-warning" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8 mb-2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" /></svg>
+                        <span>Warning Signs</span>
+                    </button>
+                    <button id="startPositiveCheckinBtn" class="dashboard-btn bg-emerald-600 hover:bg-emerald-700">
+                         <svg id="icon-positive" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8 mb-2"><path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18l-1.813-2.096a.5.5 0 00-.621-.194l-1.925.872a.5.5 0 01-.621-.194L3 13.75l-2.096-1.813a.5.5 0 01-.194-.621l.872-1.925a.5.5 0 00-.194-.621L.25 9 2.096 7.187a.5.5 0 01.194-.621l-.872-1.925a.5.5 0 01.194-.621L3 2.25l2.096 1.813a.5.5 0 00.621.194l1.925-.872a.5.5 0 01.621.194L9 5.25l1.813-2.096a.5.5 0 01.621-.194l1.925.872a.5.5 0 00.621.194L15 2.25l2.096 1.813a.5.5 0 01.194.621l-.872 1.925a.5.5 0 00.194.621L21.75 9l-2.096 1.813a.5.5 0 01-.194.621l.872 1.925a.5.5 0 01-.194.621L15 15.75l-2.096-1.813a.5.5 0 00-.621-.194l-1.925.872a.5.5 0 01-.621.194zM18 9l1.5-1.5-1.5-1.5-1.5 1.5 1.5 1.5zM3 9l1.5-1.5-1.5-1.5-1.5 1.5 1.5 1.5z" /></svg>
+                        <span>Positive Signs</span>
+                    </button>
+                    <button id="startSabbathCheckinBtn" class="dashboard-btn bg-indigo-600 hover:bg-indigo-700">
+                        <svg id="icon-sabbath" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8 mb-2"><path stroke-linecap="round" stroke-linejoin="round" d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" /></svg>
+                        <span>Sabbath Quality</span>
+                    </button>
+                    <button id="startRuleOfLifeBtn" class="dashboard-btn bg-teal-600 hover:bg-teal-700">
+                        <svg id="icon-rule" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8 mb-2"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 3.75V16.5a2.25 2.25 0 01-2.25 2.25H15v-1.5a.75.75 0 00-.75-.75H9.75a.75.75 0 00-.75.75v1.5H7.5a2.25 2.25 0 01-2.25-2.25V3.75m.75 0H15.75c.414 0 .75.336.75.75v1.5H5.25v-1.5c0-.414.336-.75.75-.75zM15 3.75a.75.75 0 00-.75-.75H9.75a.75.75 0 00-.75.75V15H15V3.75z" /></svg>
+                        <span>My Rule of Life</span>
+                    </button>
+                </div>
+
+                <!-- Quick Add Gratitude -->
+                <button id="startGratitudeBtn" class="btn btn-gratitude w-full py-3 font-semibold flex items-center justify-center">
+                    <svg id="icon-gratitude" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 mr-2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.099 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" /></svg>
+                    <span>Add Gratitude Entry</span>
+                </button>
+                
+                <!-- Rule of Life Preview -->
+                <div class="bg-white p-4 rounded-lg shadow">
+                    <h3 class="text-lg font-semibold text-slate-800 mb-3">My Rule of Life Intentions</h3>
+                    <div id="dashboardRulePreview">
+                        <!-- Rule of Life preview will be rendered here by JS -->
+                    </div>
+                </div>
+
                 <div class="text-center">
                     <button onclick="navigateTo('privacyView')" class="btn btn-secondary btn-sm py-1 px-2 text-xs rounded-full">Privacy Information</button>
                 </div>
@@ -241,7 +283,7 @@
                 </div>
             </div>
 
-            <!-- Rule of Life Hub View (New) -->
+            <!-- Rule of Life Hub View -->
             <div id="ruleOfLifeView" class="view space-y-4">
                 <div class="flex justify-between items-center">
                     <h2 class="text-xl font-semibold text-teal-800">My Rule of Life</h2>
@@ -287,7 +329,7 @@
                 <button id="viewPastRuleOfLifeBtn" class="btn btn-secondary w-full mt-2">View Past Reflections</button>
             </div>
 
-            <!-- Rule of Life Check-in View (New) -->
+            <!-- Rule of Life Check-in View -->
             <div id="ruleOfLifeCheckinView" class="view space-y-4">
                 <h2 class="text-xl font-semibold text-teal-800">Rule of Life Check-in</h2>
                 <p class="text-sm text-slate-600">For the week ending on:</p>
@@ -306,7 +348,7 @@
                 <button onclick="navigateTo('ruleOfLifeView')" class="btn btn-secondary w-full mt-2">Back to Rule of Life</button>
             </div>
             
-            <!-- Past Rule of Life Reflections View (New) -->
+            <!-- Past Rule of Life Reflections View -->
             <div id="pastRuleOfLifeView" class="view space-y-4">
                 <h2 class="text-xl font-semibold text-teal-800">Past Rule of Life Reflections</h2>
                 <button onclick="navigateTo('ruleOfLifeView')" class="btn btn-secondary w-full mb-3">Back to Rule of Life</button>
@@ -421,7 +463,7 @@
                 <h2 class="text-xl font-semibold text-sky-800">Privacy Information</h2>
                 <div class="bg-sky-50 p-4 rounded-lg shadow space-y-3 text-slate-700">
                     <p><strong>Your Privacy is Paramount.</strong></p>
-                    <p>This "Taha Hinengaro Check" app is designed with your privacy as its core principle.</p>
+                    <p>This "Tōku Hauora" app is designed with your privacy as its core principle.</p>
                     <ul class="list-disc list-inside space-y-1 mt-2">
                         <li><strong>Local Data Storage:</strong> All data you enter (check-in responses, notes, trends) is stored *exclusively* on your device within this web browser's local storage. It is not sent to any server or third party.</li>
                         <li><strong>No Account Needed:</strong> You do not need to create an account or log in to use this app.</li>
@@ -438,7 +480,7 @@
                 <h2 class="text-xl font-semibold text-sky-800">Settings & Data</h2>
                  <div class="bg-sky-50 p-4 rounded-lg shadow space-y-3">
                     <p class="font-medium">Reminders:</p>
-                    <p class="text-sm text-slate-600">This web app cannot set system reminders. Please use your phone or computer's calendar app to set a weekly reminder for your Taha Hinengaro Check.</p>
+                    <p class="text-sm text-slate-600">This web app cannot set system reminders. Please use your phone or computer's calendar app to set a weekly reminder for your Tōku Hauora Check.</p>
 
                     <p class="font-medium mt-4">Manage Your Data:</p>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -458,12 +500,28 @@
 
         </main>
 
+        <!-- Updated Footer Navigation -->
         <nav class="bg-sky-600 text-white flex sticky bottom-0 shadow-t-md p-2 space-x-2">
-            <button onclick="navigateTo('welcomeView')" class="nav-btn" data-view="welcomeView">Home</button>
-            <button onclick="navigateTo('summaryViewLast')" class="nav-btn" data-view="summaryView">Summary</button>
-            <button onclick="navigateTo('trendsView')" class="nav-btn" data-view="trendsView">Trends</button>
-            <button onclick="navigateTo('resourcesView')" class="nav-btn" data-view="resourcesView">Resources</button>
-            <button onclick="navigateTo('settingsView')" class="nav-btn" data-view="settingsView">Settings</button>
+            <button onclick="navigateTo('welcomeView')" class="nav-btn active" data-view="welcomeView">
+                <svg id="icon-home" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 mx-auto"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" /></svg>
+                <span>Home</span>
+            </button>
+            <button onclick="navigateTo('summaryViewLast')" class="nav-btn" data-view="summaryView">
+                <svg id="icon-summary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 mx-auto"><path stroke-linecap="round" stroke-linejoin="round" d="M11.39 6.22l.015.015.015-.015a.75.75 0 011.06 0l1.06 1.06c.3.3.3.785 0 1.076l-4.5 4.5a.75.75 0 01-1.06 0l-1.06-1.06a.75.75 0 010-1.076l4.5-4.5zM11.25 12.75l-4.5 4.5a.75.75 0 01-1.06 0l-1.06-1.06a.75.75 0 010-1.076l4.5-4.5a.75.75 0 011.06 0l1.06 1.06a.75.75 0 010 1.076zM18.75 2.25c.398 0 .779.158 1.06.44l2.25 2.25a1.5 1.5 0 01.44 1.06v12a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 18V6a2.25 2.25 0 012.25-2.25h13.5zM18 4.5H5.25A.75.75 0 004.5 5.25v12.75c0 .414.336.75.75.75h13.5a.75.75 0 00.75-.75V5.25a.75.75 0 00-.75-.75z" /></svg>
+                <span>Summary</span>
+            </button>
+            <button onclick="navigateTo('trendsView')" class="nav-btn" data-view="trendsView">
+                <svg id="icon-trends" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 mx-auto"><path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25C3.504 21 3 20.496 3 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25c-.621 0-1.125-.504-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25c-.621 0-1.125-.504-1.125-1.125V4.125z" /></svg>
+                <span>Trends</span>
+            </button>
+            <button onclick="navigateTo('resourcesView')" class="nav-btn" data-view="resourcesView">
+                <svg id="icon-resources" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 mx-auto"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18c-2.305 0-4.408.867-6 2.292m0-14.25v14.25" /></svg>
+                <span>Resources</span>
+            </button>
+            <button onclick="navigateTo('settingsView')" class="nav-btn" data-view="settingsView">
+                <svg id="icon-settings" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 mx-auto"><path stroke-linecap="round" stroke-linejoin="round" d="M10.343 3.94c.09-.542.56-1.007 1.11-1.226l.487-.202a.75.75 0 01.93.93l-.202.487c-.219.55-.684 1.02-1.226 1.11a4.5 4.5 0 00-2.032 5.225l.042.11a.75.75 0 01-1.214.866l-.11-.042a4.5 4.5 0 00-5.225-2.032c-.542.09-1.007.56-1.226 1.11l-.202.487a.75.75 0 01-.93-.93l.487-.202c.55-.219 1.02-.684 1.11-1.226a4.5 4.5 0 00-2.032-5.225l-.042-.11a.75.75 0 01.866-1.214l.11.042a4.5 4.5 0 005.225-2.032zM12 8.25a3.75 3.75 0 100 7.5 3.75 3.75 0 000-7.5z" /></svg>
+                <span>Settings</span>
+            </button>
         </nav>
 
         <div id="promptModal" class="modal-overlay" style="display: none;">
@@ -478,6 +536,7 @@
 
     <script>
         // --- Application State and Data ---
+        // (All data definitions remain the same)
         const warningSigns = {
             emotional: ["Loss of joy or satisfaction in ministry", "Increased irritability, impatience, or anger", "Cynicism, negativity, or disillusionment about ministry or the Church", "Feeling emotionally exhausted, overwhelmed, or \"numb\"", "Increased anxiety or feelings of dread related to work", "Heightened sensitivity to criticism", "Feelings of failure, inadequacy, or guilt"],
             mentalCognitive: ["Difficulty concentrating or making decisions", "Forgetfulness", "Constant rumination about work problems, even during time off", "Loss of creativity or motivation", "A sense that you are never \"not working\" mentally"],
@@ -506,7 +565,6 @@
         };
         const positiveCategoryOrder = ["connection", "purpose", "engagement", "selfCare", "spiritual"];
 
-        // Sabbath Check-in Data
         const sabbathSigns = {
             disengagement: ["I was able to mentally disengage from work (e.g., not ruminating on problems)", "I successfully avoided or limited work-related emails and calls", "I felt 'off-duty' and not on call"],
             rest: ["I experienced physical rest and renewal", "I engaged in activities I find genuinely restful (which might be active or passive)", "I felt my energy levels were restored"],
@@ -524,28 +582,25 @@
         let currentSabbathCheckinData = {};
         let sabbathHistory = [];
 
-
-        // Check-in History
         let currentCategoryIndex = 0;
         let currentPositiveCategoryIndex = 0;
         let currentCheckinData = {}; 
         let allCheckinHistory = []; 
         let currentlyViewedSummaryIndex = -1; 
         let currentEditingNotesIndex = -1; 
-        // Gratitude History
         let gratitudeHistory = [];
-        // User Resources
         let userResources = {};
-        // Rule of Life (New)
         let ruleOfLife = {};
         let ruleOfLifeHistory = [];
-        // Chart.js instance
         let trendsChartInstance = null;
-        let currentTrendView = 'recent'; // 'recent' or 'all'
+        let currentTrendView = 'recent'; 
 
         // --- DOM Elements ---
         const views = document.querySelectorAll('.view');
         const appElement = document.getElementById('app');
+        // Dashboard (New)
+        const dashboardPreviewEl = document.getElementById('dashboardPreview');
+        const dashboardRulePreviewEl = document.getElementById('dashboardRulePreview');
         // Warning Check-in
         const categoryTitleEl = document.getElementById('categoryTitle');
         const questionsContainerEl = document.getElementById('questionsContainer');
@@ -586,7 +641,7 @@
         const saveGratitudeBtn = document.getElementById('saveGratitudeBtn');
         const viewPastGratitudeBtn = document.getElementById('viewPastGratitudeBtn');
         const pastGratitudeContainer = document.getElementById('pastGratitudeContainer');
-        // Rule of Life (New)
+        // Rule of Life
         const startRuleOfLifeBtn = document.getElementById('startRuleOfLifeBtn');
         const editRuleBtn = document.getElementById('editRuleBtn');
         const saveRuleBtn = document.getElementById('saveRuleBtn');
@@ -846,6 +901,8 @@
                 loadRuleOfLifeChecklist();
             } else if (viewId === 'pastRuleOfLifeView') {
                 renderPastRuleOfLifeEntries();
+            } else if (viewId === 'welcomeView') { // New
+                renderDashboardPreview();
             }
             
             const targetViewEl = document.getElementById(targetViewId);
@@ -894,6 +951,65 @@
                 navigateTo('summaryViewLast'); 
             }
         };
+        
+        // --- Dashboard Preview Logic (New) ---
+        function renderDashboardPreview() {
+            // 1. Render Last Check-in Preview
+            dashboardPreviewEl.innerHTML = '';
+            if (allCheckinHistory.length > 0) {
+                const lastEntry = allCheckinHistory[allCheckinHistory.length - 1];
+                let totalWarning = 0;
+                if (lastEntry.warningResponses) {
+                    Object.values(lastEntry.warningResponses).forEach(cat => {
+                        totalWarning += Object.values(cat).filter(Boolean).length;
+                    });
+                }
+                let totalPositive = 0;
+                if (lastEntry.positiveResponses) {
+                    Object.values(lastEntry.positiveResponses).forEach(cat => {
+                        totalPositive += Object.values(cat).filter(Boolean).length;
+                    });
+                }
+
+                const displayDate = parseDateString(lastEntry.date);
+                const dateString = displayDate ? displayDate.toLocaleDateString('en-NZ', { day: 'numeric', month: 'short' }) : 'Last Entry';
+                
+                const totalSigns = totalWarning + totalPositive;
+                const warningPercent = totalSigns === 0 ? 0 : (totalWarning / totalSigns) * 100;
+                const positivePercent = totalSigns === 0 ? 0 : (totalPositive / totalSigns) * 100;
+                
+                dashboardPreviewEl.innerHTML = `
+                    <p class="text-sm text-slate-600 mb-2">Your last check-in (${dateString}):</p>
+                    <div class="flex w-full h-6 rounded-full overflow-hidden bg-gray-200">
+                        <div class="bg-sky-600" style="width: ${warningPercent}%" title="Warning Signs"></div>
+                        <div class="bg-emerald-600" style="width: ${positivePercent}%" title="Positive Signs"></div>
+                    </div>
+                    <div class="flex justify-between text-sm mt-1">
+                        <span class="font-semibold text-sky-700">${totalWarning} Warning</span>
+                        <span class="font-semibold text-emerald-700">${totalPositive} Positive</span>
+                    </div>
+                    <button class="btn-link-like text-sm mt-3" onclick="navigateTo('summaryViewLast')">View Full Summary</button>
+                `;
+            } else {
+                dashboardPreviewEl.innerHTML = '<p class="text-slate-500 italic">You haven\'t completed a check-in yet. Start one below!</p>';
+            }
+
+            // 2. Render Rule of Life Preview
+            dashboardRulePreviewEl.innerHTML = '';
+            const intentions = ruleOfLife.intentions || [];
+            if (intentions.length > 0) {
+                const ul = document.createElement('ul');
+                ul.className = 'list-disc list-inside text-teal-700 font-medium space-y-1';
+                intentions.forEach(intention => {
+                    const li = document.createElement('li');
+                    li.textContent = intention;
+                    ul.appendChild(li);
+                });
+                dashboardRulePreviewEl.appendChild(ul);
+            } else {
+                dashboardRulePreviewEl.innerHTML = '<p class="text-slate-500 italic">You haven\'t set your intentions yet. Tap "My Rule of Life" to begin.</p>';
+            }
+        }
         
         // --- Resource Page Logic ---
         function renderUserResources(mode = 'read') {
@@ -1914,7 +2030,7 @@
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
-                a.download = `taha_hinengaro_check_backup_${new Date().toISOString().split('T')[0]}.json`;
+                a.download = `toku_hauora_backup_${new Date().toISOString().split('T')[0]}.json`; // Updated name
                 document.body.appendChild(a);
                 a.click();
                 document.body.removeChild(a);
