@@ -111,6 +111,13 @@
         .entry-display {
             @apply p-3 bg-white border border-slate-200 rounded-md text-sm text-slate-700 whitespace-pre-wrap shadow-sm;
         }
+        /* Style for read-only resource text */
+        .resource-text {
+            @apply text-slate-700 font-medium;
+        }
+        .resource-text.placeholder {
+            @apply text-slate-400 italic font-normal;
+        }
     </style>
 </head>
 <body class="text-slate-800">
@@ -176,7 +183,7 @@
                 </div>
             </div>
 
-            <!-- Sabbath Check-in View (New) -->
+            <!-- Sabbath Check-in View -->
             <div id="sabbathCheckinView" class="view space-y-6">
                 <h2 id="sabbathCategoryTitle" class="text-xl font-semibold text-indigo-800">Sabbath Quality</h2>
                 <p class="text-sm text-slate-600">Reflect on your most recent Sabbath or day off. Select the date for this reflection:</p>
@@ -203,7 +210,7 @@
                 <button id="viewPastSabbathBtn" class="btn btn-secondary w-full mt-4">View Past Sabbath Reflections</button>
             </div>
 
-            <!-- Past Sabbath Entries View (New) -->
+            <!-- Past Sabbath Entries View -->
             <div id="pastSabbathView" class="view space-y-4">
                 <h2 class="text-xl font-semibold text-indigo-800">Past Sabbath Reflections</h2>
                 <button onclick="navigateTo('sabbathCheckinView')" class="btn btn-secondary w-full mb-3">Back to Sabbath Check-in</button>
@@ -269,8 +276,16 @@
                 </div>
             </div>
 
+            <!-- Updated Resources View -->
             <div id="resourcesView" class="view space-y-4">
-                <h2 class="text-xl font-semibold text-sky-800">Support Resources</h2>
+                <div class="flex justify-between items-center">
+                    <h2 class="text-xl font-semibold text-sky-800">Support Resources</h2>
+                    <div>
+                        <button id="editResourcesBtn" class="btn btn-secondary btn-sm py-1 px-3">Edit</button>
+                        <button id="saveResourcesBtn" class="btn btn-primary btn-sm py-1 px-3" style="display: none;">Save</button>
+                    </div>
+                </div>
+                
                 <div class="bg-sky-50 p-4 rounded-lg shadow space-y-3">
                     <p class="font-medium">General NZ Helplines:</p>
                     <ul class="list-disc list-inside text-slate-700 space-y-1">
@@ -278,16 +293,49 @@
                         <li><strong>Lifeline Aotearoa:</strong> 0800 543 354 (0800 LIFELINE) or free text 4357 (HELP).</li>
                         <li><strong>Samaritans:</strong> 0800 726 666.</li>
                     </ul>
-                    <p class="font-medium mt-3">Your Personal Contacts (Add your own):</p>
-                    <p class="text-sm text-slate-600">This app does not store these. Please keep your important contacts in a safe place you can easily access.</p>
-                    <ul class="list-disc list-inside text-slate-700 space-y-1">
-                        <li>Supervisor: _________________________</li>
-                        <li>Mentor: ___________________________</li>
-                        <li>Spiritual Director: ___________________</li>
-                        <li>Doctor/GP: _________________________</li>
-                        <li>Counsellor: ________________________</li>
-                    </ul>
-                     <p class="text-sm text-slate-500 mt-3">Consider adding diocesan support contacts if provided by your diocese.</p>
+                </div>
+                
+                <div class="bg-sky-50 p-4 rounded-lg shadow space-y-3">
+                    <p class="font-medium mt-3">Your Personal Contacts:</p>
+                    <p class="text-sm text-slate-600">Add your important contacts here. This data is saved privately on your device.</p>
+                    <div id="userResourcesContainer" class="space-y-3 mt-2">
+                        <!-- Read-only view -->
+                        <div id="resourcesReadView" class="space-y-1">
+                            <p><strong>Supervisor:</strong> <span id="readSupervisor" class="resource-text placeholder">Not set</span></p>
+                            <p><strong>Mentor:</strong> <span id="readMentor" class="resource-text placeholder">Not set</span></p>
+                            <p><strong>Spiritual Director:</strong> <span id="readSpiritualDirector" class="resource-text placeholder">Not set</span></p>
+                            <p><strong>Doctor/GP:</strong> <span id="readDoctor" class="resource-text placeholder">Not set</span></p>
+                            <p><strong>Counsellor:</strong> <span id="readCounsellor" class="resource-text placeholder">Not set</span></p>
+                            <p><strong>Other:</strong> <span id="readOther" class="resource-text placeholder">Not set</span></p>
+                        </div>
+                        <!-- Edit view -->
+                        <div id="resourcesEditView" class="space-y-2" style="display: none;">
+                            <div>
+                                <label for="editSupervisor" class="block text-sm font-medium text-slate-700">Supervisor:</label>
+                                <input type="text" id="editSupervisor" class="w-full p-2 border border-slate-300 rounded-lg shadow-sm focus:ring-sky-500 focus:border-sky-500">
+                            </div>
+                            <div>
+                                <label for="editMentor" class="block text-sm font-medium text-slate-700">Mentor:</label>
+                                <input type="text" id="editMentor" class="w-full p-2 border border-slate-300 rounded-lg shadow-sm focus:ring-sky-500 focus:border-sky-500">
+                            </div>
+                            <div>
+                                <label for="editSpiritualDirector" class="block text-sm font-medium text-slate-700">Spiritual Director:</label>
+                                <input type="text" id="editSpiritualDirector" class="w-full p-2 border border-slate-300 rounded-lg shadow-sm focus:ring-sky-500 focus:border-sky-500">
+                            </div>
+                            <div>
+                                <label for="editDoctor" class="block text-sm font-medium text-slate-700">Doctor/GP:</label>
+                                <input type="text" id="editDoctor" class="w-full p-2 border border-slate-300 rounded-lg shadow-sm focus:ring-sky-500 focus:border-sky-500">
+                            </div>
+                            <div>
+                                <label for="editCounsellor" class="block text-sm font-medium text-slate-700">Counsellor:</label>
+                                <input type="text" id="editCounsellor" class="w-full p-2 border border-slate-300 rounded-lg shadow-sm focus:ring-sky-500 focus:border-sky-500">
+                            </div>
+                            <div>
+                                <label for="editOther" class="block text-sm font-medium text-slate-700">Other:</label>
+                                <input type="text" id="editOther" class="w-full p-2 border border-slate-300 rounded-lg shadow-sm focus:ring-sky-500 focus:border-sky-500" placeholder="e.g., Diocesan contact, friend...">
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -408,6 +456,8 @@
         let currentEditingNotesIndex = -1; 
         // Gratitude History
         let gratitudeHistory = [];
+        // User Resources (New)
+        let userResources = {};
         // Chart.js instance
         let trendsChartInstance = null;
         let currentTrendView = 'recent'; // 'recent' or 'all'
@@ -435,7 +485,7 @@
         const positiveCheckinProgressEl = document.getElementById('positiveCheckinProgress');
         const positiveProgressTextEl = document.getElementById('positiveProgressText');
         const positiveCheckinButtonContainerEl = document.getElementById('positiveCheckinButtonContainer'); 
-        // Sabbath Check-in (New)
+        // Sabbath Check-in
         const startSabbathCheckinBtn = document.getElementById('startSabbathCheckinBtn');
         const sabbathCategoryTitleEl = document.getElementById('sabbathCategoryTitle');
         const sabbathQuestionsContainerEl = document.getElementById('sabbathQuestionsContainer');
@@ -470,6 +520,23 @@
         const trendsChartEmptyEl = document.getElementById('trendsChartEmpty');
         const trendsToggleRecentBtn = document.getElementById('trendsToggleRecent');
         const trendsToggleAllBtn = document.getElementById('trendsToggleAll');
+        // Resources (New)
+        const editResourcesBtn = document.getElementById('editResourcesBtn');
+        const saveResourcesBtn = document.getElementById('saveResourcesBtn');
+        const resourcesReadView = document.getElementById('resourcesReadView');
+        const resourcesEditView = document.getElementById('resourcesEditView');
+        const readSupervisor = document.getElementById('readSupervisor');
+        const readMentor = document.getElementById('readMentor');
+        const readSpiritualDirector = document.getElementById('readSpiritualDirector');
+        const readDoctor = document.getElementById('readDoctor');
+        const readCounsellor = document.getElementById('readCounsellor');
+        const readOther = document.getElementById('readOther');
+        const editSupervisor = document.getElementById('editSupervisor');
+        const editMentor = document.getElementById('editMentor');
+        const editSpiritualDirector = document.getElementById('editSpiritualDirector');
+        const editDoctor = document.getElementById('editDoctor');
+        const editCounsellor = document.getElementById('editCounsellor');
+        const editOther = document.getElementById('editOther');
         // Settings
         const clearDataBtn = document.getElementById('clearDataBtn');
         const viewDataBtn = document.getElementById('viewDataBtn');
@@ -527,6 +594,14 @@
             } catch (error) {
                  console.error("Error loading or parsing sabbath history:", error); sabbathHistory = []; 
             }
+
+            let resourcesJson = null;
+            try {
+                resourcesJson = localStorage.getItem('tahaHinengaroUserResources');
+                userResources = resourcesJson ? JSON.parse(resourcesJson) : {}; // New
+            } catch (error) {
+                 console.error("Error loading or parsing user resources:", error); userResources = {}; // New
+            }
         }
 
         function saveHistory() {
@@ -553,6 +628,15 @@
             } catch (error) {
                 console.error("Error saving sabbath history:", error);
                 showModal("Save Error", "Could not save your sabbath data. Your browser's storage might be full or unavailable.");
+            }
+        }
+        
+        function saveUserResources() {
+             try {
+                localStorage.setItem('tahaHinengaroUserResources', JSON.stringify(userResources));
+            } catch (error) {
+                console.error("Error saving user resources:", error);
+                showModal("Save Error", "Could not save your resource contacts.");
             }
         }
 
@@ -618,6 +702,8 @@
                 loadSabbathCheckinForToday();
             } else if (viewId === 'pastSabbathView') {
                 renderPastSabbathEntries();
+            } else if (viewId === 'resourcesView') { // New
+                renderUserResources('read');
             }
             
             const targetViewEl = document.getElementById(targetViewId);
@@ -665,6 +751,66 @@
             } else {
                 navigateTo('summaryViewLast'); 
             }
+        };
+        
+        // --- Resource Page Logic (New) ---
+        function renderUserResources(mode = 'read') {
+            const placeholder = "Not set";
+            
+            if (mode === 'read') {
+                // Populate read view
+                readSupervisor.textContent = userResources.supervisor || placeholder;
+                readMentor.textContent = userResources.mentor || placeholder;
+                readSpiritualDirector.textContent = userResources.spiritualDirector || placeholder;
+                readDoctor.textContent = userResources.doctor || placeholder;
+                readCounsellor.textContent = userResources.counsellor || placeholder;
+                readOther.textContent = userResources.other || placeholder;
+                
+                // Add/remove placeholder class
+                [readSupervisor, readMentor, readSpiritualDirector, readDoctor, readCounsellor, readOther].forEach(el => {
+                    if (el.textContent === placeholder) {
+                        el.classList.add('placeholder');
+                    } else {
+                        el.classList.remove('placeholder');
+                    }
+                });
+                
+                resourcesReadView.style.display = 'block';
+                resourcesEditView.style.display = 'none';
+                editResourcesBtn.style.display = 'inline-block';
+                saveResourcesBtn.style.display = 'none';
+            } else { // 'edit' mode
+                // Populate edit view
+                editSupervisor.value = userResources.supervisor || '';
+                editMentor.value = userResources.mentor || '';
+                editSpiritualDirector.value = userResources.spiritualDirector || '';
+                editDoctor.value = userResources.doctor || '';
+                editCounsellor.value = userResources.counsellor || '';
+                editOther.value = userResources.other || '';
+
+                resourcesReadView.style.display = 'none';
+                resourcesEditView.style.display = 'block';
+                editResourcesBtn.style.display = 'none';
+                saveResourcesBtn.style.display = 'inline-block';
+            }
+        }
+
+        editResourcesBtn.onclick = () => {
+            renderUserResources('edit');
+        };
+
+        saveResourcesBtn.onclick = () => {
+            userResources = {
+                supervisor: editSupervisor.value.trim(),
+                mentor: editMentor.value.trim(),
+                spiritualDirector: editSpiritualDirector.value.trim(),
+                doctor: editDoctor.value.trim(),
+                counsellor: editCounsellor.value.trim(),
+                other: editOther.value.trim(),
+            };
+            saveUserResources();
+            renderUserResources('read');
+            showModal("Resources Saved", "Your personal contacts have been saved.");
         };
 
 
@@ -1416,7 +1562,7 @@
 
         // --- Data Export/Import ---
         exportDataBtn.onclick = () => {
-            if (allCheckinHistory.length === 0 && gratitudeHistory.length === 0 && sabbathHistory.length === 0) {
+            if (allCheckinHistory.length === 0 && gratitudeHistory.length === 0 && sabbathHistory.length === 0 && Object.keys(userResources).length === 0) { // Updated check
                 showModal("No Data to Export", "There is no data to export.");
                 return;
             }
@@ -1424,7 +1570,8 @@
                 const exportObject = {
                     checkinHistory: allCheckinHistory,
                     gratitudeHistory: gratitudeHistory,
-                    sabbathHistory: sabbathHistory // Add sabbath history
+                    sabbathHistory: sabbathHistory,
+                    userResources: userResources // Added
                 };
                 const dataStr = JSON.stringify(exportObject, null, 2);
                 const blob = new Blob([dataStr], { type: 'application/json' });
@@ -1452,19 +1599,21 @@
                 let importedCheckinHistory = [];
                 let importedGratitudeHistory = [];
                 let importedSabbathHistory = [];
+                let importedUserResources = {}; // Added
                 try {
                     const importedObject = JSON.parse(e.target.result);
                     if (Array.isArray(importedObject)) { // Old format (only check-ins)
                         importedCheckinHistory = importedObject;
-                    } else if (importedObject.checkinHistory) { // New format
+                    } else if (importedObject.checkinHistory || importedObject.gratitudeHistory || importedObject.sabbathHistory || importedObject.userResources) { // Updated check
                         importedCheckinHistory = importedObject.checkinHistory || [];
                         importedGratitudeHistory = importedObject.gratitudeHistory || [];
                         importedSabbathHistory = importedObject.sabbathHistory || [];
+                        importedUserResources = importedObject.userResources || {}; // Added
                     } else {
                         throw new Error("File is not a valid backup file.");
                     }
                     
-                    showModal("Confirm Import", `This will overwrite your current data with the data from the file. This import contains: \n- ${importedCheckinHistory.length} Check-in Entries\n- ${importedGratitudeHistory.length} Gratitude Entries\n- ${importedSabbathHistory.length} Sabbath Reflections\n\nAre you sure?`);
+                    showModal("Confirm Import", `This will overwrite your current data. This import contains: \n- ${importedCheckinHistory.length} Check-in Entries\n- ${importedGratitudeHistory.length} Gratitude Entries\n- ${importedSabbathHistory.length} Sabbath Reflections\n- ${Object.keys(importedUserResources).length} Resource Contacts\n\nAre you sure?`); // Updated message
                     
                     const confirmBtn = document.createElement('button');
                     confirmBtn.textContent = "Yes, Overwrite and Import";
@@ -1473,9 +1622,11 @@
                         allCheckinHistory = importedCheckinHistory;
                         gratitudeHistory = importedGratitudeHistory;
                         sabbathHistory = importedSabbathHistory;
+                        userResources = importedUserResources; // Added
                         saveHistory();
                         saveGratitudeHistory();
                         saveSabbathHistory();
+                        saveUserResources(); // Added
                         loadHistory();
                         navigateTo('welcomeView');
                         promptModal.style.display = 'none'; 
@@ -1509,7 +1660,7 @@
         };
 
         clearDataBtn.onclick = () => {
-            showModal("Confirm Deletion", "Are you sure you want to clear ALL your check-in, gratitude, AND sabbath data? This action cannot be undone.");
+            showModal("Confirm Deletion", "Are you sure you want to clear ALL your check-in, gratitude, sabbath, AND resource contact data? This action cannot be undone."); // Updated message
             const confirmBtn = document.createElement('button');
             confirmBtn.textContent = "Yes, Clear All Data";
             confirmBtn.className = "btn bg-red-500 text-white hover:bg-red-600 w-full mt-2 btn-extra-modal"; 
@@ -1517,9 +1668,11 @@
                 localStorage.removeItem('tahaHinengaroCheckHistory');
                 localStorage.removeItem('tahaHinengaroGratitudeJournal');
                 localStorage.removeItem('tahaHinengaroSabbathCheck');
+                localStorage.removeItem('tahaHinengaroUserResources'); // Added
                 allCheckinHistory = [];
                 gratitudeHistory = [];
                 sabbathHistory = [];
+                userResources = {}; // Added
                 currentlyViewedSummaryIndex = -1;
                 currentEditingNotesIndex = -1;
                 
@@ -1554,7 +1707,8 @@
                 const exportObject = { 
                     checkinHistory: allCheckinHistory,
                     gratitudeHistory: gratitudeHistory,
-                    sabbathHistory: sabbathHistory
+                    sabbathHistory: sabbathHistory,
+                    userResources: userResources // Added
                 };
                 rawDataDisplayEl.textContent = JSON.stringify(exportObject, null, 2);
                 rawDataDisplayEl.style.display = rawDataDisplayEl.style.display === 'none' ? 'block' : 'none';
