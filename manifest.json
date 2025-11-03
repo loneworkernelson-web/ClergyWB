@@ -1,0 +1,21 @@
+{
+  "name": "Taha Hinengaro Check",
+  "short_name": "Wellbeing",
+  "start_url": "clergy_wellbeing_app_html",
+  "display": "standalone",
+  "background_color": "#f0f9ff",
+  "theme_color": "#0284c7",
+  "description": "A private wellbeing check-in app for clergy.",
+  "icons": [
+    {
+      "src": "https://placehold.co/192x192/0284c7/ffffff?text=App",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "https://placehold.co/512x512/0284c7/ffffff?text=App",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
