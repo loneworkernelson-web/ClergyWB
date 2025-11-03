@@ -59,9 +59,12 @@
         .btn-gratitude {
             @apply bg-amber-600 text-white hover:bg-amber-700 focus:ring-2 focus:ring-amber-500 focus:ring-opacity-50;
         }
-        /* New Sabbath Button Style */
         .btn-sabbath {
             @apply bg-indigo-600 text-white hover:bg-indigo-700 focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-50;
+        }
+        /* New Rule of Life Button Style */
+        .btn-rule {
+             @apply bg-teal-600 text-white hover:bg-teal-700 focus:ring-2 focus:ring-teal-500 focus:ring-opacity-50;
         }
         .btn-secondary {
             @apply bg-slate-200 text-slate-700 hover:bg-slate-300 focus:ring-2 focus:ring-slate-400 focus:ring-opacity-50;
@@ -144,6 +147,7 @@
                         <button id="startPositiveCheckinBtn" class="btn btn-positive w-full py-3 font-semibold">Start Positive Signs Check-in</button>
                         <button id="startGratitudeBtn" class="btn btn-gratitude w-full py-3 font-semibold">Add Gratitude Entry</button>
                         <button id="startSabbathCheckinBtn" class="btn btn-sabbath w-full py-3 font-semibold">Sabbath Quality Check-in</button>
+                        <button id="startRuleOfLifeBtn" class="btn btn-rule w-full py-3 font-semibold">My Rule of Life</button>
                     </div>
                 </div>
                 <div class="text-center">
@@ -233,6 +237,80 @@
                 <h2 class="text-xl font-semibold text-amber-800">Past Gratitude Entries</h2>
                 <button onclick="navigateTo('gratitudeView')" class="btn btn-secondary w-full mb-3">Back to Journal</button>
                 <div id="pastGratitudeContainer" class="space-y-3">
+                    <!-- Past entries will be injected here -->
+                </div>
+            </div>
+
+            <!-- Rule of Life Hub View (New) -->
+            <div id="ruleOfLifeView" class="view space-y-4">
+                <div class="flex justify-between items-center">
+                    <h2 class="text-xl font-semibold text-teal-800">My Rule of Life</h2>
+                    <div>
+                        <button id="editRuleBtn" class="btn btn-secondary btn-sm py-1 px-3">Edit</button>
+                        <button id="saveRuleBtn" class="btn btn-primary btn-sm py-1 px-3" style="display: none;">Save</button>
+                    </div>
+                </div>
+                <p class="text-sm text-slate-600">Define 3-5 key intentions for your wellbeing. These are the things you want to intentionally practice.</p>
+                
+                <div class="bg-teal-50 p-4 rounded-lg shadow space-y-3">
+                    <!-- Read View -->
+                    <div id="ruleOfLifeReadView" class="space-y-2">
+                        <ul id="ruleOfLifeReadList" class="list-disc list-inside text-teal-700 font-medium space-y-1">
+                            <!-- Intentions will be populated here -->
+                        </ul>
+                    </div>
+                    <!-- Edit View -->
+                    <div id="ruleOfLifeEditView" class="space-y-2" style="display: none;">
+                        <div>
+                            <label for="ruleIntention1" class="block text-sm font-medium text-slate-700">Intention 1:</label>
+                            <input type="text" id="ruleIntention1" class="w-full p-2 border border-slate-300 rounded-lg shadow-sm focus:ring-teal-500 focus:border-teal-500" placeholder="e.g., Pray daily">
+                        </div>
+                        <div>
+                            <label for="ruleIntention2" class="block text-sm font-medium text-slate-700">Intention 2:</label>
+                            <input type="text" id="ruleIntention2" class="w-full p-2 border border-slate-300 rounded-lg shadow-sm focus:ring-teal-500 focus:border-teal-500" placeholder="e.g., Walk 3x a week">
+                        </div>
+                        <div>
+                            <label for="ruleIntention3" class="block text-sm font-medium text-slate-700">Intention 3:</label>
+                            <input type="text" id="ruleIntention3" class="w-full p-2 border border-slate-300 rounded-lg shadow-sm focus:ring-teal-500 focus:border-teal-500">
+                        </div>
+                        <div>
+                            <label for="ruleIntention4" class="block text-sm font-medium text-slate-700">Intention 4:</label>
+                            <input type="text" id="ruleIntention4" class="w-full p-2 border border-slate-300 rounded-lg shadow-sm focus:ring-teal-500 focus:border-teal-500">
+                        </div>
+                        <div>
+                            <label for="ruleIntention5" class="block text-sm font-medium text-slate-700">Intention 5:</label>
+                            <input type="text" id="ruleIntention5" class="w-full p-2 border border-slate-300 rounded-lg shadow-sm focus:ring-teal-500 focus:border-teal-500">
+                        </div>
+                    </div>
+                </div>
+                <button id="startRuleOfLifeCheckinBtn" class="btn btn-rule w-full mt-4">Start Weekly Check-in</button>
+                <button id="viewPastRuleOfLifeBtn" class="btn btn-secondary w-full mt-2">View Past Reflections</button>
+            </div>
+
+            <!-- Rule of Life Check-in View (New) -->
+            <div id="ruleOfLifeCheckinView" class="view space-y-4">
+                <h2 class="text-xl font-semibold text-teal-800">Rule of Life Check-in</h2>
+                <p class="text-sm text-slate-600">For the week ending on:</p>
+                <input type="date" id="ruleOfLifeCheckinDate" class="w-full p-2 border border-slate-300 rounded-lg shadow-sm">
+                
+                <div id="ruleOfLifeChecklistContainer" class="space-y-3 bg-white p-4 rounded-lg shadow">
+                    <!-- Checkboxes will be injected here -->
+                </div>
+                
+                <div class="mt-4">
+                    <label for="ruleOfLifeNotesArea" class="block text-sm font-medium text-slate-700 mb-1">Reflections for this week (Private):</label>
+                    <textarea id="ruleOfLifeNotesArea" rows="4" class="w-full p-3 border border-slate-300 rounded-lg shadow-sm focus:ring-teal-500 focus:border-teal-500" placeholder="e.g., What went well? What was a challenge?"></textarea>
+                </div>
+
+                <button id="saveRuleOfLifeCheckinBtn" class="btn btn-rule w-full">Save Reflection</button>
+                <button onclick="navigateTo('ruleOfLifeView')" class="btn btn-secondary w-full mt-2">Back to Rule of Life</button>
+            </div>
+            
+            <!-- Past Rule of Life Reflections View (New) -->
+            <div id="pastRuleOfLifeView" class="view space-y-4">
+                <h2 class="text-xl font-semibold text-teal-800">Past Rule of Life Reflections</h2>
+                <button onclick="navigateTo('ruleOfLifeView')" class="btn btn-secondary w-full mb-3">Back to Rule of Life</button>
+                <div id="pastRuleOfLifeContainer" class="space-y-3">
                     <!-- Past entries will be injected here -->
                 </div>
             </div>
@@ -428,7 +506,7 @@
         };
         const positiveCategoryOrder = ["connection", "purpose", "engagement", "selfCare", "spiritual"];
 
-        // New Sabbath Check-in Data
+        // Sabbath Check-in Data
         const sabbathSigns = {
             disengagement: ["I was able to mentally disengage from work (e.g., not ruminating on problems)", "I successfully avoided or limited work-related emails and calls", "I felt 'off-duty' and not on call"],
             rest: ["I experienced physical rest and renewal", "I engaged in activities I find genuinely restful (which might be active or passive)", "I felt my energy levels were restored"],
@@ -456,8 +534,11 @@
         let currentEditingNotesIndex = -1; 
         // Gratitude History
         let gratitudeHistory = [];
-        // User Resources (New)
+        // User Resources
         let userResources = {};
+        // Rule of Life (New)
+        let ruleOfLife = {};
+        let ruleOfLifeHistory = [];
         // Chart.js instance
         let trendsChartInstance = null;
         let currentTrendView = 'recent'; // 'recent' or 'all'
@@ -505,6 +586,27 @@
         const saveGratitudeBtn = document.getElementById('saveGratitudeBtn');
         const viewPastGratitudeBtn = document.getElementById('viewPastGratitudeBtn');
         const pastGratitudeContainer = document.getElementById('pastGratitudeContainer');
+        // Rule of Life (New)
+        const startRuleOfLifeBtn = document.getElementById('startRuleOfLifeBtn');
+        const editRuleBtn = document.getElementById('editRuleBtn');
+        const saveRuleBtn = document.getElementById('saveRuleBtn');
+        const ruleOfLifeReadView = document.getElementById('ruleOfLifeReadView');
+        const ruleOfLifeEditView = document.getElementById('ruleOfLifeEditView');
+        const ruleOfLifeReadList = document.getElementById('ruleOfLifeReadList');
+        const ruleIntentionInputs = [
+            document.getElementById('ruleIntention1'),
+            document.getElementById('ruleIntention2'),
+            document.getElementById('ruleIntention3'),
+            document.getElementById('ruleIntention4'),
+            document.getElementById('ruleIntention5'),
+        ];
+        const startRuleOfLifeCheckinBtn = document.getElementById('startRuleOfLifeCheckinBtn');
+        const viewPastRuleOfLifeBtn = document.getElementById('viewPastRuleOfLifeBtn');
+        const ruleOfLifeCheckinDate = document.getElementById('ruleOfLifeCheckinDate');
+        const ruleOfLifeChecklistContainer = document.getElementById('ruleOfLifeChecklistContainer');
+        const ruleOfLifeNotesArea = document.getElementById('ruleOfLifeNotesArea');
+        const saveRuleOfLifeCheckinBtn = document.getElementById('saveRuleOfLifeCheckinBtn');
+        const pastRuleOfLifeContainer = document.getElementById('pastRuleOfLifeContainer');
         // Summary
         const summaryContentEl = document.getElementById('summaryContent');
         const summaryPromptEl = document.getElementById('summaryPrompt');
@@ -520,7 +622,7 @@
         const trendsChartEmptyEl = document.getElementById('trendsChartEmpty');
         const trendsToggleRecentBtn = document.getElementById('trendsToggleRecent');
         const trendsToggleAllBtn = document.getElementById('trendsToggleAll');
-        // Resources (New)
+        // Resources
         const editResourcesBtn = document.getElementById('editResourcesBtn');
         const saveResourcesBtn = document.getElementById('saveResourcesBtn');
         const resourcesReadView = document.getElementById('resourcesReadView');
@@ -598,9 +700,25 @@
             let resourcesJson = null;
             try {
                 resourcesJson = localStorage.getItem('tahaHinengaroUserResources');
-                userResources = resourcesJson ? JSON.parse(resourcesJson) : {}; // New
+                userResources = resourcesJson ? JSON.parse(resourcesJson) : {};
             } catch (error) {
-                 console.error("Error loading or parsing user resources:", error); userResources = {}; // New
+                 console.error("Error loading or parsing user resources:", error); userResources = {};
+            }
+            
+            let ruleJson = null;
+            try {
+                ruleJson = localStorage.getItem('tahaHinengaroRuleOfLife');
+                ruleOfLife = ruleJson ? JSON.parse(ruleJson) : {};
+            } catch (error) {
+                 console.error("Error loading or parsing rule of life:", error); ruleOfLife = {};
+            }
+            
+            let ruleHistoryJson = null;
+            try {
+                ruleHistoryJson = localStorage.getItem('tahaHinengaroRuleOfLifeHistory');
+                ruleOfLifeHistory = ruleHistoryJson ? JSON.parse(ruleHistoryJson) : [];
+            } catch (error) {
+                 console.error("Error loading or parsing rule of life history:", error); ruleOfLifeHistory = [];
             }
         }
 
@@ -637,6 +755,24 @@
             } catch (error) {
                 console.error("Error saving user resources:", error);
                 showModal("Save Error", "Could not save your resource contacts.");
+            }
+        }
+        
+        function saveRuleOfLife() {
+             try {
+                localStorage.setItem('tahaHinengaroRuleOfLife', JSON.stringify(ruleOfLife));
+            } catch (error) {
+                console.error("Error saving rule of life:", error);
+                showModal("Save Error", "Could not save your Rule of Life.");
+            }
+        }
+        
+        function saveRuleOfLifeHistory() {
+             try {
+                localStorage.setItem('tahaHinengaroRuleOfLifeHistory', JSON.stringify(ruleOfLifeHistory));
+            } catch (error) {
+                console.error("Error saving rule of life history:", error);
+                showModal("Save Error", "Could not save your Rule of Life reflection.");
             }
         }
 
@@ -702,8 +838,14 @@
                 loadSabbathCheckinForToday();
             } else if (viewId === 'pastSabbathView') {
                 renderPastSabbathEntries();
-            } else if (viewId === 'resourcesView') { // New
+            } else if (viewId === 'resourcesView') {
                 renderUserResources('read');
+            } else if (viewId === 'ruleOfLifeView') {
+                renderRuleOfLife('read');
+            } else if (viewId === 'ruleOfLifeCheckinView') {
+                loadRuleOfLifeChecklist();
+            } else if (viewId === 'pastRuleOfLifeView') {
+                renderPastRuleOfLifeEntries();
             }
             
             const targetViewEl = document.getElementById(targetViewId);
@@ -753,7 +895,7 @@
             }
         };
         
-        // --- Resource Page Logic (New) ---
+        // --- Resource Page Logic ---
         function renderUserResources(mode = 'read') {
             const placeholder = "Not set";
             
@@ -986,7 +1128,7 @@
         };
         startPositiveCheckinBtn.onclick = startPositiveCheckin;
 
-        // --- Sabbath Check-in Logic (New) ---
+        // --- Sabbath Check-in Logic ---
         startSabbathCheckinBtn.onclick = () => navigateTo('sabbathCheckinView');
         
         function loadSabbathCheckinForToday() {
@@ -1227,6 +1369,198 @@
                 pastGratitudeContainer.appendChild(entryWrapper);
             });
         }
+        
+        // --- Rule of Life Logic (New) ---
+        startRuleOfLifeBtn.onclick = () => navigateTo('ruleOfLifeView');
+        startRuleOfLifeCheckinBtn.onclick = () => navigateTo('ruleOfLifeCheckinView');
+        viewPastRuleOfLifeBtn.onclick = () => navigateTo('pastRuleOfLifeView');
+        
+        function renderRuleOfLife(mode = 'read') {
+            const intentions = ruleOfLife.intentions || [];
+            if (mode === 'read') {
+                ruleOfLifeReadList.innerHTML = '';
+                if (intentions.length === 0) {
+                    const li = document.createElement('li');
+                    li.className = "italic text-slate-500";
+                    li.textContent = "You haven't set any intentions yet. Click 'Edit' to add some.";
+                    ruleOfLifeReadList.appendChild(li);
+                } else {
+                    intentions.forEach(intention => {
+                        if (intention && intention.trim() !== "") {
+                            const li = document.createElement('li');
+                            li.textContent = intention;
+                            ruleOfLifeReadList.appendChild(li);
+                        }
+                    });
+                }
+                ruleOfLifeReadView.style.display = 'block';
+                ruleOfLifeEditView.style.display = 'none';
+                editRuleBtn.style.display = 'inline-block';
+                saveRuleBtn.style.display = 'none';
+            } else { // 'edit' mode
+                ruleIntentionInputs.forEach((input, index) => {
+                    input.value = intentions[index] || '';
+                });
+                ruleOfLifeReadView.style.display = 'none';
+                ruleOfLifeEditView.style.display = 'block';
+                editRuleBtn.style.display = 'none';
+                saveRuleBtn.style.display = 'inline-block';
+            }
+        }
+        
+        editRuleBtn.onclick = () => renderRuleOfLife('edit');
+        
+        saveRuleBtn.onclick = () => {
+            ruleOfLife.intentions = ruleIntentionInputs
+                .map(input => input.value.trim())
+                .filter(intention => intention !== ""); // Filter out empty strings
+            saveRuleOfLife();
+            renderRuleOfLife('read');
+            showModal("Rule of Life Saved", "Your intentions have been saved.");
+        };
+        
+        function loadRuleOfLifeChecklist() {
+            const todayDateString = new Date().toISOString().split('T')[0];
+            ruleOfLifeCheckinDate.value = todayDateString;
+            ruleOfLifeChecklistContainer.innerHTML = '';
+            
+            const intentions = ruleOfLife.intentions || [];
+            if (intentions.length === 0) {
+                ruleOfLifeChecklistContainer.innerHTML = '<p class="text-slate-500 italic">Please define your intentions on the "My Rule of Life" page first.</p>';
+                saveRuleOfLifeCheckinBtn.style.display = 'none';
+                return;
+            }
+            
+            saveRuleOfLifeCheckinBtn.style.display = 'block';
+            
+            // Check for existing entry for this date
+            const existingEntry = ruleOfLifeHistory.find(e => e.date === todayDateString);
+            ruleOfLifeNotesArea.value = existingEntry ? existingEntry.notes || '' : '';
+            
+            intentions.forEach((intention, index) => {
+                const isChecked = existingEntry ? (existingEntry.responses && existingEntry.responses[index]) : false;
+                
+                const label = document.createElement('label');
+                label.className = "flex items-center space-x-3 p-3 bg-white rounded-md shadow-sm border border-slate-200";
+                
+                const checkbox = document.createElement('input');
+                checkbox.type = "checkbox";
+                checkbox.id = `ruleCheck-${index}`;
+                checkbox.checked = isChecked;
+                checkbox.className = "h-5 w-5 rounded border-gray-300 text-teal-600 focus:ring-teal-500";
+                
+                const text = document.createElement('span');
+                text.className = "text-slate-700";
+                text.textContent = intention;
+                
+                label.appendChild(checkbox);
+                label.appendChild(text);
+                ruleOfLifeChecklistContainer.appendChild(label);
+            });
+        }
+        
+        saveRuleOfLifeCheckinBtn.onclick = () => {
+            const reflectionDate = ruleOfLifeCheckinDate.value || new Date().toISOString().split('T')[0];
+            const responses = {};
+            const intentions = ruleOfLife.intentions || [];
+            
+            intentions.forEach((intention, index) => {
+                const checkbox = document.getElementById(`ruleCheck-${index}`);
+                if (checkbox) {
+                    responses[index] = checkbox.checked;
+                }
+            });
+            
+            const notes = ruleOfLifeNotesArea.value;
+            
+            const newEntry = {
+                date: reflectionDate,
+                responses: responses,
+                notes: notes,
+                intentionsAtTime: [...intentions] // Snapshot intentions at time of check-in
+            };
+            
+            const existingEntryIndex = ruleOfLifeHistory.findIndex(e => e.date === reflectionDate);
+            if (existingEntryIndex > -1) {
+                ruleOfLifeHistory[existingEntryIndex] = newEntry;
+            } else {
+                ruleOfLifeHistory.push(newEntry);
+            }
+            
+            saveRuleOfLifeHistory();
+            showModal("Reflection Saved", "Your Rule of Life reflection has been saved.");
+            navigateTo('pastRuleOfLifeView');
+        };
+        
+        function renderPastRuleOfLifeEntries() {
+            pastRuleOfLifeContainer.innerHTML = '';
+            if (ruleOfLifeHistory.length === 0) {
+                pastRuleOfLifeContainer.innerHTML = '<p class="text-slate-500 italic">No past Rule of Life reflections found.</p>';
+                return;
+            }
+            
+            const reversedHistory = [...ruleOfLifeHistory].sort((a, b) => b.date.localeCompare(a.date));
+            
+            reversedHistory.forEach(entry => {
+                const entryWrapper = document.createElement('div');
+                entryWrapper.className = "mb-4";
+                
+                const dateEl = document.createElement('h3');
+                dateEl.className = "font-semibold text-teal-700";
+                const displayDate = parseDateString(entry.date);
+                dateEl.textContent = displayDate ? displayDate.toLocaleDateString('en-NZ', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) : 'Invalid Date';
+                entryWrapper.appendChild(dateEl);
+                
+                const summaryDiv = document.createElement('div');
+                summaryDiv.className = "entry-display";
+                
+                const intentionsAtTime = entry.intentionsAtTime || ruleOfLife.intentions || []; // Use snapshot or current
+                
+                if (intentionsAtTime.length > 0) {
+                    const ul = document.createElement('ul');
+                    ul.className = 'list-none space-y-1 text-sm';
+                    
+                    intentionsAtTime.forEach((intention, index) => {
+                        const wasChecked = entry.responses ? entry.responses[index] : false;
+                        const li = document.createElement('li');
+                        li.className = "flex items-center";
+                        
+                        const icon = document.createElement('span');
+                        icon.className = `mr-2 w-5 h-5 inline-block ${wasChecked ? 'text-teal-500' : 'text-slate-300'}`;
+                        icon.innerHTML = wasChecked 
+                            ? `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" /></svg>` 
+                            : `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM7 9a1 1 0 000 2h6a1 1 0 100-2H7z" clip-rule="evenodd" /></svg>`;
+                            
+                        const text = document.createElement('span');
+                        text.textContent = intention;
+                        text.className = wasChecked ? 'text-slate-700' : 'text-slate-500 line-through';
+                        
+                        li.appendChild(icon);
+                        li.appendChild(text);
+                        ul.appendChild(li);
+                    });
+                    summaryDiv.appendChild(ul);
+                } else {
+                    summaryDiv.innerHTML = '<p class="italic text-slate-400">No intentions were defined for this entry.</p>';
+                }
+                
+                if (entry.notes && entry.notes.trim() !== "") {
+                    const notesTitle = document.createElement('p');
+                    notesTitle.className = "font-semibold text-sm text-amber-700 mt-3";
+                    notesTitle.textContent = "Reflections:";
+                    summaryDiv.appendChild(notesTitle);
+                    
+                    const notesEl = document.createElement('p');
+                    notesEl.className = "italic whitespace-pre-wrap text-slate-600";
+                    notesEl.textContent = entry.notes;
+                    summaryDiv.appendChild(notesEl);
+                }
+                
+                entryWrapper.appendChild(summaryDiv);
+                pastRuleOfLifeContainer.appendChild(entryWrapper);
+            });
+        }
+
 
         // --- Generic Check-in Helper Functions ---
         function selectAnswer(categoryKey, question, value, noticedBtn, notReallyBtn, type) {
@@ -1562,7 +1896,7 @@
 
         // --- Data Export/Import ---
         exportDataBtn.onclick = () => {
-            if (allCheckinHistory.length === 0 && gratitudeHistory.length === 0 && sabbathHistory.length === 0 && Object.keys(userResources).length === 0) { // Updated check
+            if (allCheckinHistory.length === 0 && gratitudeHistory.length === 0 && sabbathHistory.length === 0 && Object.keys(userResources).length === 0 && Object.keys(ruleOfLife).length === 0 && ruleOfLifeHistory.length === 0) { // Updated check
                 showModal("No Data to Export", "There is no data to export.");
                 return;
             }
@@ -1571,7 +1905,9 @@
                     checkinHistory: allCheckinHistory,
                     gratitudeHistory: gratitudeHistory,
                     sabbathHistory: sabbathHistory,
-                    userResources: userResources // Added
+                    userResources: userResources,
+                    ruleOfLife: ruleOfLife,
+                    ruleOfLifeHistory: ruleOfLifeHistory
                 };
                 const dataStr = JSON.stringify(exportObject, null, 2);
                 const blob = new Blob([dataStr], { type: 'application/json' });
@@ -1599,21 +1935,25 @@
                 let importedCheckinHistory = [];
                 let importedGratitudeHistory = [];
                 let importedSabbathHistory = [];
-                let importedUserResources = {}; // Added
+                let importedUserResources = {};
+                let importedRuleOfLife = {};
+                let importedRuleOfLifeHistory = [];
                 try {
                     const importedObject = JSON.parse(e.target.result);
                     if (Array.isArray(importedObject)) { // Old format (only check-ins)
                         importedCheckinHistory = importedObject;
-                    } else if (importedObject.checkinHistory || importedObject.gratitudeHistory || importedObject.sabbathHistory || importedObject.userResources) { // Updated check
+                    } else if (importedObject.checkinHistory || importedObject.gratitudeHistory || importedObject.sabbathHistory || importedObject.userResources || importedObject.ruleOfLife || importedObject.ruleOfLifeHistory) { // Updated check
                         importedCheckinHistory = importedObject.checkinHistory || [];
                         importedGratitudeHistory = importedObject.gratitudeHistory || [];
                         importedSabbathHistory = importedObject.sabbathHistory || [];
-                        importedUserResources = importedObject.userResources || {}; // Added
+                        importedUserResources = importedObject.userResources || {};
+                        importedRuleOfLife = importedObject.ruleOfLife || {};
+                        importedRuleOfLifeHistory = importedObject.ruleOfLifeHistory || [];
                     } else {
                         throw new Error("File is not a valid backup file.");
                     }
                     
-                    showModal("Confirm Import", `This will overwrite your current data. This import contains: \n- ${importedCheckinHistory.length} Check-in Entries\n- ${importedGratitudeHistory.length} Gratitude Entries\n- ${importedSabbathHistory.length} Sabbath Reflections\n- ${Object.keys(importedUserResources).length} Resource Contacts\n\nAre you sure?`); // Updated message
+                    showModal("Confirm Import", `This will overwrite your current data. This import contains: \n- ${importedCheckinHistory.length} Check-in Entries\n- ${importedGratitudeHistory.length} Gratitude Entries\n- ${importedSabbathHistory.length} Sabbath Reflections\n- ${Object.keys(importedUserResources).length} Resource Contacts\n- ${Object.keys(importedRuleOfLife).length > 0 ? '1 Rule of Life' : '0 Rules of Life'}\n- ${importedRuleOfLifeHistory.length} Rule Reflections\n\nAre you sure?`); // Updated message
                     
                     const confirmBtn = document.createElement('button');
                     confirmBtn.textContent = "Yes, Overwrite and Import";
@@ -1622,11 +1962,15 @@
                         allCheckinHistory = importedCheckinHistory;
                         gratitudeHistory = importedGratitudeHistory;
                         sabbathHistory = importedSabbathHistory;
-                        userResources = importedUserResources; // Added
+                        userResources = importedUserResources;
+                        ruleOfLife = importedRuleOfLife;
+                        ruleOfLifeHistory = importedRuleOfLifeHistory;
                         saveHistory();
                         saveGratitudeHistory();
                         saveSabbathHistory();
-                        saveUserResources(); // Added
+                        saveUserResources();
+                        saveRuleOfLife();
+                        saveRuleOfLifeHistory();
                         loadHistory();
                         navigateTo('welcomeView');
                         promptModal.style.display = 'none'; 
@@ -1660,7 +2004,7 @@
         };
 
         clearDataBtn.onclick = () => {
-            showModal("Confirm Deletion", "Are you sure you want to clear ALL your check-in, gratitude, sabbath, AND resource contact data? This action cannot be undone."); // Updated message
+            showModal("Confirm Deletion", "Are you sure you want to clear ALL your data (Check-ins, Gratitude, Sabbath, Rule of Life, and Resources)? This action cannot be undone."); // Updated message
             const confirmBtn = document.createElement('button');
             confirmBtn.textContent = "Yes, Clear All Data";
             confirmBtn.className = "btn bg-red-500 text-white hover:bg-red-600 w-full mt-2 btn-extra-modal"; 
@@ -1668,15 +2012,18 @@
                 localStorage.removeItem('tahaHinengaroCheckHistory');
                 localStorage.removeItem('tahaHinengaroGratitudeJournal');
                 localStorage.removeItem('tahaHinengaroSabbathCheck');
-                localStorage.removeItem('tahaHinengaroUserResources'); // Added
+                localStorage.removeItem('tahaHinengaroUserResources');
+                localStorage.removeItem('tahaHinengaroRuleOfLife');
+                localStorage.removeItem('tahaHinengaroRuleOfLifeHistory');
                 allCheckinHistory = [];
                 gratitudeHistory = [];
                 sabbathHistory = [];
-                userResources = {}; // Added
+                userResources = {};
+                ruleOfLife = {};
+                ruleOfLifeHistory = [];
                 currentlyViewedSummaryIndex = -1;
                 currentEditingNotesIndex = -1;
                 
-                // Destroy chart if it exists
                 if (trendsChartInstance) {
                     trendsChartInstance.destroy();
                     trendsChartInstance = null;
@@ -1708,7 +2055,9 @@
                     checkinHistory: allCheckinHistory,
                     gratitudeHistory: gratitudeHistory,
                     sabbathHistory: sabbathHistory,
-                    userResources: userResources // Added
+                    userResources: userResources,
+                    ruleOfLife: ruleOfLife,
+                    ruleOfLifeHistory: ruleOfLifeHistory
                 };
                 rawDataDisplayEl.textContent = JSON.stringify(exportObject, null, 2);
                 rawDataDisplayEl.style.display = rawDataDisplayEl.style.display === 'none' ? 'block' : 'none';
