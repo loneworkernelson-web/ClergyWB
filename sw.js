@@ -5,6 +5,8 @@ const CACHE_NAME = 'toku-hauora-cache-v1';
 const FILES_TO_CACHE = [
     'index.html',
     'manifest.json',
+    'https://placehold.co/192x192/0284c7/ffffff?text=TH', // Updated Logo 192
+    'https://placehold.co/512x512/0284c7/ffffff?text=TH', // Updated Logo 512
     'https://cdn.tailwindcss.com',
     'https://cdn.jsdelivr.net/npm/chart.js',
     'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap'
@@ -17,7 +19,13 @@ self.addEventListener('install', (event) => {
         caches.open(CACHE_NAME)
             .then((cache) => {
                 console.log('[ServiceWorker] Caching app shell');
-                return cache.addAll(FILES_TO_CACHE);
+                // Use addAll for atomic caching
+                return cache.addAll(FILES_TO_CACHE).catch(err => {
+                    // This catch is important. If one file fails, addAll() rejects.
+                    // This can happen if an external resource (like the font) is temporarily unavailable.
+                    console.warn('[ServiceWorker] Caching failed on install:', err);
+                    // You might want to retry or handle this, but for now, just log it.
+                });
             })
     );
 });
@@ -35,11 +43,16 @@ self.addEventListener('activate', (event) => {
             }));
         })
     );
-    return self.clients.claim();
+    return self.clients.claim(); // Makes the new SW take control immediately
 });
 
-// Fetch event: serves files from cache or network
+// Fetch event: serves files from cache first, then network (Cache-First strategy)
 self.addEventListener('fetch', (event) => {
+    // We only want to cache GET requests
+    if (event.request.method !== 'GET') {
+        return;
+    }
+
     event.respondWith(
         caches.match(event.request)
             .then((response) => {
@@ -47,30 +60,36 @@ self.addEventListener('fetch', (event) => {
                 if (response) {
                     return response;
                 }
-                
-                // Clone the request
-                const fetchRequest = event.request.clone();
 
-                return fetch(fetchRequest).then(
-                    (response) => {
+                // Not in cache - go to network
+                return fetch(event.request)
+                    .then((response) => {
                         // Check if we received a valid response
-                        if (!response || response.status !== 200 || response.type !== 'basic') {
+                        if (!response || response.status !== 200) {
                             return response;
                         }
 
-                        // Clone the response
-                        const responseToCache = response.clone();
+                        // Check if the request is one of the files we want to cache
+                        // This avoids caching every single request (e.g., from an extension)
+                        // Updated this logic to be more permissive for placehold.co
+                        const url = event.request.url;
+                        if (FILES_TO_CACHE.includes(url) || url.startsWith(self.location.origin) || url.startsWith('https://placehold.co') || url.startsWith('https://fonts.gstatic.com')) {
+                             // Clone the response
+                            const responseToCache = response.clone();
 
-                        caches.open(CACHE_NAME)
-                            .then((cache) => {
-                                // We don't cache all requests, just the ones we need.
-                                // For this simple app, we'll be more aggressive and cache what we've defined.
-                                // This fetch logic is more of a "cache-first" for the defined assets.
-                            });
+                            caches.open(CACHE_NAME)
+                                .then((cache) => {
+                                    cache.put(event.request, responseToCache);
+                                });
+                        }
 
                         return response;
                     }
-                );
+                ).catch(err => {
+                    // Network request failed
+                    console.warn('[ServiceWorker] Fetch failed:', err);
+                    // You could return a specific offline page here if you had one in the cache
+                });
             })
     );
 });
