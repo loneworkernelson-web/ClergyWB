@@ -326,7 +326,7 @@
                     </div>
                 </div>
                 <button id="startRuleOfLifeCheckinBtn" class="btn btn-rule w-full mt-4">Start Weekly Check-in</button>
-                <button id="viewPastRuleOfLifeBtn" class="btn btn-secondary w-full mt-2">View Past Reflections</button>
+                <button id="viewPastRuleOfLifeBtn" class="btn btn-secondary w-full mt-2">View Trends & History</button>
             </div>
 
             <!-- Rule of Life Check-in View -->
@@ -350,8 +350,18 @@
             
             <!-- Past Rule of Life Reflections View -->
             <div id="pastRuleOfLifeView" class="view space-y-4">
-                <h2 class="text-xl font-semibold text-teal-800">Past Rule of Life Reflections</h2>
+                <h2 class="text-xl font-semibold text-teal-800">Rule of Life Trends & History</h2>
                 <button onclick="navigateTo('ruleOfLifeView')" class="btn btn-secondary w-full mb-3">Back to Rule of Life</button>
+                
+                <!-- New Chart Section -->
+                <div class="bg-teal-50 p-4 rounded-lg shadow min-h-[250px] sm:min-h-[300px] relative">
+                    <canvas id="ruleOfLifeChart"></canvas>
+                    <div id="ruleOfLifeChartEmpty" class="text-slate-500 italic text-center p-8" style="display: none;">
+                        No reflections found. Complete a few check-ins to see your trends.
+                    </div>
+                </div>
+                
+                <h3 class="text-lg font-semibold text-teal-800 pt-4">Past Reflections</h3>
                 <div id="pastRuleOfLifeContainer" class="space-y-3">
                     <!-- Past entries will be injected here -->
                 </div>
@@ -592,13 +602,15 @@
         let userResources = {};
         let ruleOfLife = {};
         let ruleOfLifeHistory = [];
+        // Chart.js instances
         let trendsChartInstance = null;
+        let ruleOfLifeChartInstance = null; // New
         let currentTrendView = 'recent'; 
 
         // --- DOM Elements ---
         const views = document.querySelectorAll('.view');
         const appElement = document.getElementById('app');
-        // Dashboard (New)
+        // Dashboard
         const dashboardPreviewEl = document.getElementById('dashboardPreview');
         const dashboardRulePreviewEl = document.getElementById('dashboardRulePreview');
         // Warning Check-in
@@ -662,6 +674,8 @@
         const ruleOfLifeNotesArea = document.getElementById('ruleOfLifeNotesArea');
         const saveRuleOfLifeCheckinBtn = document.getElementById('saveRuleOfLifeCheckinBtn');
         const pastRuleOfLifeContainer = document.getElementById('pastRuleOfLifeContainer');
+        const ruleOfLifeChartEl = document.getElementById('ruleOfLifeChart'); // New
+        const ruleOfLifeChartEmptyEl = document.getElementById('ruleOfLifeChartEmpty'); // New
         // Summary
         const summaryContentEl = document.getElementById('summaryContent');
         const summaryPromptEl = document.getElementById('summaryPrompt');
@@ -863,6 +877,7 @@
                     targetViewId = 'summaryView';
                 } else {
                      targetViewId = 'welcomeView'; 
+                     renderDashboardPreview(); // New
                      showModal("No Summary Yet", "Please complete a check-in first to see a summary.");
                 }
             } else if (viewId === 'summaryView' && typeof params.entryIndex !== 'undefined') { 
@@ -899,8 +914,9 @@
                 renderRuleOfLife('read');
             } else if (viewId === 'ruleOfLifeCheckinView') {
                 loadRuleOfLifeChecklist();
-            } else if (viewId === 'pastRuleOfLifeView') {
+            } else if (viewId === 'pastRuleOfLifeView') { // Updated
                 renderPastRuleOfLifeEntries();
+                renderRuleOfLifeTrends();
             } else if (viewId === 'welcomeView') { // New
                 renderDashboardPreview();
             }
@@ -1611,8 +1627,7 @@
         function renderPastRuleOfLifeEntries() {
             pastRuleOfLifeContainer.innerHTML = '';
             if (ruleOfLifeHistory.length === 0) {
-                pastRuleOfLifeContainer.innerHTML = '<p class="text-slate-500 italic">No past Rule of Life reflections found.</p>';
-                return;
+                // Handled by renderRuleOfLifeTrends
             }
             
             const reversedHistory = [...ruleOfLifeHistory].sort((a, b) => b.date.localeCompare(a.date));
@@ -1674,6 +1689,99 @@
                 
                 entryWrapper.appendChild(summaryDiv);
                 pastRuleOfLifeContainer.appendChild(entryWrapper);
+            });
+        }
+        
+        // --- New Rule of Life Trends Logic ---
+        function renderRuleOfLifeTrends() {
+            if (ruleOfLifeChartInstance) {
+                ruleOfLifeChartInstance.destroy();
+                ruleOfLifeChartInstance = null;
+            }
+
+            if (ruleOfLifeHistory.length === 0) {
+                ruleOfLifeChartEmptyEl.style.display = 'block';
+                ruleOfLifeChartEl.style.display = 'none';
+                return;
+            }
+            
+            ruleOfLifeChartEmptyEl.style.display = 'none';
+            ruleOfLifeChartEl.style.display = 'block';
+            
+            const sortedHistory = [...ruleOfLifeHistory].sort((a, b) => a.date.localeCompare(b.date));
+            const dataToShow = sortedHistory.slice(-12); // Show recent 12
+            
+            const labels = dataToShow.map(entry => {
+                const displayDate = parseDateString(entry.date);
+                return displayDate ? displayDate.toLocaleDateString('en-NZ', { day: '2-digit', month: 'short' }) : 'Invalid';
+            });
+
+            const intentionsMetData = dataToShow.map(entry => {
+                if (!entry.responses) return 0;
+                return Object.values(entry.responses).filter(Boolean).length;
+            });
+            
+            const totalIntentionsData = dataToShow.map(entry => {
+                 const intentions = entry.intentionsAtTime || ruleOfLife.intentions || [];
+                 return intentions.length;
+            });
+
+            const ctx = ruleOfLifeChartEl.getContext('2d');
+            ruleOfLifeChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Intentions Met',
+                            data: intentionsMetData,
+                            backgroundColor: 'rgba(13, 148, 136, 0.7)', // teal-600
+                            borderColor: 'rgba(13, 148, 136, 1)',
+                            borderWidth: 1
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 1, // Ensure y-axis shows whole numbers
+                                callback: function(value, index, values) {
+                                    // Find max value in totalIntentionsData to set the scale's max
+                                    const maxIntentions = Math.max(...totalIntentionsData, ...intentionsMetData, 1);
+                                    this.max = maxIntentions;
+                                    return value;
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    const intentionsMet = context.parsed.y;
+                                    const totalIntentions = totalIntentionsData[context.dataIndex] || 0;
+                                    label += `${intentionsMet} of ${totalIntentions}`;
+                                    return label;
+                                }
+                            }
+                        },
+                        legend: {
+                            position: 'bottom',
+                        }
+                    },
+                    onClick: null, // Disable clicks on this chart
+                    onHover: (event, chartElement) => {
+                        event.native.target.style.cursor = 'default'; // No pointer
+                    }
+                }
             });
         }
 
@@ -2143,6 +2251,10 @@
                 if (trendsChartInstance) {
                     trendsChartInstance.destroy();
                     trendsChartInstance = null;
+                }
+                if (ruleOfLifeChartInstance) { // New
+                    ruleOfLifeChartInstance.destroy();
+                    ruleOfLifeChartInstance = null;
                 }
 
                 renderTrends(); 
