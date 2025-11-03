@@ -5,8 +5,8 @@ const CACHE_NAME = 'toku-hauora-cache-v1';
 const FILES_TO_CACHE = [
     'index.html',
     'manifest.json',
-    'https://placehold.co/192x192/0284c7/ffffff?text=TH', // Updated Logo 192
-    'https://placehold.co/512x512/0284c7/ffffff?text=TH', // Updated Logo 512
+    'https://i.postimg.cc/6pPSn3Fr/Clergy-Wellbeing.jpg', // Updated Logo 192
+    'https://i.postimg.cc/6pPSn3Fr/Clergy-Wellbeing.jpg', // Updated Logo 512
     'https://cdn.tailwindcss.com',
     'https://cdn.jsdelivr.net/npm/chart.js',
     'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap'
