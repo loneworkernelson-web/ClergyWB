@@ -5,10 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tōku Hauora</title>
     
-    <!-- PWA Links Added -->
+    <!-- PWA Links Updated -->
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#0284c7">
-    <link rel="apple-touch-icon" href="https://placehold.co/192x192/0284c7/ffffff?text=Hauora">
+    <link rel="apple-touch-icon" href="https://placehold.co/192x192/0284c7/ffffff?text=TH">
+    <link rel="icon" type="image/png" href="https://placehold.co/192x192/0284c7/ffffff?text=TH" sizes="192x192">
     <!-- End of PWA Links -->
 
     <script src="https://cdn.tailwindcss.com"></script>
@@ -130,6 +131,10 @@
         .dashboard-btn span {
             @apply text-sm font-semibold;
         }
+        /* Insight card style */
+        .insight-card {
+            @apply bg-white p-4 rounded-lg shadow border-l-4;
+        }
     </style>
 </head>
 <body class="text-slate-800">
@@ -147,7 +152,11 @@
             <div id="welcomeView" class="view active-view space-y-6">
                 <div class="bg-sky-50 p-6 rounded-lg shadow">
                     <h2 class="text-xl font-semibold text-sky-800 mb-3">Nau Mai, Haere Mai</h2>
-                    <p class="text-slate-600 mb-4">Welcome to your private wellbeing hub. How are you today?</p>
+                    <p class="italic text-slate-600">"Mā te kimi ka kite, Mā te kite ka mōhio, Mā te mōhio ka mārama."</p>
+                    <p class="text-slate-600 mb-4">(Seek and discover, discover and know, know and become enlightened.)</p>
+                    <!-- Updated intro text -->
+                    <p class="mb-2">This app is a private tool to help you reflect on your wellbeing and discover patterns over time.</p>
+                    <p class="text-sm text-slate-500 mb-4">All your data is stored locally in this browser and is not shared.</p>
                 </div>
                 
                 <!-- At a Glance Preview -->
@@ -355,7 +364,7 @@
                 <h2 class="text-xl font-semibold text-teal-800">Rule of Life Trends & History</h2>
                 <button onclick="navigateTo('ruleOfLifeView')" class="btn btn-secondary w-full mb-3">Back to Rule of Life</button>
                 
-                <!-- New Chart Section -->
+                <!-- Re-added Chart Section -->
                 <div class="bg-teal-50 p-4 rounded-lg shadow min-h-[250px] sm:min-h-[300px] relative">
                     <canvas id="ruleOfLifeChart"></canvas>
                     <div id="ruleOfLifeChartEmpty" class="text-slate-500 italic text-center p-8" style="display: none;">
@@ -702,7 +711,7 @@
         const trendsChartEmptyEl = document.getElementById('trendsChartEmpty');
         const trendsToggleRecentBtn = document.getElementById('trendsToggleRecent');
         const trendsToggleAllBtn = document.getElementById('trendsToggleAll');
-        // Insights (New)
+        // Insights
         const startInsightsBtn = document.getElementById('startInsightsBtn');
         const insightsContainer = document.getElementById('insightsContainer');
         // Resources
@@ -891,7 +900,7 @@
                     targetViewId = 'summaryView';
                 } else {
                      targetViewId = 'welcomeView'; 
-                     renderDashboardPreview(); // New
+                     renderDashboardPreview(); 
                      showModal("No Summary Yet", "Please complete a check-in first to see a summary.");
                 }
             } else if (viewId === 'summaryView' && typeof params.entryIndex !== 'undefined') { 
@@ -933,7 +942,7 @@
                 renderRuleOfLifeTrends();
             } else if (viewId === 'welcomeView') { 
                 renderDashboardPreview();
-            } else if (viewId === 'insightsView') { // New
+            } else if (viewId === 'insightsView') { 
                 renderInsights();
             }
             
@@ -984,7 +993,7 @@
             }
         };
         
-        // --- Dashboard Preview Logic (New) ---
+        // --- Dashboard Preview Logic ---
         function renderDashboardPreview() {
             // 1. Render Last Check-in Preview
             dashboardPreviewEl.innerHTML = '';
@@ -1644,6 +1653,7 @@
             pastRuleOfLifeContainer.innerHTML = '';
             if (ruleOfLifeHistory.length === 0) {
                 pastRuleOfLifeContainer.innerHTML = '<p class="text-slate-500 italic">No past Rule of Life reflections found.</p>';
+                return;
             }
             
             const reversedHistory = [...ruleOfLifeHistory].sort((a, b) => b.date.localeCompare(a.date));
@@ -2009,7 +2019,7 @@
             }
         };
         
-        // --- Trends Logic (Updated with Chart.js) ---
+        // --- Trends Logic ---
         function renderTrends() {
             if (trendsChartInstance) {
                 trendsChartInstance.destroy();
@@ -2131,6 +2141,161 @@
                 }
             });
         }
+        
+        // --- Insights Logic (New) ---
+        function renderInsights() {
+            insightsContainer.innerHTML = ''; // Clear previous insights
+            
+            if (allCheckinHistory.length < 3) {
+                insightsContainer.innerHTML = '<p class="text-slate-500 italic">Complete at least 3 check-ins to start seeing wellbeing insights.</p>';
+                return;
+            }
+
+            // Helper function to create an insight card
+            const createInsightCard = (title, body, color) => {
+                const card = document.createElement('div');
+                card.className = `insight-card border-${color}-500`;
+                card.innerHTML = `
+                    <h3 class="font-semibold text-lg text-${color}-800 mb-1">${title}</h3>
+                    <p class="text-slate-700">${body}</p>
+                `;
+                return card;
+            };
+
+            // --- Insight 1: Positive vs. Negative Correlation ---
+            let totalEntries = allCheckinHistory.length;
+            let avgWarning = 0;
+            let avgPositive = 0;
+            allCheckinHistory.forEach(entry => {
+                if (entry.warningResponses) Object.values(entry.warningResponses).forEach(cat => avgWarning += Object.values(cat).filter(Boolean).length);
+                if (entry.positiveResponses) Object.values(entry.positiveResponses).forEach(cat => avgPositive += Object.values(cat).filter(Boolean).length);
+            });
+            avgWarning /= totalEntries;
+            avgPositive /= totalEntries;
+            
+            let aboveAvgPositiveEntries = allCheckinHistory.filter(entry => {
+                let totalPositive = 0;
+                if (entry.positiveResponses) Object.values(entry.positiveResponses).forEach(cat => totalPositive += Object.values(cat).filter(Boolean).length);
+                return totalPositive > avgPositive;
+            });
+            
+            if (aboveAvgPositiveEntries.length > 1) {
+                let warningSignsOnGoodWeeks = 0;
+                aboveAvgPositiveEntries.forEach(entry => {
+                    if (entry.warningResponses) Object.values(entry.warningResponses).forEach(cat => warningSignsOnGoodWeeks += Object.values(cat).filter(Boolean).length);
+                });
+                let avgWarningOnGoodWeeks = warningSignsOnGoodWeeks / aboveAvgPositiveEntries.length;
+                
+                if (avgWarningOnGoodWeeks < avgWarning * 0.85) { // At least 15% lower
+                    const percentLower = Math.round((1 - (avgWarningOnGoodWeeks / avgWarning)) * 100);
+                    insightsContainer.appendChild(createInsightCard(
+                        "Positive Signs vs. Warning Signs",
+                        `On weeks your 'Positive Signs' were above average, your 'Warning Signs' were <strong>${percentLower}% lower</strong> than average.`,
+                        "emerald"
+                    ));
+                }
+            }
+
+            // --- Insight 2: Rule of Life Correlation ---
+            if (ruleOfLifeHistory.length > 2 && (ruleOfLife.intentions || []).length > 0) {
+                let avgIntentionsMet = 0;
+                ruleOfLifeHistory.forEach(entry => {
+                    avgIntentionsMet += Object.values(entry.responses).filter(Boolean).length;
+                });
+                avgIntentionsMet /= ruleOfLifeHistory.length;
+                
+                // Find check-in days that are close to rule of life check-in days
+                let correlatedEntries = [];
+                ruleOfLifeHistory.forEach(ruleEntry => {
+                    const ruleDate = new Date(ruleEntry.date + 'T12:00:00'); // Use noon to avoid timezone issues
+                    const intentionsMet = Object.values(ruleEntry.responses).filter(Boolean).length;
+                    
+                    // Find a check-in within +/- 3 days
+                    const checkinEntry = allCheckinHistory.find(checkin => {
+                         const checkinDate = new Date(checkin.date + 'T12:00:00');
+                         const diffDays = Math.abs(checkinDate - ruleDate) / (1000 * 60 * 60 * 24);
+                         return diffDays <= 3;
+                    });
+                    
+                    if (checkinEntry) {
+                        let totalPositive = 0;
+                        if (checkinEntry.positiveResponses) Object.values(checkinEntry.positiveResponses).forEach(cat => totalPositive += Object.values(cat).filter(Boolean).length);
+                        correlatedEntries.push({ intentionsMet, totalPositive });
+                    }
+                });
+                
+                if(correlatedEntries.length > 2) {
+                    const goodRuleWeeks = correlatedEntries.filter(e => e.intentionsMet > avgIntentionsMet);
+                    const badRuleWeeks = correlatedEntries.filter(e => e.intentionsMet < avgIntentionsMet);
+                    
+                    if (goodRuleWeeks.length > 1 && badRuleWeeks.length > 1) {
+                        let avgPositiveOnGoodRuleWeeks = goodRuleWeeks.reduce((acc, e) => acc + e.totalPositive, 0) / goodRuleWeeks.length;
+                        let avgPositiveOnBadRuleWeeks = badRuleWeeks.reduce((acc, e) => acc + e.totalPositive, 0) / badRuleWeeks.length;
+
+                        if (avgPositiveOnGoodRuleWeeks > avgPositiveOnBadRuleWeeks * 1.2) { // At least 20% higher
+                            const percentHigher = Math.round(((avgPositiveOnGoodRuleWeeks / avgPositiveOnBadRuleWeeks) - 1) * 100);
+                             insightsContainer.appendChild(createInsightCard(
+                                "Rule of Life vs. Positive Signs",
+                                `On weeks you met more 'Rule of Life' intentions than average, you also reported <strong>${percentHigher}% more 'Positive Signs'</strong>.`,
+                                "teal"
+                            ));
+                        }
+                    }
+                }
+            }
+            
+            // --- Insight 3: Most Common Warning Sign ---
+            const allWarningSigns = {};
+            allCheckinHistory.forEach(entry => {
+                if (entry.warningResponses) {
+                    Object.values(entry.warningResponses).forEach(cat => {
+                        Object.entries(cat).forEach(([question, noticed]) => {
+                            if (noticed) {
+                                allWarningSigns[question] = (allWarningSigns[question] || 0) + 1;
+                            }
+                        });
+                    });
+                }
+            });
+            
+            if (Object.keys(allWarningSigns).length > 0) {
+                 const mostCommonWarning = Object.entries(allWarningSigns).sort((a, b) => b[1] - a[1])[0];
+                 insightsContainer.appendChild(createInsightCard(
+                    "Most Common Warning Sign",
+                    `Your most frequently noted warning sign is: <strong>"${mostCommonWarning[0]}"</strong> (noted ${mostCommonWarning[1]} times).`,
+                    "sky"
+                ));
+            }
+
+            // --- Insight 4: Most Common Positive Sign ---
+            const allPositiveSigns = {};
+            allCheckinHistory.forEach(entry => {
+                if (entry.positiveResponses) {
+                    Object.values(entry.positiveResponses).forEach(cat => {
+                        Object.entries(cat).forEach(([question, noticed]) => {
+                            if (noticed) {
+                                allPositiveSigns[question] = (allPositiveSigns[question] || 0) + 1;
+                            }
+                        });
+                    });
+                }
+            });
+            
+            if (Object.keys(allPositiveSigns).length > 0) {
+                 const mostCommonPositive = Object.entries(allPositiveSigns).sort((a, b) => b[1] - a[1])[0];
+                 insightsContainer.appendChild(createInsightCard(
+                    "Most Common Positive Sign",
+                    `Your most frequently noted positive sign is: <strong>"${mostCommonPositive[0]}"</strong> (noted ${mostCommonPositive[1]} times).`,
+                    "emerald"
+                ));
+            }
+            
+            if (insightsContainer.innerHTML === '') {
+                 insightsContainer.innerHTML = '<p class="text-slate-500 italic">Keep using the app to gather more data. Insights will appear here as patterns emerge.</p>';
+            }
+
+        }
+        startInsightsBtn.onclick = () => navigateTo('insightsView');
 
 
         // --- Data Export/Import ---
@@ -2267,7 +2432,7 @@
                     trendsChartInstance.destroy();
                     trendsChartInstance = null;
                 }
-                if (ruleOfLifeChartInstance) { // New
+                if (ruleOfLifeChartInstance) { 
                     ruleOfLifeChartInstance.destroy();
                     ruleOfLifeChartInstance = null;
                 }
@@ -2350,6 +2515,9 @@
                 trendsToggleRecentBtn.classList.remove('active');
                 renderTrends();
             });
+            
+            // Add listener for new insights button
+            startInsightsBtn.onclick = () => navigateTo('insightsView');
 
             // Register service worker
             if ('serviceWorker' in navigator) {
