@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Taha Hinengaro Check</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        html, body {
+            height: 100%; 
+            overflow-x: hidden; 
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f9ff; 
+        }
+        #app {
+             height: 100%; 
+        }
+        .view {
+            display: none; 
+        }
+        .active-view {
+            display: block;
+        }
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+        .btn {
+            @apply px-4 py-2 rounded-lg shadow-md transition-all duration-150 ease-in-out;
+        }
+        .btn-primary {
+            @apply bg-sky-600 text-white hover:bg-sky-700 focus:ring-2 focus:ring-sky-500 focus:ring-opacity-50;
+        }
+        .btn-secondary {
+            @apply bg-slate-200 text-slate-700 hover:bg-slate-300 focus:ring-2 focus:ring-slate-400 focus:ring-opacity-50;
+        }
+        .btn-link-like { 
+            @apply text-sky-600 hover:text-sky-700 hover:underline cursor-pointer;
+        }
+        .btn-choice {
+            @apply w-full sm:w-auto text-sm sm:text-base;
+        }
+        .nav-btn {
+            /* Individual button styling */
+            @apply flex-1 text-center py-3 px-2 bg-sky-700 text-white hover:bg-sky-800 transition-colors rounded-md shadow-sm;
+        }
+        .nav-btn.active {
+            /* Active button styling */
+            @apply bg-sky-900 font-semibold border-t-2 border-sky-400;
+        }
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            max-width: 90%;
+            width: 500px;
+        }
+        .notes-display {
+            @apply mt-4 p-3 bg-amber-50 border border-amber-200 rounded-md text-sm text-slate-700 whitespace-pre-wrap;
+        }
+    </style>
+</head>
+<body class="text-slate-800">
+
+    <div id="app" class="max-w-2xl mx-auto bg-white shadow-xl flex flex-col">
+
+        <header class="bg-sky-700 text-white p-4 text-center sticky top-0 z-50 shadow-md">
+            <h1 class="text-2xl font-bold">Taha Hinengaro Check</h1>
+            <p class="text-sm opacity-90">Mind & Heart Check for Clergy Wellbeing</p>
+        </header>
+
+        <main class="flex-grow p-4 sm:p-6 space-y-6 overflow-y-auto">
+
+            <div id="welcomeView" class="view active-view space-y-6">
+                <div class="bg-sky-50 p-6 rounded-lg shadow">
+                    <h2 class="text-xl font-semibold text-sky-800 mb-3">Nau Mai, Haere Mai</h2>
+                    <p class="italic text-slate-600">"Mā te kimi ka kite, Mā te kite ka mōhio, Mā te mōhio ka mārama."</p>
+                    <p class="text-slate-600 mb-4">(Seek and discover, discover and know, know and become enlightened.)</p>
+                    <p class="mb-2">This app is a private tool to help you reflect on your wellbeing. It's recommended to do a check-in weekly.</p>
+                    <p class="text-sm text-slate-500 mb-4">All your data is stored locally in this browser and is not shared.</p>
+                    <button id="startCheckinBtn" class="btn btn-primary w-full py-3 font-semibold">Start Weekly Check-in</button>
+                </div>
+                <div class="text-center">
+                    <button onclick="navigateTo('privacyView')" class="btn btn-secondary btn-sm py-1 px-2 text-xs rounded-full">Privacy Information</button>
+                </div>
+            </div>
+
+            <div id="checkinView" class="view space-y-6">
+                <h2 id="categoryTitle" class="text-xl font-semibold text-sky-800">Wellbeing Signs</h2>
+                <div id="questionsContainer" class="space-y-4">
+                    </div>
+                <div id="checkinButtonContainer" class="flex flex-col sm:flex-row sm:justify-between space-y-3 sm:space-y-0 sm:space-x-3">
+                    <button id="prevCategoryBtn" class="btn btn-secondary w-full sm:w-auto">Previous</button>
+                    <button id="nextCategoryBtn" class="btn btn-primary w-full sm:w-auto py-3 font-semibold">Next</button>
+                    <button id="finishCheckinBtn" class="btn btn-primary w-full sm:w-auto" style="display:none;">Finish Check-in</button>
+                </div>
+                 <div class="mt-4 text-center">
+                    <progress id="checkinProgress" value="0" max="100" class="w-full h-2 rounded-full overflow-hidden"></progress>
+                    <p id="progressText" class="text-sm text-slate-500 mt-1"></p>
+                </div>
+            </div>
+
+            <div id="summaryView" class="view space-y-6">
+                <h2 class="text-xl font-semibold text-sky-800">This Week's Reflection</h2>
+                <button id="backToTrendsBtn" class="btn btn-secondary w-full mb-3" style="display:none;">Back to Trends</button>
+                <div id="summaryContent" class="bg-sky-50 p-4 rounded-lg shadow space-y-2">
+                    </div>
+                <div id="summaryPrompt" class="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-md shadow text-yellow-800" style="display:none;">
+                    </div>
+                <button id="notesForSummaryBtn" class="btn btn-primary w-full">Add/Edit Personal Notes for this Summary</button>
+            </div>
+
+            <div id="notesView" class="view space-y-4">
+                <h2 class="text-xl font-semibold text-sky-800">Personal Notes (Private)</h2>
+                <p id="notesForDateText" class="text-sm text-slate-600">Notes for: </p>
+                <textarea id="personalNotesArea" rows="6" class="w-full p-3 border border-slate-300 rounded-lg shadow-sm focus:ring-sky-500 focus:border-sky-500" placeholder="Type your private reflections here..."></textarea>
+                <button id="saveNotesBtn" class="btn btn-primary w-full">Save Notes</button>
+                 <button id="backToSummaryFromNotesBtn" class="btn btn-secondary w-full mt-2">Back to Summary</button>
+            </div>
+
+            <div id="trendsView" class="view space-y-4">
+                <h2 class="text-xl font-semibold text-sky-800">Wellbeing Trends</h2>
+                <p class="text-sm text-slate-600">This shows the number of signs you've noted each week. Click an entry to view its summary. All data is private to you.</p>
+                <div id="trendsChart" class="bg-sky-50 p-4 rounded-lg shadow min-h-[100px]">
+                    </div>
+            </div>
+
+            <div id="resourcesView" class="view space-y-4">
+                <h2 class="text-xl font-semibold text-sky-800">Support Resources</h2>
+                <div class="bg-sky-50 p-4 rounded-lg shadow space-y-3">
+                    <p class="font-medium">General NZ Helplines:</p>
+                    <ul class="list-disc list-inside text-slate-700 space-y-1">
+                        <li><strong>Need to talk?</strong> Free call or text 1737 anytime for support from a trained counsellor.</li>
+                        <li><strong>Lifeline Aotearoa:</strong> 0800 543 354 (0800 LIFELINE) or free text 4357 (HELP).</li>
+                        <li><strong>Samaritans:</strong> 0800 726 666.</li>
+                    </ul>
+                    <p class="font-medium mt-3">Your Personal Contacts (Add your own):</p>
+                    <p class="text-sm text-slate-600">This app does not store these. Please keep your important contacts in a safe place you can easily access.</p>
+                    <ul class="list-disc list-inside text-slate-700 space-y-1">
+                        <li>Supervisor: _________________________</li>
+                        <li>Mentor: ___________________________</li>
+                        <li>Spiritual Director: ___________________</li>
+                        <li>Doctor/GP: _________________________</li>
+                        <li>Counsellor: ________________________</li>
+                    </ul>
+                     <p class="text-sm text-slate-500 mt-3">Consider adding diocesan support contacts if provided by your diocese.</p>
+                </div>
+            </div>
+
+            <div id="privacyView" class="view space-y-4">
+                <h2 class="text-xl font-semibold text-sky-800">Privacy Information</h2>
+                <div class="bg-sky-50 p-4 rounded-lg shadow space-y-3 text-slate-700">
+                    <p><strong>Your Privacy is Paramount.</strong></p>
+                    <p>This "Taha Hinengaro Check" app is designed with your privacy as its core principle.</p>
+                    <ul class="list-disc list-inside space-y-1 mt-2">
+                        <li><strong>Local Data Storage:</strong> All data you enter (check-in responses, notes, trends) is stored *exclusively* on your device within this web browser's local storage. It is not sent to any server or third party.</li>
+                        <li><strong>No Account Needed:</strong> You do not need to create an account or log in to use this app.</li>
+                        <li><strong>Offline Functionality:</strong> The core features of the app work offline once the page is loaded.</li>
+                        <li><strong>You Control Your Data:</strong> You can view and clear your data at any time using the options in the "Settings" section.</li>
+                    </ul>
+                    <p class="mt-2"><strong>App Lock:</strong> For enhanced privacy on your device, consider using your device's built-in screen lock features (PIN, fingerprint, Face ID). This web app itself does not provide an additional app lock.</p>
+                    <p class="mt-2"><strong>Data Export & Deletion:</strong> You can copy your raw data or clear all stored data from this app via the Settings page.</p>
+                    <p class="mt-2">This app is a tool for personal reflection and awareness. It is not a diagnostic tool and does not replace professional medical or psychological advice.</p>
+                </div>
+            </div>
+
+            <div id="settingsView" class="view space-y-4">
+                <h2 class="text-xl font-semibold text-sky-800">Settings & Data</h2>
+                 <div class="bg-sky-50 p-4 rounded-lg shadow space-y-3">
+                    <p class="font-medium">Reminders:</p>
+                    <p class="text-sm text-slate-600">This web app cannot set system reminders. Please use your phone or computer's calendar app to set a weekly reminder for your Taha Hinengaro Check.</p>
+
+                    <p class="font-medium mt-4">Manage Your Data:</p>
+                    <button id="viewDataBtn" class="btn btn-secondary w-full mb-2">View My Raw Data (JSON)</button>
+                    <button id="clearDataBtn" class="btn bg-red-500 text-white hover:bg-red-600 w-full">Clear All My Data</button>
+                    <p class="text-xs text-slate-500 mt-1">Warning: Clearing data is permanent and cannot be undone.</p>
+                    <div id="rawDataDisplay" class="mt-3 p-2 bg-slate-100 rounded border border-slate-300 text-xs overflow-auto max-h-60" style="display:none;"></div>
+                 </div>
+            </div>
+
+        </main>
+
+        <nav class="bg-sky-600 text-white flex sticky bottom-0 shadow-t-md p-2 space-x-2">
+            <button onclick="navigateTo('welcomeView')" class="nav-btn" data-view="welcomeView">Home</button>
+            <button onclick="navigateTo('summaryViewLast')" class="nav-btn" data-view="summaryView">Summary</button>
+            <button onclick="navigateTo('trendsView')" class="nav-btn" data-view="trendsView">Trends</button>
+            <button onclick="navigateTo('resourcesView')" class="nav-btn" data-view="resourcesView">Resources</button>
+            <button onclick="navigateTo('settingsView')" class="nav-btn" data-view="settingsView">Settings</button>
+        </nav>
+
+        <div id="promptModal" class="modal-overlay" style="display: none;">
+            <div class="modal-content space-y-4">
+                <h3 id="promptModalTitle" class="text-lg font-semibold text-sky-800">Wellbeing Reflection</h3>
+                <p id="promptModalMessage" class="text-slate-700"></p>
+                <button id="closePromptModalBtn" class="btn btn-primary w-full">Okay, I Understand</button>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // --- Application State and Data ---
+        const warningSigns = {
+            emotional: ["Loss of joy or satisfaction in ministry", "Increased irritability, impatience, or anger", "Cynicism, negativity, or disillusionment about ministry or the Church", "Feeling emotionally exhausted, overwhelmed, or \"numb\"", "Increased anxiety or feelings of dread related to work", "Heightened sensitivity to criticism", "Feelings of failure, inadequacy, or guilt"],
+            mentalCognitive: ["Difficulty concentrating or making decisions", "Forgetfulness", "Constant rumination about work problems, even during time off", "Loss of creativity or motivation", "A sense that you are never \"not working\" mentally"],
+            physical: ["Persistent fatigue, exhaustion, or low energy", "Changes in sleep patterns (insomnia, oversleeping)", "Headaches, muscle tension, or other physical ailments", "Changes in appetite or weight", "Increased susceptibility to illness"],
+            spiritual: ["Feeling disconnected from God or your faith", "Finding prayer or spiritual practices a burden rather than a source of strength", "Loss of meaning or purpose in your ministry", "Questioning your calling"],
+            behaviouralRelational: ["Withdrawal from colleagues, friends, or family", "Increased conflict in relationships", "Neglecting personal needs or hobbies", "Increased use of alcohol, medication, or other coping mechanisms (e.g., overeating, excessive screen time, escapist behaviours)", "Procrastination or avoidance of tasks", "Working longer hours but feeling less effective", "Reduced empathy or compassion for others (depersonalisation)"]
+        };
+
+        const categoryDisplayNames = {
+            emotional: "Emotional Signs", mentalCognitive: "Mental/Cognitive Signs", physical: "Physical Signs", spiritual: "Spiritual Signs", behaviouralRelational: "Behavioural/Relational Signs"
+        };
+        const categoryOrder = ["emotional", "mentalCognitive", "physical", "spiritual", "behaviouralRelational"];
+        
+        let currentCategoryIndex = 0;
+        let currentCheckinData = {}; 
+        let allCheckinHistory = []; 
+        let currentlyViewedSummaryIndex = -1; 
+        let currentEditingNotesIndex = -1; 
+
+        // --- DOM Elements ---
+        const views = document.querySelectorAll('.view');
+        const appElement = document.getElementById('app');
+        const categoryTitleEl = document.getElementById('categoryTitle');
+        const questionsContainerEl = document.getElementById('questionsContainer');
+        const prevCategoryBtn = document.getElementById('prevCategoryBtn');
+        const nextCategoryBtn = document.getElementById('nextCategoryBtn');
+        const finishCheckinBtn = document.getElementById('finishCheckinBtn');
+        const startCheckinBtn = document.getElementById('startCheckinBtn');
+        const summaryContentEl = document.getElementById('summaryContent');
+        const summaryPromptEl = document.getElementById('summaryPrompt');
+        const personalNotesArea = document.getElementById('personalNotesArea');
+        const saveNotesBtn = document.getElementById('saveNotesBtn');
+        const trendsChartEl = document.getElementById('trendsChart');
+        const clearDataBtn = document.getElementById('clearDataBtn');
+        const viewDataBtn = document.getElementById('viewDataBtn');
+        const rawDataDisplayEl = document.getElementById('rawDataDisplay');
+        const navButtons = document.querySelectorAll('.nav-btn');
+        const checkinProgressEl = document.getElementById('checkinProgress');
+        const progressTextEl = document.getElementById('progressText');
+        const backToTrendsBtn = document.getElementById('backToTrendsBtn');
+        const notesForSummaryBtn = document.getElementById('notesForSummaryBtn');
+        const notesForDateTextEl = document.getElementById('notesForDateText');
+        const backToSummaryFromNotesBtn = document.getElementById('backToSummaryFromNotesBtn');
+        const checkinButtonContainerEl = document.getElementById('checkinButtonContainer'); 
+
+
+        const promptModal = document.getElementById('promptModal');
+        const promptModalTitle = document.getElementById('promptModalTitle');
+        const promptModalMessage = document.getElementById('promptModalMessage');
+        const closePromptModalBtn = document.getElementById('closePromptModalBtn');
+
+        function parseDateString(dateString) {
+            if (!dateString || !/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+                console.warn("Invalid date string format for parsing:", dateString); return null; 
+            }
+            const parts = dateString.split('-');
+            const year = parseInt(parts[0], 10);
+            const month = parseInt(parts[1], 10) - 1; 
+            const day = parseInt(parts[2], 10);
+            if (month < 0 || month > 11 || day < 1 || day > 31) { 
+                 console.warn("Invalid date components after parsing:", year, month + 1, day); return null;
+            }
+            const d = new Date(year, month, day);
+            if (d.getFullYear() === year && d.getMonth() === month && d.getDate() === day) {
+                return d;
+            } else {
+                console.warn("Constructed date is invalid:", d, "from parts:", year, month + 1, day); return null;
+            }
+        }
+
+        function loadHistory() {
+            let historyJson = null;
+            try {
+                historyJson = localStorage.getItem('tahaHinengaroCheckHistory');
+                allCheckinHistory = historyJson ? JSON.parse(historyJson) : [];
+            } catch (error) {
+                console.error("Error loading or parsing history from localStorage:", error); allCheckinHistory = []; 
+            }
+        }
+
+        function saveHistory() {
+            try {
+                localStorage.setItem('tahaHinengaroCheckHistory', JSON.stringify(allCheckinHistory));
+            } catch (error) {
+                console.error("Error saving history to localStorage:", error);
+                showModal("Save Error", "Could not save your data. Your browser's storage might be full or unavailable.");
+            }
+        }
+
+        function navigateTo(viewId, params = {}) {
+            views.forEach(view => view.classList.remove('active-view'));
+            let targetViewId = viewId;
+
+            backToTrendsBtn.style.display = 'none'; 
+
+            if (viewId === 'summaryViewLast') { 
+                if (allCheckinHistory.length > 0) {
+                    currentlyViewedSummaryIndex = allCheckinHistory.length - 1;
+                    renderSummary(allCheckinHistory[currentlyViewedSummaryIndex]);
+                    targetViewId = 'summaryView';
+                } else {
+                     targetViewId = 'welcomeView'; 
+                     showModal("No Summary Yet", "Please complete a check-in first to see a summary.");
+                }
+            } else if (viewId === 'summaryView' && typeof params.entryIndex !== 'undefined') { 
+                currentlyViewedSummaryIndex = params.entryIndex;
+                if (allCheckinHistory[currentlyViewedSummaryIndex]) {
+                    renderSummary(allCheckinHistory[currentlyViewedSummaryIndex]);
+                    backToTrendsBtn.style.display = 'block'; 
+                } else {
+                    console.error("Historical entry not found for index:", params.entryIndex);
+                    targetViewId = 'trendsView'; 
+                }
+            } else if (viewId === 'notesView') {
+                if (currentEditingNotesIndex !== -1 && allCheckinHistory[currentEditingNotesIndex]) {
+                    const entryForNotes = allCheckinHistory[currentEditingNotesIndex];
+                    personalNotesArea.value = entryForNotes.notes || '';
+                    const displayDate = parseDateString(entryForNotes.date);
+                    notesForDateTextEl.textContent = displayDate ? `Notes for: ${displayDate.toLocaleDateString('en-NZ', { day: '2-digit', month: 'short', year: 'numeric' })}` : "Notes for selected date";
+                } else {
+                    personalNotesArea.value = '';
+                    notesForDateTextEl.textContent = "Notes (no specific date selected)";
+                    console.warn("Navigated to notesView without a valid currentEditingNotesIndex");
+                }
+            }
+            
+            const targetViewEl = document.getElementById(targetViewId);
+            if (targetViewEl) {
+                targetViewEl.classList.add('active-view');
+            } else {
+                console.error("Target view not found:", targetViewId);
+                document.getElementById('welcomeView').classList.add('active-view'); 
+            }
+            
+            navButtons.forEach(btn => {
+                btn.classList.remove('active');
+                const btnView = btn.getAttribute('data-view');
+                if (btnView === targetViewId || (viewId === 'summaryViewLast' && btnView === 'summaryView')) {
+                    btn.classList.add('active');
+                }
+            });
+
+            const mainContentArea = appElement.querySelector('main');
+            if (mainContentArea) mainContentArea.scrollTop = 0;
+
+            if (targetViewId === 'trendsView') renderTrends();
+        }
+        
+        backToTrendsBtn.onclick = () => navigateTo('trendsView');
+        
+        notesForSummaryBtn.onclick = () => {
+            if (currentlyViewedSummaryIndex !== -1 && allCheckinHistory[currentlyViewedSummaryIndex]) {
+                currentEditingNotesIndex = currentlyViewedSummaryIndex;
+                navigateTo('notesView');
+            } else {
+                showModal("Error", "Could not determine which summary's notes to show.");
+            }
+        };
+
+        backToSummaryFromNotesBtn.onclick = () => {
+            if (currentEditingNotesIndex !== -1) {
+                // Check if the "Back to Trends" button was visible, indicating we came from Trends
+                const wasViewingHistoricalFromTrends = document.getElementById('backToTrendsBtn').style.display.includes('block');
+                
+                if (wasViewingHistoricalFromTrends) {
+                     navigateTo('summaryView', { entryIndex: currentEditingNotesIndex });
+                } else { // Otherwise, it was the latest summary
+                    navigateTo('summaryViewLast');
+                }
+            } else {
+                navigateTo('summaryViewLast'); 
+            }
+        };
+
+
+        function startCheckin() {
+            currentCategoryIndex = 0;
+            currentCheckinData = { date: new Date().toISOString().split('T')[0], responses: {} }; 
+            categoryOrder.forEach(catKey => currentCheckinData.responses[catKey] = {});
+            loadCategoryQuestions();
+            navigateTo('checkinView');
+        }
+
+        function loadCategoryQuestions() {
+            const categoryKey = categoryOrder[currentCategoryIndex];
+            const questions = warningSigns[categoryKey];
+            categoryTitleEl.textContent = categoryDisplayNames[categoryKey];
+            questionsContainerEl.innerHTML = ''; 
+
+            questions.forEach((q, index) => {
+                const questionId = `${categoryKey}-${index}`;
+                const existingResponse = currentCheckinData.responses[categoryKey] ? currentCheckinData.responses[categoryKey][q] : undefined;
+                const isNoticed = existingResponse === true;
+                const isNotReally = existingResponse === false;
+
+                const questionDiv = document.createElement('div');
+                questionDiv.className = 'p-4 border border-slate-200 rounded-lg shadow-sm bg-white';
+                
+                const questionText = document.createElement('p');
+                questionText.className = 'mb-3 text-slate-700';
+                questionText.textContent = q;
+                questionDiv.appendChild(questionText);
+
+                const buttonGroup = document.createElement('div');
+                buttonGroup.className = 'flex flex-col sm:flex-row sm:space-x-2 space-y-2 sm:space-y-0';
+
+                const noticedBtn = document.createElement('button');
+                noticedBtn.textContent = 'Noticed this week';
+                noticedBtn.className = `btn btn-choice ${isNoticed ? 'bg-sky-500 text-white' : 'bg-sky-100 text-sky-700 hover:bg-sky-200'}`;
+                noticedBtn.onclick = () => selectAnswer(categoryKey, q, true, noticedBtn, notReallyBtn);
+                
+                const notReallyBtn = document.createElement('button');
+                notReallyBtn.textContent = 'Not really this week';
+                notReallyBtn.className = `btn btn-choice ${isNotReally ? 'bg-slate-500 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`;
+                notReallyBtn.onclick = () => selectAnswer(categoryKey, q, false, noticedBtn, notReallyBtn);
+
+                buttonGroup.appendChild(noticedBtn);
+                buttonGroup.appendChild(notReallyBtn);
+                questionDiv.appendChild(buttonGroup);
+                questionsContainerEl.appendChild(questionDiv);
+            });
+
+            updateCheckinControls();
+            updateProgress();
+        }
+        
+        function selectAnswer(categoryKey, question, value, noticedBtn, notReallyBtn) {
+            currentCheckinData.responses[categoryKey][question] = value;
+            if (value) { 
+                noticedBtn.classList.remove('bg-sky-100', 'text-sky-700', 'hover:bg-sky-200');
+                noticedBtn.classList.add('bg-sky-500', 'text-white');
+                notReallyBtn.classList.remove('bg-slate-500', 'text-white');
+                notReallyBtn.classList.add('bg-slate-100', 'text-slate-700', 'hover:bg-slate-200');
+            } else { 
+                noticedBtn.classList.remove('bg-sky-500', 'text-white');
+                noticedBtn.classList.add('bg-sky-100', 'text-sky-700', 'hover:bg-sky-200');
+                notReallyBtn.classList.remove('bg-slate-100', 'text-slate-700', 'hover:bg-slate-200');
+                notReallyBtn.classList.add('bg-slate-500', 'text-white');
+            }
+        }
+
+        function updateCheckinControls() {
+            prevCategoryBtn.style.display = currentCategoryIndex > 0 ? 'inline-block' : 'none';
+            nextCategoryBtn.style.display = currentCategoryIndex < categoryOrder.length - 1 ? 'inline-block' : 'none';
+            finishCheckinBtn.style.display = currentCategoryIndex === categoryOrder.length - 1 ? 'inline-block' : 'none';
+
+            if (checkinButtonContainerEl) { 
+                if (currentCategoryIndex === 0) {
+                    checkinButtonContainerEl.classList.remove('sm:justify-between');
+                    checkinButtonContainerEl.classList.add('sm:justify-end');
+                } else {
+                    checkinButtonContainerEl.classList.remove('sm:justify-end');
+                    checkinButtonContainerEl.classList.add('sm:justify-between');
+                }
+            }
+        }
+        
+        function updateProgress() {
+            const totalCategories = categoryOrder.length;
+            const progressPercentage = ((currentCategoryIndex + 1) / totalCategories) * 100;
+            checkinProgressEl.value = progressPercentage;
+            progressTextEl.textContent = `Category ${currentCategoryIndex + 1} of ${totalCategories}`;
+        }
+
+        prevCategoryBtn.onclick = () => {
+            if (currentCategoryIndex > 0) {
+                currentCategoryIndex--;
+                loadCategoryQuestions();
+            }
+        };
+
+        nextCategoryBtn.onclick = () => {
+            const currentCatKey = categoryOrder[currentCategoryIndex];
+            const currentCatQuestions = warningSigns[currentCatKey];
+            let allAnswered = true;
+            for (const q of currentCatQuestions) {
+                if (typeof currentCheckinData.responses[currentCatKey][q] === 'undefined') {
+                    allAnswered = false;
+                    break;
+                }
+            }
+            if (!allAnswered) {
+                 showModal("Incomplete Section", "Please answer all questions in this category before proceeding.");
+                return;
+            }
+
+            if (currentCategoryIndex < categoryOrder.length - 1) {
+                currentCategoryIndex++;
+                loadCategoryQuestions();
+            }
+        };
+
+        finishCheckinBtn.onclick = () => {
+            const currentCatKey = categoryOrder[currentCategoryIndex];
+            const currentCatQuestions = warningSigns[currentCatKey];
+            let allAnswered = true;
+            for (const q of currentCatQuestions) {
+                if (typeof currentCheckinData.responses[currentCatKey][q] === 'undefined') {
+                    allAnswered = false;
+                    break;
+                }
+            }
+
+            if (!allAnswered) {
+                 showModal("Incomplete Section", "Please answer all questions in the final category before finishing.");
+                return;
+            }
+            
+            currentCheckinData.notes = ""; 
+            allCheckinHistory.push(currentCheckinData);
+            saveHistory();
+            currentlyViewedSummaryIndex = allCheckinHistory.length - 1; 
+            renderSummary(currentCheckinData);
+            navigateTo('summaryView'); 
+        };
+        
+        startCheckinBtn.onclick = startCheckin;
+
+        function renderSummary(checkinEntry) {
+            if (!checkinEntry || !checkinEntry.responses) {
+                summaryContentEl.innerHTML = "<p>No summary data available. Please complete a check-in.</p>";
+                summaryPromptEl.style.display = 'none';
+                return;
+            }
+
+            summaryContentEl.innerHTML = ''; // Clear previous summary content
+            let totalNoticedSigns = 0;
+            let promptNeeded = false;
+            let promptMessages = [];
+
+            const dateP = document.createElement('p');
+            dateP.className = 'text-sm text-slate-500 mb-3';
+            if (checkinEntry && checkinEntry.date) {
+                const displayDate = parseDateString(checkinEntry.date);
+                dateP.textContent = displayDate ? `Summary for: ${displayDate.toLocaleDateString('en-NZ', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}` : `Summary for: date unavailable (parsing error)`;
+            } else {
+                dateP.textContent = `Summary for: date not recorded`;
+            }
+            summaryContentEl.appendChild(dateP);
+
+            categoryOrder.forEach(catKey => {
+                const categoryDiv = document.createElement('div');
+                categoryDiv.className = 'mb-2 p-3 bg-white rounded-md shadow-sm';
+                const catTitle = document.createElement('h3');
+                catTitle.className = 'font-semibold text-sky-700';
+                catTitle.textContent = categoryDisplayNames[catKey];
+                categoryDiv.appendChild(catTitle);
+
+                const ul = document.createElement('ul');
+                ul.className = 'list-disc list-inside text-sm text-slate-600';
+                let categoryNoticedCount = 0;
+                
+                if (checkinEntry.responses[catKey]) {
+                    Object.entries(checkinEntry.responses[catKey]).forEach(([question, noticed]) => {
+                        if (noticed) {
+                            categoryNoticedCount++;
+                            const li = document.createElement('li');
+                            li.textContent = question;
+                            ul.appendChild(li);
+                        }
+                    });
+                }
+                totalNoticedSigns += categoryNoticedCount;
+
+                if (categoryNoticedCount === 0) {
+                    const p = document.createElement('p');
+                    p.className = 'text-sm text-slate-500 italic';
+                    p.textContent = 'No signs noted in this category.';
+                    categoryDiv.appendChild(p);
+                } else {
+                    categoryDiv.appendChild(ul);
+                }
+                if (categoryNoticedCount >= 3) { 
+                    promptNeeded = true;
+                    promptMessages.push(`You noted ${categoryNoticedCount} signs in the "${categoryDisplayNames[catKey]}" category.`);
+                }
+                summaryContentEl.appendChild(categoryDiv);
+            });
+            
+            const totalP = document.createElement('p');
+            totalP.className = 'font-bold mt-3 text-md text-sky-800';
+            totalP.textContent = `Total signs noted this week: ${totalNoticedSigns}`;
+            summaryContentEl.appendChild(totalP);
+
+            // Display notes if they exist
+            if (checkinEntry.notes && checkinEntry.notes.trim() !== "") {
+                const notesTitle = document.createElement('h3');
+                notesTitle.className = 'font-semibold text-amber-700 mt-4';
+                notesTitle.textContent = "Personal Notes for this Summary:";
+                summaryContentEl.appendChild(notesTitle);
+
+                const notesDisplayDiv = document.createElement('div');
+                notesDisplayDiv.className = 'notes-display'; 
+                notesDisplayDiv.textContent = checkinEntry.notes;
+                summaryContentEl.appendChild(notesDisplayDiv);
+            }
+
+
+            if (totalNoticedSigns >= 7) { 
+                 promptNeeded = true;
+                 if (!promptMessages.some(msg => msg.includes("total of"))) { 
+                    promptMessages.push(`You noted a total of ${totalNoticedSigns} signs this week.`);
+                 }
+            }
+
+            if (promptNeeded) {
+                summaryPromptEl.innerHTML = `
+                    <p class="font-semibold mb-1">A Moment for Reflection:</p>
+                    <ul class="list-disc list-inside text-sm">
+                        ${promptMessages.map(m => `<li>${m}</li>`).join('')}
+                    </ul>
+                    <p class="mt-2">Remember, acknowledging these signs is a strength. Taking time to reflect or reaching out for support can make a real difference to your hauora. Consider talking with a trusted supervisor, mentor, doctor, or counsellor.</p>
+                `;
+                summaryPromptEl.style.display = 'block';
+            } else {
+                summaryPromptEl.style.display = 'none';
+            }
+        }
+
+        saveNotesBtn.onclick = () => {
+            if (currentEditingNotesIndex !== -1 && allCheckinHistory[currentEditingNotesIndex]) {
+                allCheckinHistory[currentEditingNotesIndex].notes = personalNotesArea.value;
+                saveHistory();
+                showModal("Notes Saved", "Your personal notes have been saved locally for this entry.");
+            } else {
+                showModal("Error Saving Notes", "Could not determine which entry to save notes for. Please try again.");
+            }
+        };
+        
+        function renderTrends() {
+            trendsChartEl.innerHTML = '';
+            if (allCheckinHistory.length === 0) {
+                trendsChartEl.innerHTML = '<p class="text-slate-500 italic">No check-in history yet. Complete a few weekly check-ins to see your trends.</p>';
+                return;
+            }
+
+            const ul = document.createElement('ul');
+            ul.className = 'space-y-2';
+
+            const recentHistory = [...allCheckinHistory].reverse(); 
+
+            recentHistory.slice(0, 12).forEach((entry, indexInReversedArray) => { 
+                const originalIndex = allCheckinHistory.length - 1 - indexInReversedArray; 
+                
+                let totalNoticed = 0;
+                if (entry && entry.responses) {
+                    categoryOrder.forEach(catKey => {
+                        if (entry.responses[catKey]) {
+                            Object.values(entry.responses[catKey]).forEach(noticed => {
+                                if (noticed) totalNoticed++;
+                            });
+                        }
+                    });
+                }
+
+                const li = document.createElement('li');
+                li.className = 'p-3 border border-slate-200 rounded-lg shadow-sm bg-white flex justify-between items-center';
+                
+                const dateAndCountDiv = document.createElement('div');
+                const dateSpan = document.createElement('span');
+                dateSpan.className = 'block text-slate-700';
+                
+                if (entry && entry.date) {
+                    const displayDate = parseDateString(entry.date);
+                    dateSpan.textContent = displayDate ? displayDate.toLocaleDateString('en-NZ', { day: '2-digit', month: 'short', year: 'numeric' }) : 'Invalid Date';
+                } else {
+                    dateSpan.textContent = 'Date not recorded';
+                }
+                
+                const countSpan = document.createElement('span');
+                countSpan.className = 'block text-sm text-sky-700 font-semibold';
+                countSpan.textContent = `${totalNoticed} signs noted`;
+                
+                dateAndCountDiv.appendChild(dateSpan);
+                dateAndCountDiv.appendChild(countSpan);
+
+                const viewButton = document.createElement('button');
+                viewButton.textContent = "View Summary";
+                viewButton.className = "btn btn-secondary btn-sm py-1 px-3"; 
+                viewButton.onclick = () => navigateTo('summaryView', { entryIndex: originalIndex });
+                
+                li.appendChild(dateAndCountDiv);
+                li.appendChild(viewButton);
+                ul.appendChild(li);
+            });
+            trendsChartEl.appendChild(ul);
+        }
+
+        clearDataBtn.onclick = () => {
+            showModal("Confirm Deletion", "Are you sure you want to clear all your check-in data? This action cannot be undone.");
+            const confirmBtn = document.createElement('button');
+            confirmBtn.textContent = "Yes, Clear All Data";
+            confirmBtn.className = "btn bg-red-500 text-white hover:bg-red-600 w-full mt-2 btn-extra-modal"; 
+            confirmBtn.onclick = () => {
+                localStorage.removeItem('tahaHinengaroCheckHistory');
+                allCheckinHistory = [];
+                currentlyViewedSummaryIndex = -1;
+                currentEditingNotesIndex = -1;
+                renderTrends(); 
+                navigateTo('welcomeView');
+                promptModal.style.display = 'none'; 
+                showModal("Data Cleared", "All your check-in data has been removed from this browser.");
+            };
+
+            const modalContent = promptModal.querySelector('.modal-content');
+            const existingExtraButtons = modalContent.querySelectorAll('.btn-extra-modal');
+            existingExtraButtons.forEach(btn => modalContent.removeChild(btn));
+            
+            modalContent.appendChild(confirmBtn);
+            closePromptModalBtn.textContent = "Cancel"; 
+            closePromptModalBtn.onclick = () => { 
+                promptModal.style.display = 'none';
+                if (modalContent.contains(confirmBtn)) {
+                    modalContent.removeChild(confirmBtn);
+                }
+                closePromptModalBtn.textContent = "Okay, I Understand"; 
+                closePromptModalBtn.onclick = () => { promptModal.style.display = 'none'; }; 
+            };
+        };
+
+        viewDataBtn.onclick = () => {
+            try {
+                rawDataDisplayEl.textContent = JSON.stringify(allCheckinHistory, null, 2);
+                rawDataDisplayEl.style.display = rawDataDisplayEl.style.display === 'none' ? 'block' : 'none';
+            } catch (error) {
+                console.error("Error stringifying history for display:", error);
+                rawDataDisplayEl.textContent = "Error displaying data.";
+                rawDataDisplayEl.style.display = 'block';
+            }
+        };
+
+        function showModal(title, message) {
+            promptModalTitle.textContent = title;
+            promptModalMessage.textContent = message;
+            promptModal.style.display = 'flex';
+            const modalContent = promptModal.querySelector('.modal-content');
+            const existingExtraButtons = modalContent.querySelectorAll('.btn-extra-modal');
+            existingExtraButtons.forEach(btn => modalContent.removeChild(btn));
+            closePromptModalBtn.textContent = "Okay, I Understand";
+            closePromptModalBtn.onclick = () => { promptModal.style.display = 'none'; };
+        }
+
+        closePromptModalBtn.onclick = () => {
+            promptModal.style.display = 'none';
+        };
+        promptModal.addEventListener('click', (event) => {
+            if (event.target === promptModal) {
+                promptModal.style.display = 'none';
+            }
+        });
+
+        // --- Initialization ---
+        document.addEventListener('DOMContentLoaded', () => {
+            loadHistory();
+            navigateTo('welcomeView'); 
+        });
+
+    </script>
+
+</body>
+</html>
