@@ -8,7 +8,8 @@
     <!-- PWA Links Added -->
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#0284c7">
-    <link rel="apple-touch-icon" href="https://placehold.co/192x192/0284c7/ffffff?text=Hauora">
+    <!-- Updated Apple Touch Icon -->
+    <link rel="apple-touch-icon" href="images/koru-icon-192.png">
     <!-- End of PWA Links -->
 
     <script src="https://cdn.tailwindcss.com"></script>
@@ -130,15 +131,24 @@
         .dashboard-btn span {
             @apply text-sm font-semibold;
         }
+        /* New Insight Card Style */
+        .insight-card {
+            @apply bg-white p-4 rounded-lg shadow border-l-4 border-fuchsia-600;
+        }
+        .insight-card p {
+            @apply text-slate-700;
+        }
+        .insight-card strong {
+            @apply font-semibold text-fuchsia-700;
+        }
     </style>
 </head>
 <body class="text-slate-800">
 
     <div id="app" class="max-w-2xl mx-auto bg-white shadow-xl flex flex-col">
 
-        <!-- Updated Header with width/height attributes on SVG -->
+        <!-- Updated Header with Koru Icon -->
         <header class="bg-sky-700 text-white p-4 flex items-center justify-center sticky top-0 z-50 shadow-md">
-            <!-- Added Koru Icon with fallback width/height -->
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-7 h-7 mr-2" width="28" height="28">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M12 21a9 9 0 009-9h-9" />
                 <path stroke-linecap="round" stroke-linejoin="round" d="M12 3a9 9 0 019 9h-9" />
@@ -410,6 +420,15 @@
                         No check-in history yet. Complete a few weekly check-ins to see your trends.
                     </div>
                 </div>
+
+                <!-- New "Wellbeing Insights" Section -->
+                <div class="mt-6">
+                    <h2 class="text-xl font-semibold text-sky-800">Wellbeing Insights</h2>
+                    <p class="text-sm text-slate-600 mb-3">The app looks for patterns in your data to offer insights. The more you use it, the better these become.</p>
+                    <div id="correlationInsightsContainer" class="space-y-3">
+                        <!-- Insight cards will be injected here -->
+                    </div>
+                </div>
             </div>
 
             <!-- Updated Resources View -->
@@ -629,7 +648,7 @@
         let ruleOfLifeHistory = [];
         // Chart.js instances
         let trendsChartInstance = null;
-        let ruleOfLifeChartInstance = null; // New
+        let ruleOfLifeChartInstance = null; 
         let currentTrendView = 'recent'; 
         
         // Onboarding (New)
@@ -729,8 +748,8 @@
         const ruleOfLifeNotesArea = document.getElementById('ruleOfLifeNotesArea');
         const saveRuleOfLifeCheckinBtn = document.getElementById('saveRuleOfLifeCheckinBtn');
         const pastRuleOfLifeContainer = document.getElementById('pastRuleOfLifeContainer');
-        const ruleOfLifeChartEl = document.getElementById('ruleOfLifeChart'); // New
-        const ruleOfLifeChartEmptyEl = document.getElementById('ruleOfLifeChartEmpty'); // New
+        const ruleOfLifeChartEl = document.getElementById('ruleOfLifeChart'); 
+        const ruleOfLifeChartEmptyEl = document.getElementById('ruleOfLifeChartEmpty'); 
         // Summary
         const summaryContentEl = document.getElementById('summaryContent');
         const summaryPromptEl = document.getElementById('summaryPrompt');
@@ -746,6 +765,7 @@
         const trendsChartEmptyEl = document.getElementById('trendsChartEmpty');
         const trendsToggleRecentBtn = document.getElementById('trendsToggleRecent');
         const trendsToggleAllBtn = document.getElementById('trendsToggleAll');
+        const correlationInsightsContainerEl = document.getElementById('correlationInsightsContainer'); // New
         // Resources
         const editResourcesBtn = document.getElementById('editResourcesBtn');
         const saveResourcesBtn = document.getElementById('saveResourcesBtn');
@@ -775,7 +795,7 @@
         const promptModalTitle = document.getElementById('promptModalTitle');
         const promptModalMessage = document.getElementById('promptModalMessage');
         const closePromptModalBtn = document.getElementById('closePromptModalBtn');
-        // Onboarding (New)
+        // Onboarding
         const onboardingModal = document.getElementById('onboardingModal');
         const onboardingModalTitle = document.getElementById('onboardingModalTitle');
         const onboardingModalContent = document.getElementById('onboardingModalContent');
@@ -984,7 +1004,7 @@
                 renderRuleOfLife('read');
             } else if (viewId === 'ruleOfLifeCheckinView') {
                 loadRuleOfLifeChecklist();
-            } else if (viewId === 'pastRuleOfLifeView') { // Updated
+            } else if (viewId === 'pastRuleOfLifeView') { 
                 renderPastRuleOfLifeEntries();
                 renderRuleOfLifeTrends();
             } else if (viewId === 'welcomeView') { 
@@ -1010,7 +1030,11 @@
             const mainContentArea = appElement.querySelector('main');
             if (mainContentArea) mainContentArea.scrollTop = 0;
 
-            if (targetViewId === 'trendsView') renderTrends();
+            // Updated to render trends AND correlations
+            if (targetViewId === 'trendsView') {
+                renderTrends();
+                renderCorrelations();
+            }
         }
         
         backToTrendsBtn.onclick = () => navigateTo('trendsView');
@@ -1082,7 +1106,7 @@
 
             // 2. Render Rule of Life Preview
             dashboardRulePreviewEl.innerHTML = '';
-            const intentions = ruleOfLife.intentions || [];
+            const intentions = (ruleOfLife && ruleOfLife.intentions) ? ruleOfLife.intentions : [];
             if (intentions.length > 0) {
                 const ul = document.createElement('ul');
                 ul.className = 'list-disc list-inside text-teal-700 font-medium space-y-1';
@@ -1578,7 +1602,7 @@
         viewPastRuleOfLifeBtn.onclick = () => navigateTo('pastRuleOfLifeView');
         
         function renderRuleOfLife(mode = 'read') {
-            const intentions = ruleOfLife.intentions || [];
+            const intentions = (ruleOfLife && ruleOfLife.intentions) ? ruleOfLife.intentions : [];
             if (mode === 'read') {
                 ruleOfLifeReadList.innerHTML = '';
                 if (intentions.length === 0) {
@@ -1626,7 +1650,7 @@
             ruleOfLifeCheckinDate.value = todayDateString;
             ruleOfLifeChecklistContainer.innerHTML = '';
             
-            const intentions = ruleOfLife.intentions || [];
+            const intentions = (ruleOfLife && ruleOfLife.intentions) ? ruleOfLife.intentions : [];
             if (intentions.length === 0) {
                 ruleOfLifeChecklistContainer.innerHTML = '<p class="text-slate-500 italic">Please define your intentions on the "My Rule of Life" page first.</p>';
                 saveRuleOfLifeCheckinBtn.style.display = 'none';
@@ -1664,7 +1688,7 @@
         saveRuleOfLifeCheckinBtn.onclick = () => {
             const reflectionDate = ruleOfLifeCheckinDate.value || new Date().toISOString().split('T')[0];
             const responses = {};
-            const intentions = ruleOfLife.intentions || [];
+            const intentions = (ruleOfLife && ruleOfLife.intentions) ? ruleOfLife.intentions : [];
             
             intentions.forEach((intention, index) => {
                 const checkbox = document.getElementById(`ruleCheck-${index}`);
@@ -1762,7 +1786,7 @@
             });
         }
         
-        // --- New Rule of Life Trends Logic ---
+        // --- Rule of Life Trends Logic ---
         function renderRuleOfLifeTrends() {
             if (ruleOfLifeChartInstance) {
                 ruleOfLifeChartInstance.destroy();
@@ -2103,9 +2127,7 @@
                 if (entry.warningResponses) {
                     categoryOrder.forEach(catKey => {
                         if (entry.warningResponses[catKey]) {
-                            Object.values(entry.warningResponses[catKey]).forEach(noticed => {
-                                if (noticed) totalWarning++;
-                            });
+                            totalWarning += Object.values(entry.warningResponses[catKey]).filter(Boolean).length;
                         }
                     });
                 }
@@ -2117,9 +2139,7 @@
                 if (entry.positiveResponses) {
                     positiveCategoryOrder.forEach(catKey => {
                         if (entry.positiveResponses[catKey]) {
-                            Object.values(entry.positiveResponses[catKey]).forEach(noticed => {
-                                if (noticed) totalPositive++;
-                            });
+                            totalPositive += Object.values(entry.positiveResponses[catKey]).filter(Boolean).length;
                         }
                     });
                 }
@@ -2186,6 +2206,202 @@
                 }
             });
         }
+        
+        // --- Correlation Insights Logic (New) ---
+        
+        /**
+         * Helper to get ISO week number for a date string
+         */
+        function getWeekNumber(dateString) {
+            const date = parseDateString(dateString);
+            if (!date) return null;
+            const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+            const dayNum = d.getUTCDay() || 7;
+            d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+            const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+            return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+        }
+
+        /**
+         * Renders all correlation insights
+         */
+        function renderCorrelations() {
+            correlationInsightsContainerEl.innerHTML = ''; // Clear previous insights
+            const insights = [];
+            const MIN_DATA_POINTS = 3; // Need at least 3 data points to find a pattern
+
+            if (allCheckinHistory.length < MIN_DATA_POINTS) {
+                correlationInsightsContainerEl.innerHTML = '<p class="text-slate-500 italic text-center">Complete a few more check-ins to unlock wellbeing insights.</p>';
+                return;
+            }
+
+            // Run analyses
+            try {
+                insights.push(analyzeRuleOfLifeVsPositive());
+                insights.push(analyzeSabbathVsConnection());
+                insights.push(analyzeSpiritualVsPhysical());
+            } catch (error) {
+                console.error("Error generating correlations:", error);
+            }
+
+            const validInsights = insights.filter(Boolean); // Filter out null/undefined
+
+            if (validInsights.length === 0) {
+                correlationInsightsContainerEl.innerHTML = '<p class="text-slate-500 italic text-center">No significant patterns found yet. Keep logging your entries!</p>';
+            } else {
+                validInsights.forEach(insightHtml => {
+                    const card = document.createElement('div');
+                    card.className = 'insight-card';
+                    card.innerHTML = `<p>${insightHtml}</p>`;
+                    correlationInsightsContainerEl.appendChild(card);
+                });
+            }
+        }
+
+        /**
+         * Analyzes Rule of Life vs. Positive Signs
+         */
+        function analyzeRuleOfLifeVsPositive() {
+            if (ruleOfLifeHistory.length < 2 || allCheckinHistory.length < 2) return null;
+
+            let goodWeeksData = [];
+            let badWeeksData = [];
+
+            // Group check-in history by week
+            const weeklyCheckins = allCheckinHistory.reduce((acc, entry) => {
+                const week = `${parseDateString(entry.date).getFullYear()}-${getWeekNumber(entry.date)}`;
+                if (!acc[week]) acc[week] = [];
+                acc[week].push(entry);
+                return acc;
+            }, {});
+
+            ruleOfLifeHistory.forEach(ruleEntry => {
+                const week = `${parseDateString(ruleEntry.date).getFullYear()}-${getWeekNumber(ruleEntry.date)}`;
+                if (weeklyCheckins[week]) {
+                    const totalIntentions = (ruleEntry.intentionsAtTime || []).length;
+                    if (totalIntentions === 0) return;
+                    
+                    const metIntentions = Object.values(ruleEntry.responses || {}).filter(Boolean).length;
+                    const successRate = metIntentions / totalIntentions;
+
+                    // Get average positive signs for that week
+                    let weekPositiveTotal = 0;
+                    weeklyCheckins[week].forEach(checkin => {
+                        if (checkin.positiveResponses) {
+                            Object.values(checkin.positiveResponses).forEach(cat => {
+                                weekPositiveTotal += Object.values(cat).filter(Boolean).length;
+                            });
+                        }
+                    });
+                    const avgPositive = weekPositiveTotal / weeklyCheckins[week].length;
+
+                    if (successRate >= 0.7) { // "Good" week
+                        goodWeeksData.push(avgPositive);
+                    } else if (successRate <= 0.4) { // "Bad" week
+                        badWeeksData.push(avgPositive);
+                    }
+                }
+            });
+
+            if (goodWeeksData.length < 2 || badWeeksData.length < 2) return null; // Not enough comparative data
+
+            const avgGood = goodWeeksData.reduce((a, b) => a + b, 0) / goodWeeksData.length;
+            const avgBad = badWeeksData.reduce((a, b) => a + b, 0) / badWeeksData.length;
+
+            if (avgGood > avgBad * 1.25) { // At least 25% better
+                const diff = Math.round(((avgGood - avgBad) / avgBad) * 100);
+                return `On weeks you met most (70%+) of your 'Rule of Life' intentions, you reported <strong>${diff}% more Positive Signs</strong> than on weeks you met few (40% or less).`;
+            }
+            return null;
+        }
+
+        /**
+         * Analyzes Sabbath Quality vs. Connection
+         */
+        function analyzeSabbathVsConnection() {
+            if (sabbathHistory.length < 2 || allCheckinHistory.length < 2) return null;
+
+            let highRestWeeks = [];
+            let lowRestWeeks = [];
+
+            sabbathHistory.forEach(sabbathEntry => {
+                const week = `${parseDateString(sabbathEntry.date).getFullYear()}-${getWeekNumber(sabbathEntry.date)}`;
+                const checkinsThisWeek = allCheckinHistory.filter(c => `${parseDateString(c.date).getFullYear()}-${getWeekNumber(c.date)}` === week);
+                if (checkinsThisWeek.length === 0) return;
+                
+                // Calculate total connection signs for the week
+                let totalConnectionSigns = 0;
+                checkinsThisWeek.forEach(checkin => {
+                    if (checkin.positiveResponses && checkin.positiveResponses.connection) {
+                        totalConnectionSigns += Object.values(checkin.positiveResponses.connection).filter(Boolean).length;
+                    }
+                });
+                const avgConnection = totalConnectionSigns / checkinsThisWeek.length;
+                
+                // Calculate sabbath quality
+                let totalSabbathQuestions = 0;
+                let metSabbathQuestions = 0;
+                if(sabbathEntry.responses) {
+                    Object.values(sabbathEntry.responses).forEach(cat => {
+                        totalSabbathQuestions += Object.keys(cat).length;
+                        metSabbathQuestions += Object.values(cat).filter(Boolean).length;
+                    });
+                }
+                if(totalSabbathQuestions === 0) return;
+                
+                const sabbathSuccessRate = metSabbathQuestions / totalSabbathQuestions;
+                
+                if (sabbathSuccessRate >= 0.7) {
+                    highRestWeeks.push(avgConnection);
+                } else if (sabbathSuccessRate <= 0.4) {
+                    lowRestWeeks.push(avgConnection);
+                }
+            });
+            
+            if (highRestWeeks.length < 2 || lowRestWeeks.length < 2) return null;
+
+            const avgHighRest = highRestWeeks.reduce((a, b) => a + b, 0) / highRestWeeks.length;
+            const avgLowRest = lowRestWeeks.reduce((a, b) => a + b, 0) / lowRestWeeks.length;
+
+            if (avgHighRest > avgLowRest * 1.25) {
+                const diff = Math.round(((avgHighRest - avgLowRest) / avgLowRest) * 100);
+                return `In weeks you had a high-quality Sabbath, you also reported <strong>${diff}% more "Connection" signs</strong> (like feeling connected to others and family).`;
+            }
+            return null;
+        }
+        
+        /**
+         * Analyzes Spiritual Warning Signs vs. Physical Warning Signs
+         */
+        function analyzeSpiritualVsPhysical() {
+            if (allCheckinHistory.length < 3) return null;
+
+            let spiritualWarningCount = 0;
+            let physicalCoOccurenceCount = 0;
+            const spiritualSign = "Feeling disconnected from God or your faith";
+            const physicalSign = "Changes in sleep patterns (insomnia, oversleeping)";
+            
+            allCheckinHistory.forEach(entry => {
+                const spiritualResponses = (entry.warningResponses && entry.warningResponses.spiritual) ? entry.warningResponses.spiritual : {};
+                const physicalResponses = (entry.warningResponses && entry.warningResponses.physical) ? entry.warningResponses.physical : {};
+                
+                if (spiritualResponses[spiritualSign]) {
+                    spiritualWarningCount++;
+                    if (physicalResponses[physicalSign]) {
+                        physicalCoOccurenceCount++;
+                    }
+                }
+            });
+
+            if (spiritualWarningCount < 2) return null; // Not enough data
+            
+            const coOccurenceRate = physicalCoOccurenceCount / spiritualWarningCount;
+
+            if (coOccurenceRate >= 0.5) { // If it happens at least 50% of the time
+                return `When you reported <strong>'Feeling disconnected from God'</strong>, you also reported <strong>'Changes in sleep patterns'</strong> ${Math.round(coOccurenceRate * 100)}% of the time.`;
+            }
+            return null;
+        }
 
 
         // --- Data Export/Import ---
@@ -2196,6 +2412,7 @@
             }
             try {
                 const exportObject = {
+                    hauoraAppVersion: APP_VERSION,
                     checkinHistory: allCheckinHistory,
                     gratitudeHistory: gratitudeHistory,
                     sabbathHistory: sabbathHistory,
@@ -2295,7 +2512,6 @@
                 event.target.value = null;
             };
             reader.readAsText(file);
-DRAFT:
         };
 
         clearDataBtn.onclick = () => {
@@ -2353,6 +2569,7 @@ DRAFT:
         viewDataBtn.onclick = () => {
             try {
                 const exportObject = { 
+                    hauoraAppVersion: APP_VERSION,
                     checkinHistory: allCheckinHistory,
                     gratitudeHistory: gratitudeHistory,
                     sabbathHistory: sabbathHistory,
