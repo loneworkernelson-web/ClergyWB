@@ -5,11 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tōku Hauora</title>
     
-    <!-- PWA Links Updated -->
+    <!-- PWA Links Added -->
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#0284c7">
-    <link rel="apple-touch-icon" href="https://i.postimg.cc/6pPSn3Fr/Clergy-Wellbeing.jpg">
-    <link rel="icon" type="image/png" href="https://i.postimg.cc/6pPSn3Fr/Clergy-Wellbeing.jpg" sizes="192x192">
+    <link rel="apple-touch-icon" href="https://placehold.co/192x192/0284c7/ffffff?text=Hauora">
     <!-- End of PWA Links -->
 
     <script src="https://cdn.tailwindcss.com"></script>
@@ -131,19 +130,21 @@
         .dashboard-btn span {
             @apply text-sm font-semibold;
         }
-        /* Insight card style */
-        .insight-card {
-            @apply bg-white p-4 rounded-lg shadow border-l-4;
-        }
     </style>
 </head>
 <body class="text-slate-800">
 
     <div id="app" class="max-w-2xl mx-auto bg-white shadow-xl flex flex-col">
 
-        <header class="bg-sky-700 text-white p-4 text-center sticky top-0 z-50 shadow-md">
+        <!-- Updated Header with width/height attributes on SVG -->
+        <header class="bg-sky-700 text-white p-4 flex items-center justify-center sticky top-0 z-50 shadow-md">
+            <!-- Added Koru Icon with fallback width/height -->
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-7 h-7 mr-2" width="28" height="28">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 21a9 9 0 009-9h-9" />
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 3a9 9 0 019 9h-9" />
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 12a9 9 0 01-9 9V3a9 9 0 019 9z" />
+            </svg>
             <h1 class="text-2xl font-bold">Tōku Hauora</h1>
-            <p class="text-sm opacity-90">My Clergy Wellbeing Hub</p>
         </header>
 
         <main class="flex-grow p-4 sm:p-6 space-y-6 overflow-y-auto">
@@ -152,54 +153,48 @@
             <div id="welcomeView" class="view active-view space-y-6">
                 <div class="bg-sky-50 p-6 rounded-lg shadow">
                     <h2 class="text-xl font-semibold text-sky-800 mb-3">Nau Mai, Haere Mai</h2>
-                    <p class="italic text-slate-600">"Mā te kimi ka kite, Mā te kite ka mōhio, Mā te mōhio ka mārama."</p>
-                    <p class="text-slate-600 mb-4">(Seek and discover, discover and know, know and become enlightened.)</p>
-                    <!-- Updated intro text -->
-                    <p class="mb-2">This app is a private tool to help you reflect on your wellbeing and discover patterns over time.</p>
-                    <p class="text-sm text-slate-500 mb-4">All your data is stored locally in this browser and is not shared.</p>
+                    <p class="text-slate-600 mb-4">Welcome to your private wellbeing hub. How are you today?</p>
                 </div>
                 
                 <!-- At a Glance Preview -->
                 <div class="bg-white p-4 rounded-lg shadow">
                     <h3 class="text-lg font-semibold text-slate-800 mb-3">At a Glance</h3>
                     <div id="dashboardPreview">
-                        <p class="text-slate-500 italic">You haven't completed a check-in yet. Start one below!</p>
+                        <!-- Dashboard preview will be rendered here by JS -->
                     </div>
                 </div>
 
                 <!-- Main Module Grid -->
                 <div class="grid grid-cols-2 gap-4">
                     <button id="startWarningCheckinBtn" class="dashboard-btn bg-sky-600 hover:bg-sky-700">
-                        <svg id="icon-warning" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" /></svg>
+                        <svg id="icon-warning" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8 mb-2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" /></svg>
                         <span>Warning Signs</span>
                     </button>
                     <button id="startPositiveCheckinBtn" class="dashboard-btn bg-emerald-600 hover:bg-emerald-700">
-                         <svg id="icon-positive" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18l-1.813-2.096a.5.5 0 00-.621-.194l-1.925.872a.5.5 0 01-.621-.194L3 13.75l-2.096-1.813a.5.5 0 01-.194-.621l.872-1.925a.5.5 0 00-.194-.621L.25 9 2.096 7.187a.5.5 0 01.194-.621l-.872-1.925a.5.5 0 01.194-.621L3 2.25l2.096 1.813a.5.5 0 00.621.194l1.925-.872a.5.5 0 01.621.194L9 5.25l1.813-2.096a.5.5 0 01.621-.194l1.925.872a.5.5 0 00.621.194L15 2.25l2.096 1.813a.5.5 0 01.194.621l-.872 1.925a.5.5 0 00.194.621L21.75 9l-2.096 1.813a.5.5 0 01-.194.621l.872 1.925a.5.5 0 01-.194.621L15 15.75l-2.096-1.813a.5.5 0 00-.621-.194l-1.925.872a.5.5 0 01-.621.194zM18 9l1.5-1.5-1.5-1.5-1.5 1.5 1.5 1.5zM3 9l1.5-1.5-1.5-1.5-1.5 1.5 1.5 1.5z" /></svg>
+                         <svg id="icon-positive" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8 mb-2"><path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18l-1.813-2.096a.5.5 0 00-.621-.194l-1.925.872a.5.5 0 01-.621-.194L3 13.75l-2.096-1.813a.5.5 0 01-.194-.621l.872-1.925a.5.5 0 00-.194-.621L.25 9 2.096 7.187a.5.5 0 01.194-.621l-.872-1.925a.5.5 0 01.194-.621L3 2.25l2.096 1.813a.5.5 0 00.621.194l1.925-.872a.5.5 0 01.621.194L9 5.25l1.813-2.096a.5.5 0 01.621-.194l1.925.872a.5.5 0 00.621.194L15 2.25l2.096 1.813a.5.5 0 01.194.621l-.872 1.925a.5.5 0 00.194.621L21.75 9l-2.096 1.813a.5.5 0 01-.194.621l.872 1.925a.5.5 0 01-.194.621L15 15.75l-2.096-1.813a.5.5 0 00-.621-.194l-1.925.872a.5.5 0 01-.621.194zM18 9l1.5-1.5-1.5-1.5-1.5 1.5 1.5 1.5zM3 9l1.5-1.5-1.5-1.5-1.5 1.5 1.5 1.5z" /></svg>
                         <span>Positive Signs</span>
                     </button>
                     <button id="startSabbathCheckinBtn" class="dashboard-btn bg-indigo-600 hover:bg-indigo-700">
-                        <svg id="icon-sabbath" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" /></svg>
+                        <svg id="icon-sabbath" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8 mb-2"><path stroke-linecap="round" stroke-linejoin="round" d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" /></svg>
                         <span>Sabbath Quality</span>
                     </button>
                     <button id="startRuleOfLifeBtn" class="dashboard-btn bg-teal-600 hover:bg-teal-700">
-                        <svg id="icon-rule" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 3.75V16.5a2.25 2.25 0 01-2.25 2.25H15v-1.5a.75.75 0 00-.75-.75H9.75a.75.75 0 00-.75.75v1.5H7.5a2.25 2.25 0 01-2.25-2.25V3.75m.75 0H15.75c.414 0 .75.336.75.75v1.5H5.25v-1.5c0-.414.336-.75.75-.75zM15 3.75a.75.75 0 00-.75-.75H9.75a.75.75 0 00-.75.75V15H15V3.75z" /></svg>
+                        <svg id="icon-rule" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8 mb-2"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 3.75V16.5a2.25 2.25 0 01-2.25 2.25H15v-1.5a.75.75 0 00-.75-.75H9.75a.75.75 0 00-.75.75v1.5H7.5a2.25 2.25 0 01-2.25-2.25V3.75m.75 0H15.75c.414 0 .75.336.75.75v1.5H5.25v-1.5c0-.414.336-.75.75-.75zM15 3.75a.75.75 0 00-.75-.75H9.75a.75.75 0 00-.75.75V15H15V3.75z" /></svg>
                         <span>My Rule of Life</span>
                     </button>
-                    <button id="startGratitudeBtn" class="dashboard-btn bg-amber-600 hover:bg-amber-700">
-                        <svg id="icon-gratitude" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.099 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" /></svg>
-                        <span>Gratitude</span>
-                    </button>
-                    <button id="startInsightsBtn" class="dashboard-btn bg-purple-600 hover:bg-purple-700">
-                        <svg id="icon-insights" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3v11.25A2.25 2.25 0 006 16.5h2.25M3.75 3h-1.5m1.5 0h16.5m0 0h1.5m-1.5 0v11.25A2.25 2.25 0 0118 16.5h-2.25m-7.5 0h7.5m-7.5 0l-1 3m8.5-3l1 3m0 0l.5 1.5m-.5-1.5h-9.5m0 0l-.5 1.5M9 11.25v1.5M12 9v3.75m3-6v6" /></svg>
-                        <span>Insights</span>
-                    </button>
                 </div>
+
+                <!-- Quick Add Gratitude -->
+                <button id="startGratitudeBtn" class="btn btn-gratitude w-full py-3 font-semibold flex items-center justify-center">
+                    <svg id="icon-gratitude" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 mr-2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.099 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" /></svg>
+                    <span>Add Gratitude Entry</span>
+                </button>
                 
                 <!-- Rule of Life Preview -->
                 <div class="bg-white p-4 rounded-lg shadow">
                     <h3 class="text-lg font-semibold text-slate-800 mb-3">My Rule of Life Intentions</h3>
                     <div id="dashboardRulePreview">
-                        <p class="text-slate-500 italic">You haven't set your intentions yet. Tap "My Rule of Life" to begin.</p>
+                        <!-- Rule of Life preview will be rendered here by JS -->
                     </div>
                 </div>
 
@@ -364,7 +359,7 @@
                 <h2 class="text-xl font-semibold text-teal-800">Rule of Life Trends & History</h2>
                 <button onclick="navigateTo('ruleOfLifeView')" class="btn btn-secondary w-full mb-3">Back to Rule of Life</button>
                 
-                <!-- Re-added Chart Section -->
+                <!-- New Chart Section -->
                 <div class="bg-teal-50 p-4 rounded-lg shadow min-h-[250px] sm:min-h-[300px] relative">
                     <canvas id="ruleOfLifeChart"></canvas>
                     <div id="ruleOfLifeChartEmpty" class="text-slate-500 italic text-center p-8" style="display: none;">
@@ -375,15 +370,6 @@
                 <h3 class="text-lg font-semibold text-teal-800 pt-4">Past Reflections</h3>
                 <div id="pastRuleOfLifeContainer" class="space-y-3">
                     <!-- Past entries will be injected here -->
-                </div>
-            </div>
-
-            <!-- New Insights View -->
-            <div id="insightsView" class="view space-y-4">
-                <h2 class="text-xl font-semibold text-purple-800">Wellbeing Insights</h2>
-                <p class="text-sm text-slate-600">This page looks for patterns in your check-in data to help you see what might be connected.</p>
-                <div id="insightsContainer" class="space-y-4">
-                    <!-- Insights will be injected here -->
                 </div>
             </div>
 
@@ -536,9 +522,9 @@
                 <svg id="icon-home" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 mx-auto"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" /></svg>
                 <span>Home</span>
             </button>
-            <button onclick="navigateTo('insightsView')" class="nav-btn" data-view="insightsView">
-                <svg id="icon-insights-nav" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 mx-auto"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3v11.25A2.25 2.25 0 006 16.5h2.25M3.75 3h-1.5m1.5 0h16.5m0 0h1.5m-1.5 0v11.25A2.25 2.25 0 0118 16.5h-2.25m-7.5 0h7.5m-7.5 0l-1 3m8.5-3l1 3m0 0l.5 1.5m-.5-1.5h-9.5m0 0l-.5 1.5M9 11.25v1.5M12 9v3.75m3-6v6" /></svg>
-                <span>Insights</span>
+            <button onclick="navigateTo('summaryViewLast')" class="nav-btn" data-view="summaryView">
+                <svg id="icon-summary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 mx-auto"><path stroke-linecap="round" stroke-linejoin="round" d="M11.39 6.22l.015.015.015-.015a.75.75 0 011.06 0l1.06 1.06c.3.3.3.785 0 1.076l-4.5 4.5a.75.75 0 01-1.06 0l-1.06-1.06a.75.75 0 010-1.076l4.5-4.5zM11.25 12.75l-4.5 4.5a.75.75 0 01-1.06 0l-1.06-1.06a.75.75 0 010-1.076l4.5-4.5a.75.75 0 011.06 0l1.06 1.06a.75.75 0 010 1.076zM18.75 2.25c.398 0 .779.158 1.06.44l2.25 2.25a1.5 1.5 0 01.44 1.06v12a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 18V6a2.25 2.25 0 012.25-2.25h13.5zM18 4.5H5.25A.75.75 0 004.5 5.25v12.75c0 .414.336.75.75.75h13.5a.75.75 0 00.75-.75V5.25a.75.75 0 00-.75-.75z" /></svg>
+                <span>Summary</span>
             </button>
             <button onclick="navigateTo('trendsView')" class="nav-btn" data-view="trendsView">
                 <svg id="icon-trends" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 mx-auto"><path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25C3.504 21 3 20.496 3 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25c-.621 0-1.125-.504-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25c-.621 0-1.125-.504-1.125-1.125V4.125z" /></svg>
@@ -554,11 +540,30 @@
             </button>
         </nav>
 
+        <!-- General Prompt Modal -->
         <div id="promptModal" class="modal-overlay" style="display: none;">
             <div class="modal-content space-y-4">
                 <h3 id="promptModalTitle" class="text-lg font-semibold text-sky-800">Wellbeing Reflection</h3>
                 <p id="promptModalMessage" class="text-slate-700"></p>
                 <button id="closePromptModalBtn" class="btn btn-primary w-full">Okay, I Understand</button>
+            </div>
+        </div>
+        
+        <!-- Onboarding Modal (New) -->
+        <div id="onboardingModal" class="modal-overlay" style="display: none;">
+            <div class="modal-content space-y-4">
+                <h3 id="onboardingModalTitle" class="text-lg font-semibold text-sky-800">Welcome to Tōku Hauora!</h3>
+                <div id="onboardingModalContent" class="text-slate-700 space-y-2">
+                    <!-- Onboarding content will be injected here -->
+                </div>
+                <div class="flex justify-between items-center mt-4">
+                    <span id="onboardingStepCounter" class="text-sm text-slate-500"></span>
+                    <div>
+                        <button id="onboardingPrevBtn" class="btn btn-secondary" style="display: none;">Previous</button>
+                        <button id="onboardingNextBtn" class="btn btn-primary">Next</button>
+                        <button id="onboardingFinishBtn" class="btn btn-primary" style="display: none;">Get Started</button>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -624,8 +629,38 @@
         let ruleOfLifeHistory = [];
         // Chart.js instances
         let trendsChartInstance = null;
-        let ruleOfLifeChartInstance = null; 
+        let ruleOfLifeChartInstance = null; // New
         let currentTrendView = 'recent'; 
+        
+        // Onboarding (New)
+        const APP_VERSION = "1.0.0"; // For future data migrations
+        let currentOnboardingStep = 0;
+        const onboardingSteps = [
+            {
+                title: "Welcome to Tōku Hauora!",
+                content: "This is your private hub for clergy wellbeing. Let's quickly look at the 5 main features. Your data is never shared and stays only on this device."
+            },
+            {
+                title: "1. Weekly Check-ins (Warning & Positive)",
+                content: "Use the **Warning Signs** (blue) and **Positive Signs** (green) buttons to reflect on your week. This data builds your 'Wellbeing Trends' chart."
+            },
+            {
+                title: "2. Gratitude Journal (Daily)",
+                content: "Use the **Add Gratitude Entry** (amber) button to quickly log things you're grateful to God for. You can do this daily."
+            },
+            {
+                title: "3. Sabbath Quality (Weekly)",
+                content: "Use the **Sabbath Quality** (indigo) button to reflect on how restful your day off *actually* was. This helps you protect your rest."
+            },
+            {
+                title: "4. My Rule of Life (Proactive)",
+                content: "Use the **My Rule of Life** (teal) button to set your own intentions (e.g., 'Pray daily') and then check-in weekly to track your consistency."
+            },
+            {
+                title: "5. Data & Settings (Total Privacy)",
+                content: "Go to **Settings** (in the bottom bar) at any time to export a backup of your data or clear everything. You are in complete control. You're all set!"
+            }
+        ];
 
         // --- DOM Elements ---
         const views = document.querySelectorAll('.view');
@@ -694,8 +729,8 @@
         const ruleOfLifeNotesArea = document.getElementById('ruleOfLifeNotesArea');
         const saveRuleOfLifeCheckinBtn = document.getElementById('saveRuleOfLifeCheckinBtn');
         const pastRuleOfLifeContainer = document.getElementById('pastRuleOfLifeContainer');
-        const ruleOfLifeChartEl = document.getElementById('ruleOfLifeChart'); 
-        const ruleOfLifeChartEmptyEl = document.getElementById('ruleOfLifeChartEmpty'); 
+        const ruleOfLifeChartEl = document.getElementById('ruleOfLifeChart'); // New
+        const ruleOfLifeChartEmptyEl = document.getElementById('ruleOfLifeChartEmpty'); // New
         // Summary
         const summaryContentEl = document.getElementById('summaryContent');
         const summaryPromptEl = document.getElementById('summaryPrompt');
@@ -711,9 +746,6 @@
         const trendsChartEmptyEl = document.getElementById('trendsChartEmpty');
         const trendsToggleRecentBtn = document.getElementById('trendsToggleRecent');
         const trendsToggleAllBtn = document.getElementById('trendsToggleAll');
-        // Insights
-        const startInsightsBtn = document.getElementById('startInsightsBtn');
-        const insightsContainer = document.getElementById('insightsContainer');
         // Resources
         const editResourcesBtn = document.getElementById('editResourcesBtn');
         const saveResourcesBtn = document.getElementById('saveResourcesBtn');
@@ -743,6 +775,14 @@
         const promptModalTitle = document.getElementById('promptModalTitle');
         const promptModalMessage = document.getElementById('promptModalMessage');
         const closePromptModalBtn = document.getElementById('closePromptModalBtn');
+        // Onboarding (New)
+        const onboardingModal = document.getElementById('onboardingModal');
+        const onboardingModalTitle = document.getElementById('onboardingModalTitle');
+        const onboardingModalContent = document.getElementById('onboardingModalContent');
+        const onboardingStepCounter = document.getElementById('onboardingStepCounter');
+        const onboardingPrevBtn = document.getElementById('onboardingPrevBtn');
+        const onboardingNextBtn = document.getElementById('onboardingNextBtn');
+        const onboardingFinishBtn = document.getElementById('onboardingFinishBtn');
 
         function parseDateString(dateString) {
             if (!dateString || !/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
@@ -811,6 +851,13 @@
                 ruleOfLifeHistory = ruleHistoryJson ? JSON.parse(ruleHistoryJson) : [];
             } catch (error) {
                  console.error("Error loading or parsing rule of life history:", error); ruleOfLifeHistory = [];
+            }
+            
+            // Check for version update (for future use, e.g., migrating data)
+            const storedVersion = localStorage.getItem('hauoraAppVersion');
+            if (storedVersion !== APP_VERSION) {
+                // Here you could run data migration functions if needed
+                localStorage.setItem('hauoraAppVersion', APP_VERSION);
             }
         }
 
@@ -937,13 +984,11 @@
                 renderRuleOfLife('read');
             } else if (viewId === 'ruleOfLifeCheckinView') {
                 loadRuleOfLifeChecklist();
-            } else if (viewId === 'pastRuleOfLifeView') { 
+            } else if (viewId === 'pastRuleOfLifeView') { // Updated
                 renderPastRuleOfLifeEntries();
                 renderRuleOfLifeTrends();
             } else if (viewId === 'welcomeView') { 
                 renderDashboardPreview();
-            } else if (viewId === 'insightsView') { 
-                renderInsights();
             }
             
             const targetViewEl = document.getElementById(targetViewId);
@@ -993,7 +1038,7 @@
             }
         };
         
-        // --- Dashboard Preview Logic ---
+        // --- Dashboard Preview Logic (New) ---
         function renderDashboardPreview() {
             // 1. Render Last Check-in Preview
             dashboardPreviewEl.innerHTML = '';
@@ -1527,7 +1572,7 @@
             });
         }
         
-        // --- Rule of Life Logic ---
+        // --- Rule of Life Logic (New) ---
         startRuleOfLifeBtn.onclick = () => navigateTo('ruleOfLifeView');
         startRuleOfLifeCheckinBtn.onclick = () => navigateTo('ruleOfLifeCheckinView');
         viewPastRuleOfLifeBtn.onclick = () => navigateTo('pastRuleOfLifeView');
@@ -1652,8 +1697,7 @@
         function renderPastRuleOfLifeEntries() {
             pastRuleOfLifeContainer.innerHTML = '';
             if (ruleOfLifeHistory.length === 0) {
-                pastRuleOfLifeContainer.innerHTML = '<p class="text-slate-500 italic">No past Rule of Life reflections found.</p>';
-                return;
+                // Handled by renderRuleOfLifeTrends
             }
             
             const reversedHistory = [...ruleOfLifeHistory].sort((a, b) => b.date.localeCompare(a.date));
@@ -1718,6 +1762,7 @@
             });
         }
         
+        // --- New Rule of Life Trends Logic ---
         function renderRuleOfLifeTrends() {
             if (ruleOfLifeChartInstance) {
                 ruleOfLifeChartInstance.destroy();
@@ -1870,7 +1915,7 @@
             return true;
         }
 
-        // --- Summary, Notes, Trends ---
+        // --- Summary, Notes, Trends (Updated) ---
         function renderSummary(checkinEntry) {
             if (!checkinEntry) {
                 summaryContentEl.innerHTML = "<p>No summary data available. Please complete a check-in.</p>";
@@ -2019,7 +2064,7 @@
             }
         };
         
-        // --- Trends Logic ---
+        // --- Trends Logic (Updated with Chart.js) ---
         function renderTrends() {
             if (trendsChartInstance) {
                 trendsChartInstance.destroy();
@@ -2141,166 +2186,11 @@
                 }
             });
         }
-        
-        // --- Insights Logic (New) ---
-        function renderInsights() {
-            insightsContainer.innerHTML = ''; // Clear previous insights
-            
-            if (allCheckinHistory.length < 3) {
-                insightsContainer.innerHTML = '<p class="text-slate-500 italic">Complete at least 3 check-ins to start seeing wellbeing insights.</p>';
-                return;
-            }
-
-            // Helper function to create an insight card
-            const createInsightCard = (title, body, color) => {
-                const card = document.createElement('div');
-                card.className = `insight-card border-${color}-500`;
-                card.innerHTML = `
-                    <h3 class="font-semibold text-lg text-${color}-800 mb-1">${title}</h3>
-                    <p class="text-slate-700">${body}</p>
-                `;
-                return card;
-            };
-
-            // --- Insight 1: Positive vs. Negative Correlation ---
-            let totalEntries = allCheckinHistory.length;
-            let avgWarning = 0;
-            let avgPositive = 0;
-            allCheckinHistory.forEach(entry => {
-                if (entry.warningResponses) Object.values(entry.warningResponses).forEach(cat => avgWarning += Object.values(cat).filter(Boolean).length);
-                if (entry.positiveResponses) Object.values(entry.positiveResponses).forEach(cat => avgPositive += Object.values(cat).filter(Boolean).length);
-            });
-            avgWarning /= totalEntries;
-            avgPositive /= totalEntries;
-            
-            let aboveAvgPositiveEntries = allCheckinHistory.filter(entry => {
-                let totalPositive = 0;
-                if (entry.positiveResponses) Object.values(entry.positiveResponses).forEach(cat => totalPositive += Object.values(cat).filter(Boolean).length);
-                return totalPositive > avgPositive;
-            });
-            
-            if (aboveAvgPositiveEntries.length > 1) {
-                let warningSignsOnGoodWeeks = 0;
-                aboveAvgPositiveEntries.forEach(entry => {
-                    if (entry.warningResponses) Object.values(entry.warningResponses).forEach(cat => warningSignsOnGoodWeeks += Object.values(cat).filter(Boolean).length);
-                });
-                let avgWarningOnGoodWeeks = warningSignsOnGoodWeeks / aboveAvgPositiveEntries.length;
-                
-                if (avgWarningOnGoodWeeks < avgWarning * 0.85) { // At least 15% lower
-                    const percentLower = Math.round((1 - (avgWarningOnGoodWeeks / avgWarning)) * 100);
-                    insightsContainer.appendChild(createInsightCard(
-                        "Positive Signs vs. Warning Signs",
-                        `On weeks your 'Positive Signs' were above average, your 'Warning Signs' were <strong>${percentLower}% lower</strong> than average.`,
-                        "emerald"
-                    ));
-                }
-            }
-
-            // --- Insight 2: Rule of Life Correlation ---
-            if (ruleOfLifeHistory.length > 2 && (ruleOfLife.intentions || []).length > 0) {
-                let avgIntentionsMet = 0;
-                ruleOfLifeHistory.forEach(entry => {
-                    avgIntentionsMet += Object.values(entry.responses).filter(Boolean).length;
-                });
-                avgIntentionsMet /= ruleOfLifeHistory.length;
-                
-                // Find check-in days that are close to rule of life check-in days
-                let correlatedEntries = [];
-                ruleOfLifeHistory.forEach(ruleEntry => {
-                    const ruleDate = new Date(ruleEntry.date + 'T12:00:00'); // Use noon to avoid timezone issues
-                    const intentionsMet = Object.values(ruleEntry.responses).filter(Boolean).length;
-                    
-                    // Find a check-in within +/- 3 days
-                    const checkinEntry = allCheckinHistory.find(checkin => {
-                         const checkinDate = new Date(checkin.date + 'T12:00:00');
-                         const diffDays = Math.abs(checkinDate - ruleDate) / (1000 * 60 * 60 * 24);
-                         return diffDays <= 3;
-                    });
-                    
-                    if (checkinEntry) {
-                        let totalPositive = 0;
-                        if (checkinEntry.positiveResponses) Object.values(checkinEntry.positiveResponses).forEach(cat => totalPositive += Object.values(cat).filter(Boolean).length);
-                        correlatedEntries.push({ intentionsMet, totalPositive });
-                    }
-                });
-                
-                if(correlatedEntries.length > 2) {
-                    const goodRuleWeeks = correlatedEntries.filter(e => e.intentionsMet > avgIntentionsMet);
-                    const badRuleWeeks = correlatedEntries.filter(e => e.intentionsMet < avgIntentionsMet);
-                    
-                    if (goodRuleWeeks.length > 1 && badRuleWeeks.length > 1) {
-                        let avgPositiveOnGoodRuleWeeks = goodRuleWeeks.reduce((acc, e) => acc + e.totalPositive, 0) / goodRuleWeeks.length;
-                        let avgPositiveOnBadRuleWeeks = badRuleWeeks.reduce((acc, e) => acc + e.totalPositive, 0) / badRuleWeeks.length;
-
-                        if (avgPositiveOnGoodRuleWeeks > avgPositiveOnBadRuleWeeks * 1.2) { // At least 20% higher
-                            const percentHigher = Math.round(((avgPositiveOnGoodRuleWeeks / avgPositiveOnBadRuleWeeks) - 1) * 100);
-                             insightsContainer.appendChild(createInsightCard(
-                                "Rule of Life vs. Positive Signs",
-                                `On weeks you met more 'Rule of Life' intentions than average, you also reported <strong>${percentHigher}% more 'Positive Signs'</strong>.`,
-                                "teal"
-                            ));
-                        }
-                    }
-                }
-            }
-            
-            // --- Insight 3: Most Common Warning Sign ---
-            const allWarningSigns = {};
-            allCheckinHistory.forEach(entry => {
-                if (entry.warningResponses) {
-                    Object.values(entry.warningResponses).forEach(cat => {
-                        Object.entries(cat).forEach(([question, noticed]) => {
-                            if (noticed) {
-                                allWarningSigns[question] = (allWarningSigns[question] || 0) + 1;
-                            }
-                        });
-                    });
-                }
-            });
-            
-            if (Object.keys(allWarningSigns).length > 0) {
-                 const mostCommonWarning = Object.entries(allWarningSigns).sort((a, b) => b[1] - a[1])[0];
-                 insightsContainer.appendChild(createInsightCard(
-                    "Most Common Warning Sign",
-                    `Your most frequently noted warning sign is: <strong>"${mostCommonWarning[0]}"</strong> (noted ${mostCommonWarning[1]} times).`,
-                    "sky"
-                ));
-            }
-
-            // --- Insight 4: Most Common Positive Sign ---
-            const allPositiveSigns = {};
-            allCheckinHistory.forEach(entry => {
-                if (entry.positiveResponses) {
-                    Object.values(entry.positiveResponses).forEach(cat => {
-                        Object.entries(cat).forEach(([question, noticed]) => {
-                            if (noticed) {
-                                allPositiveSigns[question] = (allPositiveSigns[question] || 0) + 1;
-                            }
-                        });
-                    });
-                }
-            });
-            
-            if (Object.keys(allPositiveSigns).length > 0) {
-                 const mostCommonPositive = Object.entries(allPositiveSigns).sort((a, b) => b[1] - a[1])[0];
-                 insightsContainer.appendChild(createInsightCard(
-                    "Most Common Positive Sign",
-                    `Your most frequently noted positive sign is: <strong>"${mostCommonPositive[0]}"</strong> (noted ${mostCommonPositive[1]} times).`,
-                    "emerald"
-                ));
-            }
-            
-            if (insightsContainer.innerHTML === '') {
-                 insightsContainer.innerHTML = '<p class="text-slate-500 italic">Keep using the app to gather more data. Insights will appear here as patterns emerge.</p>';
-            }
-
-        }
-        startInsightsBtn.onclick = () => navigateTo('insightsView');
 
 
         // --- Data Export/Import ---
         exportDataBtn.onclick = () => {
-            if (allCheckinHistory.length === 0 && gratitudeHistory.length === 0 && sabbathHistory.length === 0 && Object.keys(userResources).length === 0 && Object.keys(ruleOfLife).length === 0 && ruleOfLifeHistory.length === 0) { // Updated check
+            if (allCheckinHistory.length === 0 && gratitudeHistory.length === 0 && sabbathHistory.length === 0 && Object.keys(userResources).length === 0 && Object.keys(ruleOfLife).length === 0 && ruleOfLifeHistory.length === 0) { 
                 showModal("No Data to Export", "There is no data to export.");
                 return;
             }
@@ -2317,8 +2207,8 @@
                 const blob = new Blob([dataStr], { type: 'application/json' });
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
-                a.download = `toku_hauora_backup_${new Date().toISOString().split('T')[0]}.json`; // Updated name
                 a.href = url;
+                a.download = `toku_hauora_backup_${new Date().toISOString().split('T')[0]}.json`; // Updated name
                 document.body.appendChild(a);
                 a.click();
                 document.body.removeChild(a);
@@ -2405,6 +2295,7 @@
                 event.target.value = null;
             };
             reader.readAsText(file);
+DRAFT:
         };
 
         clearDataBtn.onclick = () => {
@@ -2419,6 +2310,8 @@
                 localStorage.removeItem('tahaHinengaroUserResources');
                 localStorage.removeItem('tahaHinengaroRuleOfLife');
                 localStorage.removeItem('tahaHinengaroRuleOfLifeHistory');
+                localStorage.removeItem('hauoraOnboardComplete'); // Also clear onboarding
+                localStorage.removeItem('hauoraAppVersion');
                 allCheckinHistory = [];
                 gratitudeHistory = [];
                 sabbathHistory = [];
@@ -2495,6 +2388,41 @@
                 promptModal.style.display = 'none';
             }
         });
+        
+        // --- Onboarding Logic (New) ---
+        function startOnboarding() {
+            currentOnboardingStep = 0;
+            showOnboardingStep();
+            onboardingModal.style.display = 'flex';
+        }
+
+        function showOnboardingStep() {
+            const step = onboardingSteps[currentOnboardingStep];
+            onboardingModalTitle.textContent = step.title;
+            onboardingModalContent.innerHTML = `<p>${step.content.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')}</p>`; // Basic bold markdown
+            onboardingStepCounter.textContent = `Step ${currentOnboardingStep + 1} of ${onboardingSteps.length}`;
+
+            onboardingPrevBtn.style.display = currentOnboardingStep > 0 ? 'inline-block' : 'none';
+            onboardingNextBtn.style.display = currentOnboardingStep < onboardingSteps.length - 1 ? 'inline-block' : 'none';
+            onboardingFinishBtn.style.display = currentOnboardingStep === onboardingSteps.length - 1 ? 'inline-block' : 'none';
+        }
+
+        onboardingNextBtn.onclick = () => {
+            if (currentOnboardingStep < onboardingSteps.length - 1) {
+                currentOnboardingStep++;
+                showOnboardingStep();
+            }
+        };
+        onboardingPrevBtn.onclick = () => {
+            if (currentOnboardingStep > 0) {
+                currentOnboardingStep--;
+                showOnboardingStep();
+            }
+        };
+        onboardingFinishBtn.onclick = () => {
+            onboardingModal.style.display = 'none';
+            localStorage.setItem('hauoraOnboardComplete', 'true');
+        };
 
         // --- Initialization ---
         document.addEventListener('DOMContentLoaded', () => {
@@ -2515,9 +2443,6 @@
                 trendsToggleRecentBtn.classList.remove('active');
                 renderTrends();
             });
-            
-            // Add listener for new insights button
-            startInsightsBtn.onclick = () => navigateTo('insightsView');
 
             // Register service worker
             if ('serviceWorker' in navigator) {
@@ -2530,6 +2455,19 @@
                             console.log('ServiceWorker registration failed: ', err);
                         });
                 });
+            }
+            
+            // Updated Onboarding Check with try...catch
+            let hasOnboarded = false;
+            try {
+                hasOnboarded = localStorage.getItem('hauoraOnboardComplete') === 'true';
+            } catch (e) {
+                console.warn('Could not access localStorage. Assuming first-time user for onboarding.');
+                hasOnboarded = false; 
+            }
+            
+            if (!hasOnboarded) {
+                startOnboarding();
             }
         });
 
