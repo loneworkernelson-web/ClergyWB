@@ -793,7 +793,7 @@
                 noticedBtn.className = `btn btn-choice ${activeNoticedClass}`;
                 notReallyBtn.className = `btn btn-choice ${baseNotReallyClass}`;
             } else { 
-                noticedBtn.className = `btn btn-choice ${baseNoticedClass}`;
+                noticedBtn.className = `btn btn-choice ${baseNotReallyClass}`;
                 notReallyBtn.className = `btn btn-choice ${activeNotReallyClass}`;
             }
         }
@@ -1183,10 +1183,22 @@
         document.addEventListener('DOMContentLoaded', () => {
             loadHistory();
             navigateTo('welcomeView'); 
+            
+            // Register service worker
+            if ('serviceWorker' in navigator) {
+                window.addEventListener('load', () => {
+                    navigator.serviceWorker.register('sw.js')
+                        .then(registration => {
+                            console.log('ServiceWorker registration successful with scope: ', registration.scope);
+                        })
+                        .catch(err => {
+                            console.log('ServiceWorker registration failed: ', err);
+                        });
+                });
+            }
         });
 
     </script>
 
 </body>
 </html>
-
