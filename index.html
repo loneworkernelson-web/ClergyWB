@@ -54,9 +54,12 @@
         .btn-positive {
             @apply bg-emerald-600 text-white hover:bg-emerald-700 focus:ring-2 focus:ring-emerald-500 focus:ring-opacity-50;
         }
-        /* New Gratitude Button Style */
         .btn-gratitude {
             @apply bg-amber-600 text-white hover:bg-amber-700 focus:ring-2 focus:ring-amber-500 focus:ring-opacity-50;
+        }
+        /* New Sabbath Button Style */
+        .btn-sabbath {
+            @apply bg-indigo-600 text-white hover:bg-indigo-700 focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-50;
         }
         .btn-secondary {
             @apply bg-slate-200 text-slate-700 hover:bg-slate-300 focus:ring-2 focus:ring-slate-400 focus:ring-opacity-50;
@@ -98,8 +101,8 @@
         .notes-display {
             @apply mt-4 p-3 bg-amber-50 border border-amber-200 rounded-md text-sm text-slate-700 whitespace-pre-wrap;
         }
-        /* Gratitude Entry Display */
-        .gratitude-entry-display {
+        /* Entry Display (Gratitude & Sabbath) */
+        .entry-display {
             @apply p-3 bg-white border border-slate-200 rounded-md text-sm text-slate-700 whitespace-pre-wrap shadow-sm;
         }
     </style>
@@ -127,6 +130,7 @@
                         <button id="startWarningCheckinBtn" class="btn btn-primary w-full py-3 font-semibold">Start Warning Signs Check-in</button>
                         <button id="startPositiveCheckinBtn" class="btn btn-positive w-full py-3 font-semibold">Start Positive Signs Check-in</button>
                         <button id="startGratitudeBtn" class="btn btn-gratitude w-full py-3 font-semibold">Add Gratitude Entry</button>
+                        <button id="startSabbathCheckinBtn" class="btn btn-sabbath w-full py-3 font-semibold">Sabbath Quality Check-in</button>
                     </div>
                 </div>
                 <div class="text-center">
@@ -166,7 +170,43 @@
                 </div>
             </div>
 
-            <!-- Gratitude Journal View (New) -->
+            <!-- Sabbath Check-in View (New) -->
+            <div id="sabbathCheckinView" class="view space-y-6">
+                <h2 id="sabbathCategoryTitle" class="text-xl font-semibold text-indigo-800">Sabbath Quality</h2>
+                <p class="text-sm text-slate-600">Reflect on your most recent Sabbath or day off. Select the date for this reflection:</p>
+                <input type="date" id="sabbathCheckinDate" class="w-full p-2 border border-slate-300 rounded-lg shadow-sm">
+                
+                <div id="sabbathQuestionsContainer" class="space-y-4">
+                    <!-- Sabbath questions will be injected here -->
+                </div>
+                
+                <div class="mt-4">
+                    <label for="sabbathNotesArea" class="block text-sm font-medium text-slate-700 mb-1">Additional Reflections (Private):</label>
+                    <textarea id="sabbathNotesArea" rows="4" class="w-full p-3 border border-slate-300 rounded-lg shadow-sm focus:ring-indigo-500 focus:border-indigo-500" placeholder="e.g., What was life-giving? What was difficult?"></textarea>
+                </div>
+
+                <div id="sabbathCheckinButtonContainer" class="flex flex-col sm:flex-row sm:justify-between space-y-3 sm:space-y-0 sm:space-x-3">
+                    <button id="sabbathPrevCategoryBtn" class="btn btn-secondary w-full sm:w-auto">Previous</button>
+                    <button id="sabbathNextCategoryBtn" class="btn btn-sabbath w-full sm:w-auto py-3 font-semibold">Next</button>
+                    <button id="sabbathFinishCheckinBtn" class="btn btn-sabbath w-full sm:w-auto" style="display:none;">Save Reflection</button>
+                </div>
+                 <div class="mt-4 text-center">
+                    <progress id="sabbathCheckinProgress" value="0" max="100" class="w-full h-2 rounded-full overflow-hidden [&::-webkit-progress-bar]:bg-slate-200 [&::-webkit-progress-value]:bg-indigo-600"></progress>
+                    <p id="sabbathProgressText" class="text-sm text-slate-500 mt-1"></p>
+                </div>
+                <button id="viewPastSabbathBtn" class="btn btn-secondary w-full mt-4">View Past Sabbath Reflections</button>
+            </div>
+
+            <!-- Past Sabbath Entries View (New) -->
+            <div id="pastSabbathView" class="view space-y-4">
+                <h2 class="text-xl font-semibold text-indigo-800">Past Sabbath Reflections</h2>
+                <button onclick="navigateTo('sabbathCheckinView')" class="btn btn-secondary w-full mb-3">Back to Sabbath Check-in</button>
+                <div id="pastSabbathContainer" class="space-y-3">
+                    <!-- Past entries will be injected here -->
+                </div>
+            </div>
+
+            <!-- Gratitude Journal View -->
             <div id="gratitudeView" class="view space-y-4">
                 <h2 class="text-xl font-semibold text-amber-800">Gratitude Journal</h2>
                 <p class="text-sm text-slate-600">Take a moment to note 1-3 things you are grateful to God for today.</p>
@@ -175,7 +215,7 @@
                 <button id="viewPastGratitudeBtn" class="btn btn-secondary w-full mt-2">View Past Entries</button>
             </div>
 
-            <!-- Past Gratitude Entries View (New) -->
+            <!-- Past Gratitude Entries View -->
             <div id="pastGratitudeView" class="view space-y-4">
                 <h2 class="text-xl font-semibold text-amber-800">Past Gratitude Entries</h2>
                 <button onclick="navigateTo('gratitudeView')" class="btn btn-secondary w-full mb-3">Back to Journal</button>
@@ -323,6 +363,25 @@
         };
         const positiveCategoryOrder = ["connection", "purpose", "engagement", "selfCare", "spiritual"];
 
+        // New Sabbath Check-in Data
+        const sabbathSigns = {
+            disengagement: ["I was able to mentally disengage from work (e.g., not ruminating on problems)", "I successfully avoided or limited work-related emails and calls", "I felt 'off-duty' and not on call"],
+            rest: ["I experienced physical rest and renewal", "I engaged in activities I find genuinely restful (which might be active or passive)", "I felt my energy levels were restored"],
+            connection: ["I spent quality time with family or friends", "I connected meaningfully with my community (outside of a work context)", "I took time for myself"],
+            spiritual: ["I engaged in spiritual practices that were life-giving (e.g., worship, prayer, nature)", "I felt connected to God", "I felt a sense of joy or peace"]
+        };
+        const sabbathCategoryDisplayNames = {
+            disengagement: "Disengagement from Work",
+            rest: "Physical & Mental Rest",
+            connection: "Connection (Self, Others, Community)",
+            spiritual: "Spiritual Refreshment"
+        };
+        const sabbathCategoryOrder = ["disengagement", "rest", "connection", "spiritual"];
+        let currentSabbathCategoryIndex = 0;
+        let currentSabbathCheckinData = {};
+        let sabbathHistory = [];
+
+
         // Check-in History
         let currentCategoryIndex = 0;
         let currentPositiveCategoryIndex = 0;
@@ -330,7 +389,7 @@
         let allCheckinHistory = []; 
         let currentlyViewedSummaryIndex = -1; 
         let currentEditingNotesIndex = -1; 
-        // Gratitude History (New)
+        // Gratitude History
         let gratitudeHistory = [];
 
         // --- DOM Elements ---
@@ -356,7 +415,21 @@
         const positiveCheckinProgressEl = document.getElementById('positiveCheckinProgress');
         const positiveProgressTextEl = document.getElementById('positiveProgressText');
         const positiveCheckinButtonContainerEl = document.getElementById('positiveCheckinButtonContainer'); 
-        // Gratitude (New)
+        // Sabbath Check-in (New)
+        const startSabbathCheckinBtn = document.getElementById('startSabbathCheckinBtn');
+        const sabbathCategoryTitleEl = document.getElementById('sabbathCategoryTitle');
+        const sabbathQuestionsContainerEl = document.getElementById('sabbathQuestionsContainer');
+        const sabbathPrevCategoryBtn = document.getElementById('sabbathPrevCategoryBtn');
+        const sabbathNextCategoryBtn = document.getElementById('sabbathNextCategoryBtn');
+        const sabbathFinishCheckinBtn = document.getElementById('sabbathFinishCheckinBtn');
+        const sabbathCheckinProgressEl = document.getElementById('sabbathCheckinProgress');
+        const sabbathProgressTextEl = document.getElementById('sabbathProgressText');
+        const sabbathCheckinButtonContainerEl = document.getElementById('sabbathCheckinButtonContainer');
+        const sabbathCheckinDateEl = document.getElementById('sabbathCheckinDate');
+        const sabbathNotesArea = document.getElementById('sabbathNotesArea');
+        const viewPastSabbathBtn = document.getElementById('viewPastSabbathBtn');
+        const pastSabbathContainer = document.getElementById('pastSabbathContainer');
+        // Gratitude
         const startGratitudeBtn = document.getElementById('startGratitudeBtn');
         const gratitudeEntryArea = document.getElementById('gratitudeEntryArea');
         const saveGratitudeBtn = document.getElementById('saveGratitudeBtn');
@@ -423,6 +496,14 @@
             } catch (error) {
                  console.error("Error loading or parsing gratitude history:", error); gratitudeHistory = []; 
             }
+            
+            let sabbathJson = null;
+            try {
+                sabbathJson = localStorage.getItem('tahaHinengaroSabbathCheck');
+                sabbathHistory = sabbathJson ? JSON.parse(sabbathJson) : [];
+            } catch (error) {
+                 console.error("Error loading or parsing sabbath history:", error); sabbathHistory = []; 
+            }
         }
 
         function saveHistory() {
@@ -440,6 +521,15 @@
             } catch (error) {
                 console.error("Error saving gratitude history:", error);
                 showModal("Save Error", "Could not save your gratitude data. Your browser's storage might be full or unavailable.");
+            }
+        }
+        
+        function saveSabbathHistory() {
+             try {
+                localStorage.setItem('tahaHinengaroSabbathCheck', JSON.stringify(sabbathHistory));
+            } catch (error) {
+                console.error("Error saving sabbath history:", error);
+                showModal("Save Error", "Could not save your sabbath data. Your browser's storage might be full or unavailable.");
             }
         }
 
@@ -501,6 +591,10 @@
                 loadGratitudeEntryForToday();
             } else if (viewId === 'pastGratitudeView') {
                 renderPastGratitudeEntries();
+            } else if (viewId === 'sabbathCheckinView') {
+                loadSabbathCheckinForToday();
+            } else if (viewId === 'pastSabbathView') {
+                renderPastSabbathEntries();
             }
             
             const targetViewEl = document.getElementById(targetViewId);
@@ -723,7 +817,191 @@
         };
         startPositiveCheckinBtn.onclick = startPositiveCheckin;
 
-        // --- Gratitude Journal Logic (New) ---
+        // --- Sabbath Check-in Logic (New) ---
+        startSabbathCheckinBtn.onclick = () => navigateTo('sabbathCheckinView');
+        
+        function loadSabbathCheckinForToday() {
+            const todayDateString = new Date().toISOString().split('T')[0];
+            sabbathCheckinDateEl.value = todayDateString;
+            currentSabbathCategoryIndex = 0;
+            
+            // Check if there's an entry for this date
+            const existingEntry = sabbathHistory.find(e => e.date === todayDateString);
+            if (existingEntry) {
+                currentSabbathCheckinData = JSON.parse(JSON.stringify(existingEntry)); // Deep copy to edit
+                sabbathNotesArea.value = currentSabbathCheckinData.notes || '';
+            } else {
+                currentSabbathCheckinData = {
+                    date: todayDateString,
+                    responses: {},
+                    notes: ""
+                };
+                sabbathCategoryOrder.forEach(catKey => currentSabbathCheckinData.responses[catKey] = {});
+                sabbathNotesArea.value = '';
+            }
+            loadSabbathCategoryQuestions();
+        }
+        
+        function loadSabbathCategoryQuestions() {
+            const categoryKey = sabbathCategoryOrder[currentSabbathCategoryIndex];
+            const questions = sabbathSigns[categoryKey];
+            sabbathCategoryTitleEl.textContent = sabbathCategoryDisplayNames[categoryKey];
+            sabbathQuestionsContainerEl.innerHTML = ''; 
+
+            questions.forEach((q, index) => {
+                const existingResponse = currentSabbathCheckinData.responses[categoryKey] ? currentSabbathCheckinData.responses[categoryKey][q] : undefined;
+                const isNoticed = existingResponse === true;
+                const isNotReally = existingResponse === false;
+
+                const questionDiv = document.createElement('div');
+                questionDiv.className = 'p-4 border border-slate-200 rounded-lg shadow-sm bg-white';
+                const questionText = document.createElement('p');
+                questionText.className = 'mb-3 text-slate-700';
+                questionText.textContent = q;
+                questionDiv.appendChild(questionText);
+                const buttonGroup = document.createElement('div');
+                buttonGroup.className = 'flex flex-col sm:flex-row sm:space-x-2 space-y-2 sm:space-y-0';
+                const noticedBtn = document.createElement('button');
+                noticedBtn.textContent = 'Yes, I experienced this';
+                noticedBtn.className = `btn btn-choice ${isNoticed ? 'bg-indigo-500 text-white' : 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200'}`;
+                noticedBtn.onclick = () => selectAnswer(categoryKey, q, true, noticedBtn, notReallyBtn, 'sabbath');
+                const notReallyBtn = document.createElement('button');
+                notReallyBtn.textContent = 'No, not really';
+                notReallyBtn.className = `btn btn-choice ${isNotReally ? 'bg-slate-500 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`;
+                notReallyBtn.onclick = () => selectAnswer(categoryKey, q, false, noticedBtn, notReallyBtn, 'sabbath');
+                buttonGroup.appendChild(noticedBtn);
+                buttonGroup.appendChild(notReallyBtn);
+                questionDiv.appendChild(buttonGroup);
+                sabbathQuestionsContainerEl.appendChild(questionDiv);
+            });
+            updateSabbathCheckinControls();
+            updateSabbathProgress();
+        }
+        
+        function updateSabbathCheckinControls() {
+            sabbathPrevCategoryBtn.style.display = currentSabbathCategoryIndex > 0 ? 'inline-block' : 'none';
+            sabbathNextCategoryBtn.style.display = currentSabbathCategoryIndex < sabbathCategoryOrder.length - 1 ? 'inline-block' : 'none';
+            sabbathFinishCheckinBtn.style.display = currentSabbathCategoryIndex === sabbathCategoryOrder.length - 1 ? 'inline-block' : 'none';
+
+            if (sabbathCheckinButtonContainerEl) { 
+                if (currentSabbathCategoryIndex === 0) {
+                    sabbathCheckinButtonContainerEl.classList.remove('sm:justify-between');
+                    sabbathCheckinButtonContainerEl.classList.add('sm:justify-end');
+                } else {
+                    sabbathCheckinButtonContainerEl.classList.remove('sm:justify-end');
+                    sabbathCheckinButtonContainerEl.classList.add('sm:justify-between');
+                }
+            }
+        }
+        
+        function updateSabbathProgress() {
+            const totalCategories = sabbathCategoryOrder.length;
+            const progressPercentage = ((currentSabbathCategoryIndex + 1) / totalCategories) * 100;
+            sabbathCheckinProgressEl.value = progressPercentage;
+            sabbathProgressTextEl.textContent = `Category ${currentSabbathCategoryIndex + 1} of ${totalCategories}`;
+        }
+        
+        sabbathPrevCategoryBtn.onclick = () => {
+            if (currentSabbathCategoryIndex > 0) { currentSabbathCategoryIndex--; loadSabbathCategoryQuestions(); }
+        };
+        sabbathNextCategoryBtn.onclick = () => {
+            if (!checkAllQuestionsAnswered('sabbath')) return;
+            if (currentSabbathCategoryIndex < sabbathCategoryOrder.length - 1) { currentSabbathCategoryIndex++; loadSabbathCategoryQuestions(); }
+        };
+        sabbathFinishCheckinBtn.onclick = () => {
+            if (!checkAllQuestionsAnswered('sabbath')) return;
+            
+            // Get date from input
+            const reflectionDate = sabbathCheckinDateEl.value || new Date().toISOString().split('T')[0];
+            currentSabbathCheckinData.date = reflectionDate;
+            currentSabbathCheckinData.notes = sabbathNotesArea.value;
+
+            // Find if an entry for this date already exists and update it, or add new
+            const existingEntryIndex = sabbathHistory.findIndex(e => e.date === reflectionDate);
+            if (existingEntryIndex > -1) {
+                sabbathHistory[existingEntryIndex] = currentSabbathCheckinData;
+            } else {
+                sabbathHistory.push(currentSabbathCheckinData);
+            }
+            
+            saveSabbathHistory();
+            showModal("Reflection Saved", "Your Sabbath reflection has been saved.");
+            navigateTo('pastSabbathView');
+        };
+        
+        viewPastSabbathBtn.onclick = () => navigateTo('pastSabbathView');
+        
+        function renderPastSabbathEntries() {
+            pastSabbathContainer.innerHTML = '';
+            if (sabbathHistory.length === 0) {
+                pastSabbathContainer.innerHTML = '<p class="text-slate-500 italic">No past Sabbath reflections found. Start by adding one!</p>';
+                return;
+            }
+            
+            const reversedHistory = [...sabbathHistory].sort((a, b) => b.date.localeCompare(a.date)); // Sort descending
+            
+            reversedHistory.forEach(entry => {
+                const entryWrapper = document.createElement('div');
+                entryWrapper.className = "mb-4";
+                
+                const dateEl = document.createElement('h3');
+                dateEl.className = "font-semibold text-indigo-700";
+                const displayDate = parseDateString(entry.date);
+                dateEl.textContent = displayDate ? displayDate.toLocaleDateString('en-NZ', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) : 'Invalid Date';
+                entryWrapper.appendChild(dateEl);
+                
+                const summaryDiv = document.createElement('div');
+                summaryDiv.className = "entry-display";
+                
+                let totalNoticed = 0;
+                sabbathCategoryOrder.forEach(catKey => {
+                    const catTitle = document.createElement('p');
+                    catTitle.className = "font-semibold text-sm text-indigo-600 mt-2";
+                    catTitle.textContent = sabbathCategoryDisplayNames[catKey];
+                    summaryDiv.appendChild(catTitle);
+                    
+                    const ul = document.createElement('ul');
+                    ul.className = 'list-disc list-inside text-sm text-slate-600';
+                    let countInCategory = 0;
+                    if(entry.responses && entry.responses[catKey]) {
+                        Object.entries(entry.responses[catKey]).forEach(([question, noticed]) => {
+                            if (noticed) {
+                                countInCategory++;
+                                totalNoticed++;
+                                const li = document.createElement('li');
+                                li.textContent = question;
+                                ul.appendChild(li);
+                            }
+                        });
+                    }
+                    if(countInCategory === 0) {
+                        const li = document.createElement('li');
+                        li.className = "italic text-slate-400";
+                        li.textContent = "No signs noted in this category.";
+                        ul.appendChild(li);
+                    }
+                    summaryDiv.appendChild(ul);
+                });
+                
+                if (entry.notes && entry.notes.trim() !== "") {
+                    const notesTitle = document.createElement('p');
+                    notesTitle.className = "font-semibold text-sm text-amber-700 mt-3";
+                    notesTitle.textContent = "Additional Reflections:";
+                    summaryDiv.appendChild(notesTitle);
+                    
+                    const notesEl = document.createElement('p');
+                    notesEl.className = "italic whitespace-pre-wrap text-slate-600";
+                    notesEl.textContent = entry.notes;
+                    summaryDiv.appendChild(notesEl);
+                }
+                
+                entryWrapper.appendChild(summaryDiv);
+                pastSabbathContainer.appendChild(entryWrapper);
+            });
+        }
+
+
+        // --- Gratitude Journal Logic ---
         startGratitudeBtn.onclick = () => navigateTo('gratitudeView');
         
         function loadGratitudeEntryForToday() {
@@ -759,7 +1037,7 @@
                 return;
             }
             
-            const reversedHistory = [...gratitudeHistory].reverse();
+            const reversedHistory = [...gratitudeHistory].sort((a, b) => b.date.localeCompare(a.date)); // Sort descending
             reversedHistory.forEach(entry => {
                 if (!entry.entry || entry.entry.trim() === '') return; // Skip empty entries
                 
@@ -772,7 +1050,7 @@
                 dateEl.textContent = displayDate ? displayDate.toLocaleDateString('en-NZ', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) : 'Invalid Date';
                 
                 const entryEl = document.createElement('p');
-                entryEl.className = "gratitude-entry-display";
+                entryEl.className = "entry-display";
                 entryEl.textContent = entry.entry;
                 
                 entryWrapper.appendChild(dateEl);
@@ -783,25 +1061,53 @@
 
         // --- Generic Check-in Helper Functions ---
         function selectAnswer(categoryKey, question, value, noticedBtn, notReallyBtn, type) {
-            const responseKey = type === 'warning' ? 'warningResponses' : 'positiveResponses';
-            const baseNoticedClass = type === 'warning' ? 'bg-sky-100 text-sky-700 hover:bg-sky-200' : 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200';
-            const activeNoticedClass = type === 'warning' ? 'bg-sky-500 text-white' : 'bg-emerald-500 text-white';
+            let responseKey, baseNoticedClass, activeNoticedClass, dataObject;
+            
+            if (type === 'warning') {
+                responseKey = 'warningResponses';
+                baseNoticedClass = 'bg-sky-100 text-sky-700 hover:bg-sky-200';
+                activeNoticedClass = 'bg-sky-500 text-white';
+                dataObject = currentCheckinData;
+            } else if (type === 'positive') {
+                responseKey = 'positiveResponses';
+                baseNoticedClass = 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200';
+                activeNoticedClass = 'bg-emerald-500 text-white';
+                dataObject = currentCheckinData;
+            } else if (type === 'sabbath') {
+                responseKey = 'responses';
+                baseNoticedClass = 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200';
+                activeNoticedClass = 'bg-indigo-500 text-white';
+                dataObject = currentSabbathCheckinData;
+            }
+
             const baseNotReallyClass = 'bg-slate-100 text-slate-700 hover:bg-slate-200';
             const activeNotReallyClass = 'bg-slate-500 text-white';
-            currentCheckinData[responseKey][categoryKey][question] = value;
+            
+            if (!dataObject[responseKey][categoryKey]) {
+                dataObject[responseKey][categoryKey] = {};
+            }
+            dataObject[responseKey][categoryKey][question] = value;
+            
             if (value) { 
                 noticedBtn.className = `btn btn-choice ${activeNoticedClass}`;
                 notReallyBtn.className = `btn btn-choice ${baseNotReallyClass}`;
             } else { 
-                noticedBtn.className = `btn btn-choice ${baseNotReallyClass}`;
+                noticedBtn.className = `btn btn-choice ${baseNoticedClass}`;
                 notReallyBtn.className = `btn btn-choice ${activeNotReallyClass}`;
             }
         }
 
         function checkAllQuestionsAnswered(type) {
-            const [categoryIndex, categoryKey, questions, responses] = type === 'warning' 
-                ? [currentCategoryIndex, categoryOrder[currentCategoryIndex], warningSigns, currentCheckinData.warningResponses]
-                : [currentPositiveCategoryIndex, positiveCategoryOrder[currentPositiveCategoryIndex], positiveSigns, currentCheckinData.positiveResponses];
+            let categoryIndex, categoryKey, questions, responses;
+            
+            if(type === 'warning') {
+                [categoryIndex, categoryKey, questions, responses] = [currentCategoryIndex, categoryOrder[currentCategoryIndex], warningSigns, currentCheckinData.warningResponses];
+            } else if (type === 'positive') {
+                [categoryIndex, categoryKey, questions, responses] = [currentPositiveCategoryIndex, positiveCategoryOrder[currentPositiveCategoryIndex], positiveSigns, currentCheckinData.positiveResponses];
+            } else if (type === 'sabbath') {
+                [categoryIndex, categoryKey, questions, responses] = [currentSabbathCategoryIndex, sabbathCategoryOrder[currentSabbathCategoryIndex], sabbathSigns, currentSabbathCheckinData.responses];
+            }
+
             const currentCatQuestions = questions[categoryKey];
             for (const q of currentCatQuestions) {
                 if (typeof responses[categoryKey][q] === 'undefined') {
@@ -1024,14 +1330,15 @@
 
         // --- Data Export/Import ---
         exportDataBtn.onclick = () => {
-            if (allCheckinHistory.length === 0 && gratitudeHistory.length === 0) {
+            if (allCheckinHistory.length === 0 && gratitudeHistory.length === 0 && sabbathHistory.length === 0) {
                 showModal("No Data to Export", "There is no data to export.");
                 return;
             }
             try {
                 const exportObject = {
                     checkinHistory: allCheckinHistory,
-                    gratitudeHistory: gratitudeHistory // Add gratitude history
+                    gratitudeHistory: gratitudeHistory,
+                    sabbathHistory: sabbathHistory // Add sabbath history
                 };
                 const dataStr = JSON.stringify(exportObject, null, 2);
                 const blob = new Blob([dataStr], { type: 'application/json' });
@@ -1058,19 +1365,20 @@
             reader.onload = (e) => {
                 let importedCheckinHistory = [];
                 let importedGratitudeHistory = [];
+                let importedSabbathHistory = [];
                 try {
                     const importedObject = JSON.parse(e.target.result);
                     if (Array.isArray(importedObject)) { // Old format (only check-ins)
                         importedCheckinHistory = importedObject;
-                        importedGratitudeHistory = [];
                     } else if (importedObject.checkinHistory) { // New format
                         importedCheckinHistory = importedObject.checkinHistory || [];
                         importedGratitudeHistory = importedObject.gratitudeHistory || [];
+                        importedSabbathHistory = importedObject.sabbathHistory || [];
                     } else {
                         throw new Error("File is not a valid backup file.");
                     }
                     
-                    showModal("Confirm Import", `This will overwrite your current data (${allCheckinHistory.length} check-in entries, ${gratitudeHistory.length} gratitude entries) with data from the file (${importedCheckinHistory.length} check-in, ${importedGratitudeHistory.length} gratitude). Are you sure?`);
+                    showModal("Confirm Import", `This will overwrite your current data with the data from the file. This import contains: \n- ${importedCheckinHistory.length} Check-in Entries\n- ${importedGratitudeHistory.length} Gratitude Entries\n- ${importedSabbathHistory.length} Sabbath Reflections\n\nAre you sure?`);
                     
                     const confirmBtn = document.createElement('button');
                     confirmBtn.textContent = "Yes, Overwrite and Import";
@@ -1078,12 +1386,14 @@
                     confirmBtn.onclick = () => {
                         allCheckinHistory = importedCheckinHistory;
                         gratitudeHistory = importedGratitudeHistory;
+                        sabbathHistory = importedSabbathHistory;
                         saveHistory();
                         saveGratitudeHistory();
+                        saveSabbathHistory();
                         loadHistory();
                         navigateTo('welcomeView');
                         promptModal.style.display = 'none'; 
-                        showModal("Import Successful", `Successfully imported ${importedCheckinHistory.length} check-in and ${importedGratitudeHistory.length} gratitude entries.`);
+                        showModal("Import Successful", `Successfully imported all data.`);
                     };
                     const modalContent = promptModal.querySelector('.modal-content');
                     const existingExtraButtons = modalContent.querySelectorAll('.btn-extra-modal');
@@ -1113,21 +1423,23 @@
         };
 
         clearDataBtn.onclick = () => {
-            showModal("Confirm Deletion", "Are you sure you want to clear ALL your check-in and gratitude data? This action cannot be undone.");
+            showModal("Confirm Deletion", "Are you sure you want to clear ALL your check-in, gratitude, AND sabbath data? This action cannot be undone.");
             const confirmBtn = document.createElement('button');
             confirmBtn.textContent = "Yes, Clear All Data";
             confirmBtn.className = "btn bg-red-500 text-white hover:bg-red-600 w-full mt-2 btn-extra-modal"; 
             confirmBtn.onclick = () => {
                 localStorage.removeItem('tahaHinengaroCheckHistory');
                 localStorage.removeItem('tahaHinengaroGratitudeJournal');
+                localStorage.removeItem('tahaHinengaroSabbathCheck');
                 allCheckinHistory = [];
                 gratitudeHistory = [];
+                sabbathHistory = [];
                 currentlyViewedSummaryIndex = -1;
                 currentEditingNotesIndex = -1;
                 renderTrends(); 
                 navigateTo('welcomeView');
                 promptModal.style.display = 'none'; 
-                showModal("Data Cleared", "All your check-in and gratitude data has been removed from this browser.");
+                showModal("Data Cleared", "All your data has been removed from this browser.");
             };
             const modalContent = promptModal.querySelector('.modal-content');
             const existingExtraButtons = modalContent.querySelectorAll('.btn-extra-modal');
@@ -1148,7 +1460,8 @@
             try {
                 const exportObject = { 
                     checkinHistory: allCheckinHistory,
-                    gratitudeHistory: gratitudeHistory
+                    gratitudeHistory: gratitudeHistory,
+                    sabbathHistory: sabbathHistory
                 };
                 rawDataDisplayEl.textContent = JSON.stringify(exportObject, null, 2);
                 rawDataDisplayEl.style.display = rawDataDisplayEl.style.display === 'none' ? 'block' : 'none';
@@ -1202,3 +1515,4 @@
 
 </body>
 </html>
+
