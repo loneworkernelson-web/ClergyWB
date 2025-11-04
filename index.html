@@ -5,29 +5,53 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tōku Hauora</title>
     
-    <!-- PWA Links Added -->
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#0284c7">
-    <!-- Updated Apple Touch Icon -->
-    <link rel="apple-touch-icon" href="images/koru-icon-192.png">
-    <!-- End of PWA Links -->
+    <link rel="apple-touch-icon" href="images/icons/icon-192x192.png">
 
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Added Chart.js library -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         html, body {
             height: 100%; 
-            overflow-x: hidden; 
+            overflow: hidden; 
         }
         body {
             font-family: 'Inter', sans-serif;
             background-color: #f0f9ff; 
         }
+        /* App is now VISIBLE by default */
         #app {
-             height: 100%; 
+             height: 100%;
+             display: flex; 
         }
+        /* Lock screen is now HIDDEN by default */
+        #lockScreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #f0f9ff;
+            z-index: 2000;
+            display: none; /* Hidden by default */
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            padding: 1rem;
+        }
+        .pin-dot {
+            @apply w-4 h-4 rounded-full border-2 border-slate-400 mx-2;
+        }
+        .pin-dot.filled {
+            @apply bg-sky-600 border-sky-600;
+        }
+        .pin-key {
+            @apply w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-white text-slate-700 text-2xl sm:text-3xl font-semibold shadow-md focus:outline-none focus:ring-2 focus:ring-sky-500 transition-colors hover:bg-slate-50;
+        }
+        /* End Lock Screen Styles */
+
         .view {
             display: none; 
         }
@@ -121,9 +145,9 @@
         .resource-text.placeholder {
             @apply text-slate-400 italic font-normal;
         }
-        /* Updated Dashboard Button Style */
+        /* New Dashboard Button Style */
         .dashboard-btn {
-            @apply p-4 rounded-lg shadow-lg hover:shadow-xl transition-all duration-150 ease-in-out flex flex-col items-center justify-center text-center text-white;
+            @apply p-4 rounded-lg shadow-md transition-all duration-150 ease-in-out flex flex-col items-center justify-center text-center text-white;
         }
         .dashboard-btn svg {
             @apply w-8 h-8 mb-2;
@@ -131,30 +155,56 @@
         .dashboard-btn span {
             @apply text-sm font-semibold;
         }
-        /* New Insight Card Style */
-        .insight-card {
-            @apply bg-white p-4 rounded-lg shadow border-l-4 border-fuchsia-600;
-        }
-        .insight-card p {
-            @apply text-slate-700;
-        }
-        .insight-card strong {
-            @apply font-semibold text-fuchsia-700;
-        }
     </style>
 </head>
 <body class="text-slate-800">
 
+    <!-- New PIN Lock Screen (HIDDEN BY DEFAULT) -->
+    <div id="lockScreen">
+        <div class="text-center max-w-xs">
+            <svg id="lockIcon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-12 h-12 text-sky-600 mx-auto mb-4">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 00-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+            </svg>
+            <h2 id="lockTitle" class="text-2xl font-semibold text-slate-800">Enter PIN</h2>
+            <p id="lockSubtitle" class="text-slate-600 mt-2">Enter your 4-digit PIN to unlock.</p>
+            <p id="lockError" class="text-red-500 text-sm font-medium mt-2 h-5"></p>
+
+            <!-- PIN Dots -->
+            <div class="flex justify-center my-6">
+                <div id="pin-dot-1" class="pin-dot"></div>
+                <div id="pin-dot-2" class="pin-dot"></div>
+                <div id="pin-dot-3" class="pin-dot"></div>
+                <div id="pin-dot-4" class="pin-dot"></div>
+            </div>
+
+            <!-- PIN Keypad -->
+            <div class="grid grid-cols-3 gap-4">
+                <button class="pin-key" data-key="1">1</button>
+                <button class="pin-key" data-key="2">2</button>
+                <button class="pin-key" data-key="3">3</button>
+                <button class="pin-key" data-key="4">4</button>
+                <button class="pin-key" data-key="5">5</button>
+                <button class="pin-key" data-key="6">6</button>
+                <button class="pin-key" data-key="7">7</button>
+                <button class="pin-key" data-key="8">8</button>
+                <button class="pin-key" data-key="9">9</button>
+                <div class="w-16 h-16 sm:w-20 sm:h-20"></div> <!-- Placeholder -->
+                <button class="pin-key" data-key="0">0</button>
+                <button class="pin-key flex items-center justify-center" data-key="del">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9.75L14.25 12m0 0l2.25 2.25M14.25 12l2.25-2.25M14.25 12L12 14.25m-2.58 4.92l-6.375-6.375a1.125 1.125 0 010-1.59L9.42 4.83c.39-.39 1.023-.39 1.414 0l4.242 4.242a.375.375 0 00.53 0l4.242-4.242c.39-.39 1.023-.39 1.414 0l1.59 1.59a1.125 1.125 0 010 1.59l-6.375 6.375a.675.675 0 01-.954 0z" /></svg>
+                </button>
+            </div>
+        </div>
+    </div>
+    <!-- End of Lock Screen -->
+
+
+    <!-- Main App Container - VISIBLE BY DEFAULT -->
     <div id="app" class="max-w-2xl mx-auto bg-white shadow-xl flex flex-col">
 
-        <!-- Updated Header with Koru Icon and Gradient -->
-        <header class="bg-gradient-to-r from-sky-600 to-sky-800 text-white p-4 flex items-center justify-center sticky top-0 z-50 shadow-md">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-7 h-7 mr-2" width="28" height="28">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M12 21a9 9 0 009-9h-9" />
-                <path stroke-linecap="round" stroke-linejoin="round" d="M12 3a9 9 0 019 9h-9" />
-                <path stroke-linecap="round" stroke-linejoin="round" d="M12 12a9 9 0 01-9 9V3a9 9 0 019 9z" />
-            </svg>
+        <header class="bg-sky-700 text-white p-4 text-center sticky top-0 z-50 shadow-md">
             <h1 class="text-2xl font-bold">Tōku Hauora</h1>
+            <p class="text-sm opacity-90">My Clergy Wellbeing Hub</p>
         </header>
 
         <main class="flex-grow p-4 sm:p-6 space-y-6 overflow-y-auto">
@@ -166,45 +216,42 @@
                     <p class="text-slate-600 mb-4">Welcome to your private wellbeing hub. How are you today?</p>
                 </div>
                 
-                <!-- At a Glance Preview (Updated Styling) -->
-                <div class="bg-slate-50 border border-slate-200 p-4 rounded-lg shadow">
+                <!-- At a Glance Preview -->
+                <div class="bg-white p-4 rounded-lg shadow">
                     <h3 class="text-lg font-semibold text-slate-800 mb-3">At a Glance</h3>
                     <div id="dashboardPreview">
                         <!-- Dashboard preview will be rendered here by JS -->
                     </div>
                 </div>
 
-                <!-- Main Module Grid (Updated Button Gradients and Shadows) -->
+                <!-- Main Module Grid -->
                 <div class="grid grid-cols-2 gap-4">
-                    <button id="startWarningCheckinBtn" class="dashboard-btn bg-gradient-to-br from-sky-500 to-sky-700 hover:from-sky-600 hover:to-sky-800">
-                        <svg id="icon-warning" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8 mb-2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" /></svg>
+                    <button id="startWarningCheckinBtn" class="dashboard-btn bg-sky-600 hover:bg-sky-700">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8 mb-2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" /></svg>
                         <span>Warning Signs</span>
                     </button>
-                    <button id="startPositiveCheckinBtn" class="dashboard-btn bg-gradient-to-br from-emerald-500 to-emerald-700 hover:from-emerald-600 hover:to-emerald-800">
-                         <!-- Replaced Icon with Thumbs Up -->
-                         <svg id="icon-positive" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8 mb-2">
-                           <path stroke-linecap="round" stroke-linejoin="round" d="M6.633 10.5c.806 0 1.533-.446 2.031-1.08a9.041 9.041 0 012.861-2.4c.723-.384 1.35-.956 1.653-1.715a4.498 4.498 0 00.322-1.672V3a.75.75 0 01.75-.75A2.25 2.25 0 0116.5 4.5v.75c0 1.657-.223 3.293-.658 4.803l-1.036 4.143a.75.75 0 01-.75.642H8.25m-1.622-7.803a.75.75 0 00-.75-.75H3.75a.75.75 0 00-.75.75v10.5a.75.75 0 00.75.75h3.75a.75.75 0 00.75-.75V6.45z" />
-                         </svg>
+                    <button id="startPositiveCheckinBtn" class="dashboard-btn bg-emerald-600 hover:bg-emerald-700">
+                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8 mb-2"><path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18l-1.813-2.096a.5.5 0 00-.621-.194l-1.925.872a.5.5 0 01-.621-.194L3 13.75l-2.096-1.813a.5.5 0 01-.194-.621l.872-1.925a.5.5 0 00-.194-.621L.25 9 2.096 7.187a.5.5 0 01.194-.621l-.872-1.925a.5.5 0 01.194-.621L3 2.25l2.096 1.813a.5.5 0 00.621.194l1.925-.872a.5.5 0 01.621.194L9 5.25l1.813-2.096a.5.5 0 01.621-.194l1.925.872a.5.5 0 00.621.194L15 2.25l2.096 1.813a.5.5 0 01.194.621l-.872 1.925a.5.5 0 00.194.621L21.75 9l-2.096 1.813a.5.5 0 01-.194.621l.872 1.925a.5.5 0 01-.194.621L15 15.75l-2.096-1.813a.5.5 0 00-.621-.194l-1.925.872a.5.5 0 01-.621.194zM18 9l1.5-1.5-1.5-1.5-1.5 1.5 1.5 1.5zM3 9l1.5-1.5-1.5-1.5-1.5 1.5 1.5 1.5z" /></svg>
                         <span>Positive Signs</span>
                     </button>
-                    <button id="startSabbathCheckinBtn" class="dashboard-btn bg-gradient-to-br from-indigo-500 to-indigo-700 hover:from-indigo-600 hover:to-indigo-800">
-                        <svg id="icon-sabbath" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8 mb-2"><path stroke-linecap="round" stroke-linejoin="round" d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" /></svg>
+                    <button id="startSabbathCheckinBtn" class="dashboard-btn bg-indigo-600 hover:bg-indigo-700">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8 mb-2"><path stroke-linecap="round" stroke-linejoin="round" d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" /></svg>
                         <span>Sabbath Quality</span>
                     </button>
-                    <button id="startRuleOfLifeBtn" class="dashboard-btn bg-gradient-to-br from-teal-500 to-teal-700 hover:from-teal-600 hover:to-teal-800">
-                        <svg id="icon-rule" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8 mb-2"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 3.75V16.5a2.25 2.25 0 01-2.25 2.25H15v-1.5a.75.75 0 00-.75-.75H9.75a.75.75 0 00-.75.75v1.5H7.5a2.25 2.25 0 01-2.25-2.25V3.75m.75 0H15.75c.414 0 .75.336.75.75v1.5H5.25v-1.5c0-.414.336-.75.75-.75zM15 3.75a.75.75 0 00-.75-.75H9.75a.75.75 0 00-.75.75V15H15V3.75z" /></svg>
+                    <button id="startRuleOfLifeBtn" class="dashboard-btn bg-teal-600 hover:bg-teal-700">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8 mb-2"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 3.75V16.5a2.25 2.25 0 01-2.25 2.25H15v-1.5a.75.75 0 00-.75-.75H9.75a.75.75 0 00-.75.75v1.5H7.5a2.25 2.25 0 01-2.25-2.25V3.75m.75 0H15.75c.414 0 .75.336.75.75v1.5H5.25v-1.5c0-.414.336-.75.75-.75zM15 3.75a.75.75 0 00-.75-.75H9.75a.75.75 0 00-.75.75V15H15V3.75z" /></svg>
                         <span>My Rule of Life</span>
                     </button>
                 </div>
 
-                <!-- Quick Add Gratitude (Updated Styling) -->
-                <button id="startGratitudeBtn" class="btn btn-gratitude w-full py-3 font-semibold flex items-center justify-center shadow-lg hover:shadow-xl bg-gradient-to-br from-amber-500 to-amber-700 hover:from-amber-600 hover:to-amber-800">
-                    <svg id="icon-gratitude" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 mr-2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.099 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" /></svg>
+                <!-- Quick Add Gratitude -->
+                <button id="startGratitudeBtn" class="btn btn-gratitude w-full py-3 font-semibold flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 mr-2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.099 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" /></svg>
                     <span>Add Gratitude Entry</span>
                 </button>
                 
-                <!-- Rule of Life Preview (Updated Styling) -->
-                <div class="bg-slate-50 border border-slate-200 p-4 rounded-lg shadow">
+                <!-- Rule of Life Preview -->
+                <div class="bg-white p-4 rounded-lg shadow">
                     <h3 class="text-lg font-semibold text-slate-800 mb-3">My Rule of Life Intentions</h3>
                     <div id="dashboardRulePreview">
                         <!-- Rule of Life preview will be rendered here by JS -->
@@ -424,12 +471,11 @@
                     </div>
                 </div>
 
-                <!-- New "Wellbeing Insights" Section -->
-                <div class="mt-6">
+                <!-- Correlations Section -->
+                <div id="correlationsView" class="space-y-4">
                     <h2 class="text-xl font-semibold text-sky-800">Wellbeing Insights</h2>
-                    <p class="text-sm text-slate-600 mb-3">The app looks for patterns in your data to offer insights. The more you use it, the better these become.</p>
-                    <div id="correlationInsightsContainer" class="space-y-3">
-                        <!-- Insight cards will be injected here -->
+                    <div id="correlationsContainer" class="space-y-3">
+                        <!-- Correlation cards will be injected here by JS -->
                     </div>
                 </div>
             </div>
@@ -508,14 +554,31 @@
                         <li><strong>Offline Functionality:</strong> The core features of the app work offline once the page is loaded.</li>
                         <li><strong>You Control Your Data:</strong> You can view and clear your data at any time using the options in the "Settings" section.</li>
                     </ul>
-                    <p class="mt-2"><strong>App Lock:</strong> For enhanced privacy on your device, consider using your device's built-in screen lock features (PIN, fingerprint, Face ID). This web app itself does not provide an additional app lock.</p>
+                    <p class="mt-2"><strong>PIN Lock:</strong> This app uses a PIN to provide a privacy screen against casual access. It does not encrypt your data. A technical user with access to your unlocked device and browser tools could still access the stored data.</p>
                     <p class="mt-2"><strong>Data Export & Deletion:</strong> You can copy your raw data or clear all stored data from this app via the Settings page.</p>
                     <p class="mt-2">This app is a tool for personal reflection and awareness. It is not a diagnostic tool and does not replace professional medical or psychological advice.</p>
                 </div>
             </div>
 
+            <!-- Settings View (Updated for PIN) -->
             <div id="settingsView" class="view space-y-4">
                 <h2 class="text-xl font-semibold text-sky-800">Settings & Data</h2>
+                
+                <!-- New PIN Management Section -->
+                <div class="bg-sky-50 p-4 rounded-lg shadow space-y-3">
+                    <p class="font-medium">PIN Management</p>
+                    <p class="text-sm text-slate-600">Secure your app with an optional 4-digit PIN.</p>
+                    
+                    <!-- This button shows if PIN is NOT set -->
+                    <button id="enablePinBtn" class="btn btn-secondary w-full" style="display: none;">Enable PIN Lock</button>
+                    
+                    <!-- This container shows if PIN IS set -->
+                    <div id="pinManagementContainer" class="grid grid-cols-1 sm:grid-cols-2 gap-2" style="display: none;">
+                        <button id="changePinBtn" class="btn btn-secondary w-full">Change PIN</button>
+                        <button id="removePinBtn" class="btn btn-secondary w-full">Remove PIN</button>
+                    </div>
+                </div>
+                 
                  <div class="bg-sky-50 p-4 rounded-lg shadow space-y-3">
                     <p class="font-medium">Reminders:</p>
                     <p class="text-sm text-slate-600">This web app cannot set system reminders. Please use your phone or computer's calendar app to set a weekly reminder for your Tōku Hauora Check.</p>
@@ -538,54 +601,87 @@
 
         </main>
 
-        <!-- Updated Footer Navigation with Gradient -->
-        <nav class="bg-gradient-to-r from-sky-600 to-sky-800 text-white flex sticky bottom-0 shadow-t-md p-2 space-x-2">
+        <nav class="bg-sky-600 text-white flex sticky bottom-0 shadow-t-md p-2 space-x-2">
             <button onclick="navigateTo('welcomeView')" class="nav-btn active" data-view="welcomeView">
-                <svg id="icon-home" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 mx-auto"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" /></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 mx-auto"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" /></svg>
                 <span>Home</span>
             </button>
             <button onclick="navigateTo('summaryViewLast')" class="nav-btn" data-view="summaryView">
-                <svg id="icon-summary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 mx-auto"><path stroke-linecap="round" stroke-linejoin="round" d="M11.39 6.22l.015.015.015-.015a.75.75 0 011.06 0l1.06 1.06c.3.3.3.785 0 1.076l-4.5 4.5a.75.75 0 01-1.06 0l-1.06-1.06a.75.75 0 010-1.076l4.5-4.5zM11.25 12.75l-4.5 4.5a.75.75 0 01-1.06 0l-1.06-1.06a.75.75 0 010-1.076l4.5-4.5a.75.75 0 011.06 0l1.06 1.06a.75.75 0 010 1.076zM18.75 2.25c.398 0 .779.158 1.06.44l2.25 2.25a1.5 1.5 0 01.44 1.06v12a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 18V6a2.25 2.25 0 012.25-2.25h13.5zM18 4.5H5.25A.75.75 0 004.5 5.25v12.75c0 .414.336.75.75.75h13.5a.75.75 0 00.75-.75V5.25a.75.75 0 00-.75-.75z" /></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 mx-auto"><path stroke-linecap="round" stroke-linejoin="round" d="M11.39 6.22l.015.015.015-.015a.75.75 0 011.06 0l1.06 1.06c.3.3.3.785 0 1.076l-4.5 4.5a.75.75 0 01-1.06 0l-1.06-1.06a.75.75 0 010-1.076l4.5-4.5zM11.25 12.75l-4.5 4.5a.75.75 0 01-1.06 0l-1.06-1.06a.75.75 0 010-1.076l4.5-4.5a.75.75 0 011.06 0l1.06 1.06a.75.75 0 010 1.076zM18.75 2.25c.398 0 .779.158 1.06.44l2.25 2.25a1.5 1.5 0 01.44 1.06v12a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 18V6a2.25 2.25 0 012.25-2.25h13.5zM18 4.5H5.25A.75.75 0 004.5 5.25v12.75c0 .414.336.75.75.75h13.5a.75.75 0 00.75-.75V5.25a.75.75 0 00-.75-.75z" /></svg>
                 <span>Summary</span>
             </button>
             <button onclick="navigateTo('trendsView')" class="nav-btn" data-view="trendsView">
-                <svg id="icon-trends" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 mx-auto"><path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25C3.504 21 3 20.496 3 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25c-.621 0-1.125-.504-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25c-.621 0-1.125-.504-1.125-1.125V4.125z" /></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 mx-auto"><path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25C3.504 21 3 20.496 3 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25c-.621 0-1.125-.504-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25c-.621 0-1.125-.504-1.125-1.125V4.125z" /></svg>
                 <span>Trends</span>
             </button>
             <button onclick="navigateTo('resourcesView')" class="nav-btn" data-view="resourcesView">
-                <svg id="icon-resources" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 mx-auto"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18c-2.305 0-4.408.867-6 2.292m0-14.25v14.25" /></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 mx-auto"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18c-2.305 0-4.408.867-6 2.292m0-14.25v14.25" /></svg>
                 <span>Resources</span>
             </button>
             <button onclick="navigateTo('settingsView')" class="nav-btn" data-view="settingsView">
-                <svg id="icon-settings" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 mx-auto"><path stroke-linecap="round" stroke-linejoin="round" d="M10.343 3.94c.09-.542.56-1.007 1.11-1.226l.487-.202a.75.75 0 01.93.93l-.202.487c-.219.55-.684 1.02-1.226 1.11a4.5 4.5 0 00-2.032 5.225l.042.11a.75.75 0 01-1.214.866l-.11-.042a4.5 4.5 0 00-5.225-2.032c-.542.09-1.007.56-1.226 1.11l-.202.487a.75.75 0 01-.93-.93l.487-.202c.55-.219 1.02-.684 1.11-1.226a4.5 4.5 0 00-2.032-5.225l-.042-.11a.75.75 0 01.866-1.214l.11.042a4.5 4.5 0 005.225-2.032zM12 8.25a3.75 3.75 0 100 7.5 3.75 3.75 0 000-7.5z" /></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 mx-auto"><path stroke-linecap="round" stroke-linejoin="round" d="M10.343 3.94c.09-.542.56-1.007 1.11-1.226l.487-.202a.75.75 0 01.93.93l-.202.487c-.219.55-.684 1.02-1.226 1.11a4.5 4.5 0 00-2.032 5.225l.042.11a.75.75 0 01-1.214.866l-.11-.042a4.5 4.5 0 00-5.225-2.032c-.542.09-1.007.56-1.226 1.11l-.202.487a.75.75 0 01-.93-.93l.487-.202c.55-.219 1.02-.684 1.11-1.226a4.5 4.5 0 00-2.032-5.225l-.042-.11a.75.75 0 01.866-1.214l.11.042a4.5 4.5 0 005.225-2.032zM12 8.25a3.75 3.75 0 100 7.5 3.75 3.75 0 000-7.5z" /></svg>
                 <span>Settings</span>
             </button>
         </nav>
 
-        <!-- General Prompt Modal -->
-        <div id="promptModal" class="modal-overlay" style="display: none;">
-            <div class="modal-content space-y-4">
-                <h3 id="promptModalTitle" class="text-lg font-semibold text-sky-800">Wellbeing Reflection</h3>
-                <p id="promptModalMessage" class="text-slate-700"></p>
-                <button id="closePromptModalBtn" class="btn btn-primary w-full">Okay, I Understand</button>
-            </div>
-        </div>
-        
-        <!-- Onboarding Modal (New) -->
+        <!-- Onboarding Modal -->
         <div id="onboardingModal" class="modal-overlay" style="display: none;">
             <div class="modal-content space-y-4">
-                <h3 id="onboardingModalTitle" class="text-lg font-semibold text-sky-800">Welcome to Tōku Hauora!</h3>
-                <div id="onboardingModalContent" class="text-slate-700 space-y-2">
-                    <!-- Onboarding content will be injected here -->
+                <h3 class="text-2xl font-semibold text-sky-800">Welcome to Tōku Hauora!</h3>
+                
+                <!-- Onboarding Content (Multiple Steps) -->
+                <div id="onboardingStep1" class="onboarding-step space-y-3">
+                    <p class="text-slate-700">This is your <strong>100% private</strong> wellbeing hub. All your data stays on this device, secured by your PIN. No accounts, no cloud, no one sees it but you.</p>
+                    <p class="text-sm text-slate-600">This app is a tool for reflection, not a replacement for professional advice.</p>
                 </div>
-                <div class="flex justify-between items-center mt-4">
-                    <span id="onboardingStepCounter" class="text-sm text-slate-500"></span>
+                <div id="onboardingStep2" class="onboarding-step space-y-3" style="display: none;">
+                    <h4 class="font-semibold text-lg text-slate-800">The 5 Modules</h4>
+                    <p class="text-slate-700">You can interact with 5 main modules from the Home screen:</p>
+                    <ul class="list-disc list-inside space-y-2 text-sm text-slate-600">
+                        <li><strong class="text-sky-700">Check-ins (Warning/Positive):</strong> A weekly reflection on your overall wellbeing.</li>
+                        <li><strong class="text-indigo-700">Sabbath Quality:</strong> A specific check-in on how restful your day off was.</li>
+                        <li><strong class="text-teal-700">My Rule of Life:</strong> Define your core intentions and track how you're living into them.</li>
+                        <li><strong class="text-amber-700">Gratitude Journal:</strong> A simple, daily space to note what you're grateful for.</li>
+                    </ul>
+                </div>
+                 <div id="onboardingStep3" class="onboarding-step space-y-3" style="display: none;">
+                    <h4 class="font-semibold text-lg text-slate-800">See Your Progress</h4>
+                    <p class="text-slate-700">The <strong>"Trends"</strong> tab (bottom of screen) is where your data comes alive. You'll see:
+                    </p>
+                    <ul class="list-disc list-inside space-y-2 text-sm text-slate-600">
+                        <li><strong>Visual charts</strong> of your check-in and "Rule of Life" history.</li>
+                        <li><strong>Wellbeing Insights</strong> that automatically find patterns in your data over time.</li>
+                    </ul>
+                     <p class="text-slate-700 mt-2">The more you use the app, the more useful these insights will become.</p>
+                </div>
+                 <div id="onboardingStep4" class="onboarding-step space-y-3" style="display: none;">
+                    <h4 class="font-semibold text-lg text-slate-800">Your Data, Your Control</h4>
+                    <p class="text-slate-700">Visit the <strong>"Settings"</strong> tab (bottom of screen) at any time to:</p>
+                    <ul class="list-disc list-inside space-y-2 text-sm text-slate-600">
+                        <li><strong>Change or Remove</strong> your PIN.</li>
+                        <li><strong>Export</strong> a full backup of all your data.</li>
+                        <li><strong>Import</strong> a backup file (e.g., on a new device).</li>
+                        <li><strong>Clear All Data</strong> permanently from this browser.</li>
+                    </ul>
+                </div>
+
+                <!-- Onboarding Navigation -->
+                <div class="flex justify-between items-center mt-6">
+                    <span id="onboardingStepIndicator" class="text-sm text-slate-500">Step 1 of 4</span>
                     <div>
                         <button id="onboardingPrevBtn" class="btn btn-secondary" style="display: none;">Previous</button>
                         <button id="onboardingNextBtn" class="btn btn-primary">Next</button>
                         <button id="onboardingFinishBtn" class="btn btn-primary" style="display: none;">Get Started</button>
                     </div>
                 </div>
+            </div>
+        </div>
+
+        <div id="promptModal" class="modal-overlay" style="display: none;">
+            <div class="modal-content space-y-4">
+                <h3 id="promptModalTitle" class="text-lg font-semibold text-sky-800">Wellbeing Reflection</h3>
+                <p id="promptModalMessage" class="text-slate-700"></p>
+                <button id="closePromptModalBtn" class="btn btn-primary w-full">Okay, I Understand</button>
             </div>
         </div>
 
@@ -649,44 +745,38 @@
         let userResources = {};
         let ruleOfLife = {};
         let ruleOfLifeHistory = [];
-        // Chart.js instances
         let trendsChartInstance = null;
         let ruleOfLifeChartInstance = null; 
         let currentTrendView = 'recent'; 
-        
-        // Onboarding (New)
-        const APP_VERSION = "1.0.0"; // For future data migrations
-        let currentOnboardingStep = 0;
-        const onboardingSteps = [
-            {
-                title: "Welcome to Tōku Hauora!",
-                content: "This is your private hub for clergy wellbeing. Let's quickly look at the 5 main features. Your data is never shared and stays only on this device."
-            },
-            {
-                title: "1. Weekly Check-ins (Warning & Positive)",
-                content: "Use the **Warning Signs** (blue) and **Positive Signs** (green) buttons to reflect on your week. This data builds your 'Wellbeing Trends' chart."
-            },
-            {
-                title: "2. Gratitude Journal (Daily)",
-                content: "Use the **Add Gratitude Entry** (amber) button to quickly log things you're grateful to God for. You can do this daily."
-            },
-            {
-                title: "3. Sabbath Quality (Weekly)",
-                content: "Use the **Sabbath Quality** (indigo) button to reflect on how restful your day off *actually* was. This helps you protect your rest."
-            },
-            {
-                title: "4. My Rule of Life (Proactive)",
-                content: "Use the **My Rule of Life** (teal) button to set your own intentions (e.g., 'Pray daily') and then check-in weekly to track your consistency."
-            },
-            {
-                title: "5. Data & Settings (Total Privacy)",
-                content: "Go to **Settings** (in the bottom bar) at any time to export a backup of your data or clear everything. You are in complete control. You're all set!"
-            }
-        ];
 
+        // --- PIN State Variables ---
+        let pinHash = null;
+        let pinSalt = null;
+        let currentPinInput = "";
+        let pinSetupStep = 1; // 1 for new, 2 for confirm
+        let newPinToConfirm = "";
+        let pinAttempt = ""; // For checking
+        let pinActionCallback = null; // For remove/change PIN
+        
         // --- DOM Elements ---
-        const views = document.querySelectorAll('.view');
         const appElement = document.getElementById('app');
+        const lockScreenEl = document.getElementById('lockScreen');
+        const lockTitleEl = document.getElementById('lockTitle');
+        const lockSubtitleEl = document.getElementById('lockSubtitle');
+        const lockErrorEl = document.getElementById('lockError');
+        const pinDots = [
+            document.getElementById('pin-dot-1'),
+            document.getElementById('pin-dot-2'),
+            document.getElementById('pin-dot-3'),
+            document.getElementById('pin-dot-4')
+        ];
+        const pinKeypad = document.querySelector('#lockScreen .grid');
+        const enablePinBtn = document.getElementById('enablePinBtn');
+        const pinManagementContainer = document.getElementById('pinManagementContainer');
+        const changePinBtn = document.getElementById('changePinBtn');
+        const removePinBtn = document.getElementById('removePinBtn');
+        // (All other DOM elements are the same)
+        const views = document.querySelectorAll('.view');
         // Dashboard
         const dashboardPreviewEl = document.getElementById('dashboardPreview');
         const dashboardRulePreviewEl = document.getElementById('dashboardRulePreview');
@@ -768,7 +858,7 @@
         const trendsChartEmptyEl = document.getElementById('trendsChartEmpty');
         const trendsToggleRecentBtn = document.getElementById('trendsToggleRecent');
         const trendsToggleAllBtn = document.getElementById('trendsToggleAll');
-        const correlationInsightsContainerEl = document.getElementById('correlationInsightsContainer'); // New
+        const correlationsContainerEl = document.getElementById('correlationsContainer');
         // Resources
         const editResourcesBtn = document.getElementById('editResourcesBtn');
         const saveResourcesBtn = document.getElementById('saveResourcesBtn');
@@ -800,12 +890,241 @@
         const closePromptModalBtn = document.getElementById('closePromptModalBtn');
         // Onboarding
         const onboardingModal = document.getElementById('onboardingModal');
-        const onboardingModalTitle = document.getElementById('onboardingModalTitle');
-        const onboardingModalContent = document.getElementById('onboardingModalContent');
-        const onboardingStepCounter = document.getElementById('onboardingStepCounter');
+        const onboardingStepIndicator = document.getElementById('onboardingStepIndicator');
         const onboardingPrevBtn = document.getElementById('onboardingPrevBtn');
         const onboardingNextBtn = document.getElementById('onboardingNextBtn');
         const onboardingFinishBtn = document.getElementById('onboardingFinishBtn');
+        const onboardingSteps = document.querySelectorAll('.onboarding-step');
+        let currentOnboardingStep = 1;
+
+        // --- PIN/Crypto Functions ---
+
+        /**
+         * Converts an ArrayBuffer to a hex string for storage.
+         */
+        function bufferToHex(buffer) {
+            return Array.from(new Uint8Array(buffer))
+                .map(b => b.toString(16).padStart(2, '0'))
+                .join('');
+        }
+
+        /**
+         * Converts a hex string back to an ArrayBuffer.
+         */
+        function hexToBuffer(hex) {
+            const bytes = new Uint8Array(hex.length / 2);
+            for (let i = 0; i < hex.length; i += 2) {
+                bytes[i / 2] = parseInt(hex.substr(i, 2), 16);
+            }
+            return bytes.buffer;
+        }
+
+        /**
+         * Hashes a PIN using a given salt. Uses SHA-256.
+         */
+        async function hashPIN(pin, salt) {
+            const encoder = new TextEncoder();
+            const data = encoder.encode(pin + salt);
+            const hashBuffer = await window.crypto.subtle.digest('SHA-256', data);
+            return bufferToHex(hashBuffer);
+        }
+
+        /**
+         * Generates a new random salt.
+         */
+        function generateSalt() {
+            const array = new Uint8Array(16);
+            window.crypto.getRandomValues(array);
+            return bufferToHex(array);
+        }
+
+        /**
+         * Verifies an entered PIN against the stored hash.
+         */
+        async function verifyPIN(enteredPin) {
+            if (!pinHash || !pinSalt) return false;
+            const enteredHash = await hashPIN(enteredPin, pinSalt);
+            return enteredHash === pinHash;
+        }
+
+        /**
+         * Saves a new PIN, hash, and salt.
+         */
+        async function setPIN(newPin) {
+            pinSalt = generateSalt();
+            pinHash = await hashPIN(newPin, pinSalt);
+            localStorage.setItem('tahaHauoraPINHash', pinHash);
+            localStorage.setItem('tahaHauoraPINSalt', pinSalt);
+            console.log("PIN has been set.");
+        }
+
+        /**
+         * Removes the PIN from storage.
+         */
+        function removePIN() {
+            localStorage.removeItem('tahaHauoraPINHash');
+            localStorage.removeItem('tahaHauoraPINSalt');
+            pinHash = null;
+            pinSalt = null;
+            console.log("PIN has been removed.");
+        }
+
+        /**
+         * Unlocks the app.
+         */
+        function unlockApp(targetView = 'welcomeView') {
+            lockScreenEl.style.display = 'none';
+            appElement.style.display = 'flex'; // Use flex to match layout
+            
+            // Only load data *after* unlocking
+            loadHistory(); 
+            
+            // Navigate to the target view (e.g., back to settings or to welcome)
+            navigateTo(targetView);
+            
+            // Check if onboarding needs to run
+            const hasOnboarded = localStorage.getItem('hauoraOnboardComplete');
+            if (hasOnboarded !== 'true') {
+                showOnboarding();
+            }
+        }
+
+        /**
+         * Locks the app (e.g., when called from Settings or on startup)
+         */
+        function lockApp() {
+            appElement.style.display = 'none';
+            lockScreenEl.style.display = 'flex';
+            currentPinInput = "";
+            pinAttempt = "";
+            newPinToConfirm = "";
+            pinSetupStep = 0; // Default to login
+            pinActionCallback = null;
+            updatePinDots();
+        }
+
+        /**
+         * Updates the PIN dots UI.
+         */
+        function updatePinDots() {
+            pinDots.forEach((dot, index) => {
+                if (index < currentPinInput.length) {
+                    dot.classList.add('filled');
+                } else {
+                    dot.classList.remove('filled');
+                }
+            });
+        }
+        
+        /**
+         * Resets the PIN input field and UI.
+         */
+        function resetPinInput(error = "") {
+            currentPinInput = "";
+            lockErrorEl.textContent = error;
+            updatePinDots();
+            // Vibrate on error
+            if (navigator.vibrate) navigator.vibrate(100);
+        }
+
+        /**
+         * Main handler for all PIN key presses.
+         */
+        async function onPinKeyPress(key) {
+            lockErrorEl.textContent = ""; // Clear error on key press
+            
+            if (key === 'del') {
+                currentPinInput = currentPinInput.slice(0, -1);
+                updatePinDots();
+                return;
+            }
+
+            if (currentPinInput.length >= 4) return;
+            
+            currentPinInput += key;
+            updatePinDots();
+
+            if (currentPinInput.length === 4) {
+                // PIN entry is complete, now check what to do
+                if (pinActionCallback) {
+                    // We are in a "change" or "remove" flow
+                    await handlePinAction();
+                } else if (pinSetupStep > 0) {
+                     // Setting a new PIN
+                    await handlePinSetup();
+                } else {
+                    // Standard login attempt
+                    await handlePinLogin();
+                }
+            }
+        }
+
+        /**
+         * Handles the "Set new PIN" flow.
+         */
+        async function handlePinSetup() {
+            if (pinSetupStep === 1) {
+                // Step 1: First PIN entry
+                newPinToConfirm = currentPinInput;
+                currentPinInput = "";
+                setTimeout(() => { // Pause to show 4th dot
+                    lockTitleEl.textContent = "Confirm PIN";
+                    lockSubtitleEl.textContent = "Please re-enter your 4-digit PIN.";
+                    resetPinInput();
+                    pinSetupStep = 2;
+                }, 200);
+            } else {
+                // Step 2: Confirm PIN entry
+                if (currentPinInput === newPinToConfirm) {
+                    // PINs match! Save and unlock.
+                    await setPIN(currentPinInput);
+                    setTimeout(() => unlockApp('settingsView'), 200); // Go back to settings
+                } else {
+                    // PINs don't match. Reset.
+                    lockTitleEl.textContent = "Create PIN";
+                    lockSubtitleEl.textContent = "PINs did not match. Please try again.";
+                    pinSetupStep = 1;
+                    newPinToConfirm = "";
+                    setTimeout(() => resetPinInput(""), 200);
+                }
+            }
+        }
+
+        /**
+         * Handles the "Enter PIN to log in" flow.
+         */
+        async function handlePinLogin() {
+            const isValid = await verifyPIN(currentPinInput);
+            if (isValid) {
+                setTimeout(() => unlockApp('welcomeView'), 200); // Go to welcome
+            } else {
+                setTimeout(() => resetPinInput("Invalid PIN. Please try again."), 200);
+            }
+        }
+        
+        /**
+         * Handles PIN entry for settings (change/remove).
+         */
+         async function handlePinAction() {
+            const isValid = await verifyPIN(currentPinInput);
+            if (isValid) {
+                if (pinActionCallback) {
+                    pinActionCallback(); // This will be set to do the "remove" or "change" action
+                }
+            } else {
+                 setTimeout(() => {
+                    resetPinInput("Invalid PIN. Please try again.");
+                    // If they fail, reset the action and go back to settings
+                    pinActionCallback = null;
+                    unlockApp('settingsView');
+                 }, 200);
+            }
+         }
+
+
+        // --- End PIN/Crypto Functions ---
+
+        // (Rest of the data/history functions remain the same)
 
         function parseDateString(dateString) {
             if (!dateString || !/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
@@ -828,6 +1147,8 @@
 
         // --- Data & History Functions ---
         function loadHistory() {
+            // PIN must be loaded first, but only from its own function
+            
             let historyJson = null;
             try {
                 historyJson = localStorage.getItem('tahaHinengaroCheckHistory');
@@ -874,13 +1195,6 @@
                 ruleOfLifeHistory = ruleHistoryJson ? JSON.parse(ruleHistoryJson) : [];
             } catch (error) {
                  console.error("Error loading or parsing rule of life history:", error); ruleOfLifeHistory = [];
-            }
-            
-            // Check for version update (for future use, e.g., migrating data)
-            const storedVersion = localStorage.getItem('hauoraAppVersion');
-            if (storedVersion !== APP_VERSION) {
-                // Here you could run data migration functions if needed
-                localStorage.setItem('hauoraAppVersion', APP_VERSION);
             }
         }
 
@@ -1012,6 +1326,14 @@
                 renderRuleOfLifeTrends();
             } else if (viewId === 'welcomeView') { 
                 renderDashboardPreview();
+            } else if (viewId === 'settingsView') { // New logic for settings
+                if (pinHash) {
+                    pinManagementContainer.style.display = 'grid';
+                    enablePinBtn.style.display = 'none';
+                } else {
+                    pinManagementContainer.style.display = 'none';
+                    enablePinBtn.style.display = 'block';
+                }
             }
             
             const targetViewEl = document.getElementById(targetViewId);
@@ -1033,10 +1355,9 @@
             const mainContentArea = appElement.querySelector('main');
             if (mainContentArea) mainContentArea.scrollTop = 0;
 
-            // Updated to render trends AND correlations
             if (targetViewId === 'trendsView') {
                 renderTrends();
-                renderCorrelations();
+                renderCorrelations(); 
             }
         }
         
@@ -1065,7 +1386,7 @@
             }
         };
         
-        // --- Dashboard Preview Logic (New) ---
+        // --- Dashboard Preview Logic ---
         function renderDashboardPreview() {
             // 1. Render Last Check-in Preview
             dashboardPreviewEl.innerHTML = '';
@@ -1724,7 +2045,7 @@
         function renderPastRuleOfLifeEntries() {
             pastRuleOfLifeContainer.innerHTML = '';
             if (ruleOfLifeHistory.length === 0) {
-                // Handled by renderRuleOfLifeTrends
+                 // Chart function will handle the "empty" message
             }
             
             const reversedHistory = [...ruleOfLifeHistory].sort((a, b) => b.date.localeCompare(a.date));
@@ -1742,7 +2063,7 @@
                 const summaryDiv = document.createElement('div');
                 summaryDiv.className = "entry-display";
                 
-                const intentionsAtTime = entry.intentionsAtTime || ruleOfLife.intentions || []; // Use snapshot or current
+                const intentionsAtTime = entry.intentionsAtTime || (ruleOfLife && ruleOfLife.intentions) ? ruleOfLife.intentions : []; // Use snapshot or current
                 
                 if (intentionsAtTime.length > 0) {
                     const ul = document.createElement('ul');
@@ -1789,7 +2110,7 @@
             });
         }
         
-        // --- Rule of Life Trends Logic ---
+        // --- New Rule of Life Trends Logic ---
         function renderRuleOfLifeTrends() {
             if (ruleOfLifeChartInstance) {
                 ruleOfLifeChartInstance.destroy();
@@ -1819,7 +2140,7 @@
             });
             
             const totalIntentionsData = dataToShow.map(entry => {
-                 const intentions = entry.intentionsAtTime || ruleOfLife.intentions || [];
+                 const intentions = entry.intentionsAtTime || (ruleOfLife && ruleOfLife.intentions) ? ruleOfLife.intentions : [];
                  return intentions.length;
             });
 
@@ -1845,14 +2166,12 @@
                         y: {
                             beginAtZero: true,
                             ticks: {
-                                stepSize: 1, // Ensure y-axis shows whole numbers
-                                callback: function(value, index, values) {
-                                    // Find max value in totalIntentionsData to set the scale's max
-                                    const maxIntentions = Math.max(...totalIntentionsData, ...intentionsMetData, 1);
-                                    this.max = maxIntentions;
-                                    return value;
+                                stepSize: 1, 
+                                callback: function(value) {
+                                    if (value % 1 === 0) { return value; } // Only show whole numbers
                                 }
-                            }
+                            },
+                            max: Math.max(...totalIntentionsData, 1) // Set max based on defined intentions
                         }
                     },
                     plugins: {
@@ -1874,9 +2193,9 @@
                             position: 'bottom',
                         }
                     },
-                    onClick: null, // Disable clicks on this chart
+                    onClick: null, 
                     onHover: (event, chartElement) => {
-                        event.native.target.style.cursor = 'default'; // No pointer
+                        event.native.target.style.cursor = 'default'; 
                     }
                 }
             });
@@ -2130,7 +2449,9 @@
                 if (entry.warningResponses) {
                     categoryOrder.forEach(catKey => {
                         if (entry.warningResponses[catKey]) {
-                            totalWarning += Object.values(entry.warningResponses[catKey]).filter(Boolean).length;
+                            Object.values(entry.warningResponses[catKey]).forEach(noticed => {
+                                if (noticed) totalWarning++;
+                            });
                         }
                     });
                 }
@@ -2142,7 +2463,9 @@
                 if (entry.positiveResponses) {
                     positiveCategoryOrder.forEach(catKey => {
                         if (entry.positiveResponses[catKey]) {
-                            totalPositive += Object.values(entry.positiveResponses[catKey]).filter(Boolean).length;
+                            Object.values(entry.positiveResponses[catKey]).forEach(noticed => {
+                                if (noticed) totalPositive++;
+                            });
                         }
                     });
                 }
@@ -2210,212 +2533,178 @@
             });
         }
         
-        // --- Correlation Insights Logic (New) ---
-        
-        /**
-         * Helper to get ISO week number for a date string
-         */
-        function getWeekNumber(dateString) {
-            const date = parseDateString(dateString);
-            if (!date) return null;
-            const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
-            const dayNum = d.getUTCDay() || 7;
-            d.setUTCDate(d.getUTCDate() + 4 - dayNum);
-            const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
-            return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
-        }
-
-        /**
-         * Renders all correlation insights
-         */
+        // --- Correlations Logic ---
         function renderCorrelations() {
-            correlationInsightsContainerEl.innerHTML = ''; // Clear previous insights
-            const insights = [];
-            const MIN_DATA_POINTS = 3; // Need at least 3 data points to find a pattern
-
-            if (allCheckinHistory.length < MIN_DATA_POINTS) {
-                correlationInsightsContainerEl.innerHTML = '<p class="text-slate-500 italic text-center">Complete a few more check-ins to unlock wellbeing insights.</p>';
+            correlationsContainerEl.innerHTML = ''; // Clear previous insights
+            
+            if (allCheckinHistory.length < 3) {
+                 correlationsContainerEl.innerHTML = '<p class="text-slate-500 italic text-center">Complete a few more weekly check-ins to unlock wellbeing insights.</p>';
                 return;
             }
 
-            // Run analyses
+            let insightsFound = 0;
+            
+            // Insight 1: Rule of Life vs. Positive Signs
             try {
-                insights.push(analyzeRuleOfLifeVsPositive());
-                insights.push(analyzeSabbathVsConnection());
-                insights.push(analyzeSpiritualVsPhysical());
-            } catch (error) {
-                console.error("Error generating correlations:", error);
-            }
+                const ruleHistory = ruleOfLifeHistory;
+                const checkinHistory = allCheckinHistory;
+                if (ruleHistory.length > 2 && checkinHistory.length > 2) {
+                    let highRulePositiveTotal = 0;
+                    let highRuleCount = 0;
+                    let lowRulePositiveTotal = 0;
+                    let lowRuleCount = 0;
 
-            const validInsights = insights.filter(Boolean); // Filter out null/undefined
-
-            if (validInsights.length === 0) {
-                correlationInsightsContainerEl.innerHTML = '<p class="text-slate-500 italic text-center">No significant patterns found yet. Keep logging your entries!</p>';
-            } else {
-                validInsights.forEach(insightHtml => {
-                    const card = document.createElement('div');
-                    card.className = 'insight-card';
-                    card.innerHTML = `<p>${insightHtml}</p>`;
-                    correlationInsightsContainerEl.appendChild(card);
-                });
-            }
-        }
-
-        /**
-         * Analyzes Rule of Life vs. Positive Signs
-         */
-        function analyzeRuleOfLifeVsPositive() {
-            if (ruleOfLifeHistory.length < 2 || allCheckinHistory.length < 2) return null;
-
-            let goodWeeksData = [];
-            let badWeeksData = [];
-
-            // Group check-in history by week
-            const weeklyCheckins = allCheckinHistory.reduce((acc, entry) => {
-                const week = `${parseDateString(entry.date).getFullYear()}-${getWeekNumber(entry.date)}`;
-                if (!acc[week]) acc[week] = [];
-                acc[week].push(entry);
-                return acc;
-            }, {});
-
-            ruleOfLifeHistory.forEach(ruleEntry => {
-                const week = `${parseDateString(ruleEntry.date).getFullYear()}-${getWeekNumber(ruleEntry.date)}`;
-                if (weeklyCheckins[week]) {
-                    const totalIntentions = (ruleEntry.intentionsAtTime || []).length;
-                    if (totalIntentions === 0) return;
-                    
-                    const metIntentions = Object.values(ruleEntry.responses || {}).filter(Boolean).length;
-                    const successRate = metIntentions / totalIntentions;
-
-                    // Get average positive signs for that week
-                    let weekPositiveTotal = 0;
-                    weeklyCheckins[week].forEach(checkin => {
+                    ruleHistory.forEach(ruleEntry => {
+                        const checkin = checkinHistory.find(c => c.date === ruleEntry.date);
+                        if (!checkin) return;
+                        
+                        const intentions = ruleEntry.intentionsAtTime || [];
+                        const totalIntentions = intentions.length;
+                        if (totalIntentions === 0) return;
+                        
+                        const metIntentions = Object.values(ruleEntry.responses).filter(Boolean).length;
+                        const percentMet = metIntentions / totalIntentions;
+                        
+                        let totalPositive = 0;
                         if (checkin.positiveResponses) {
                             Object.values(checkin.positiveResponses).forEach(cat => {
-                                weekPositiveTotal += Object.values(cat).filter(Boolean).length;
+                                totalPositive += Object.values(cat).filter(Boolean).length;
                             });
                         }
-                    });
-                    const avgPositive = weekPositiveTotal / weeklyCheckins[week].length;
 
-                    if (successRate >= 0.7) { // "Good" week
-                        goodWeeksData.push(avgPositive);
-                    } else if (successRate <= 0.4) { // "Bad" week
-                        badWeeksData.push(avgPositive);
+                        if (percentMet >= 0.75) { // "High" adherence
+                            highRulePositiveTotal += totalPositive;
+                            highRuleCount++;
+                        } else if (percentMet <= 0.4) { // "Low" adherence
+                            lowRulePositiveTotal += totalPositive;
+                            lowRuleCount++;
+                        }
+                    });
+
+                    if (highRuleCount > 1 && lowRuleCount > 1) {
+                        const avgHigh = highRulePositiveTotal / highRuleCount;
+                        const avgLow = lowRulePositiveTotal / lowRuleCount;
+                        
+                        if (avgHigh > avgLow * 1.25) { // At least 25% more
+                            const diff = Math.round(((avgHigh / avgLow) - 1) * 100);
+                            addInsightCard('Rule of Life', `On weeks you met most of your 'Rule of Life' intentions, you reported <strong>${diff}% more Positive Signs</strong>.`, 'bg-teal-50', 'text-teal-800');
+                            insightsFound++;
+                        }
                     }
                 }
-            });
-
-            if (goodWeeksData.length < 2 || badWeeksData.length < 2) return null; // Not enough comparative data
-
-            const avgGood = goodWeeksData.reduce((a, b) => a + b, 0) / goodWeeksData.length;
-            const avgBad = badWeeksData.reduce((a, b) => a + b, 0) / badWeeksData.length;
-
-            if (avgGood > avgBad * 1.25) { // At least 25% better
-                const diff = Math.round(((avgGood - avgBad) / avgBad) * 100);
-                return `On weeks you met most (70%+) of your 'Rule of Life' intentions, you reported <strong>${diff}% more Positive Signs</strong> than on weeks you met few (40% or less).`;
-            }
-            return null;
-        }
-
-        /**
-         * Analyzes Sabbath Quality vs. Connection
-         */
-        function analyzeSabbathVsConnection() {
-            if (sabbathHistory.length < 2 || allCheckinHistory.length < 2) return null;
-
-            let highRestWeeks = [];
-            let lowRestWeeks = [];
-
-            sabbathHistory.forEach(sabbathEntry => {
-                const week = `${parseDateString(sabbathEntry.date).getFullYear()}-${getWeekNumber(sabbathEntry.date)}`;
-                const checkinsThisWeek = allCheckinHistory.filter(c => `${parseDateString(c.date).getFullYear()}-${getWeekNumber(c.date)}` === week);
-                if (checkinsThisWeek.length === 0) return;
-                
-                // Calculate total connection signs for the week
-                let totalConnectionSigns = 0;
-                checkinsThisWeek.forEach(checkin => {
-                    if (checkin.positiveResponses && checkin.positiveResponses.connection) {
-                        totalConnectionSigns += Object.values(checkin.positiveResponses.connection).filter(Boolean).length;
-                    }
-                });
-                const avgConnection = totalConnectionSigns / checkinsThisWeek.length;
-                
-                // Calculate sabbath quality
-                let totalSabbathQuestions = 0;
-                let metSabbathQuestions = 0;
-                if(sabbathEntry.responses) {
-                    Object.values(sabbathEntry.responses).forEach(cat => {
-                        totalSabbathQuestions += Object.keys(cat).length;
-                        metSabbathQuestions += Object.values(cat).filter(Boolean).length;
-                    });
-                }
-                if(totalSabbathQuestions === 0) return;
-                
-                const sabbathSuccessRate = metSabbathQuestions / totalSabbathQuestions;
-                
-                if (sabbathSuccessRate >= 0.7) {
-                    highRestWeeks.push(avgConnection);
-                } else if (sabbathSuccessRate <= 0.4) {
-                    lowRestWeeks.push(avgConnection);
-                }
-            });
+            } catch (e) { console.error("Correlation 1 error:", e); }
             
-            if (highRestWeeks.length < 2 || lowRestWeeks.length < 2) return null;
+            // Insight 2: Sabbath vs. Warning Signs
+            try {
+                const checkinHistory = allCheckinHistory;
+                if (sabbathHistory.length > 2 && checkinHistory.length > 2) {
+                    let goodSabbathWarningTotal = 0;
+                    let goodSabbathCount = 0;
+                    let poorSabbathWarningTotal = 0;
+                    let poorSabbathCount = 0;
 
-            const avgHighRest = highRestWeeks.reduce((a, b) => a + b, 0) / highRestWeeks.length;
-            const avgLowRest = lowRestWeeks.reduce((a, b) => a + b, 0) / lowRestWeeks.length;
+                    sabbathHistory.forEach(sabbathEntry => {
+                        const checkin = checkinHistory.find(c => c.date === sabbathEntry.date);
+                        if (!checkin) return;
+                        
+                        let totalSabbathQuestions = 0;
+                        let totalSabbathMet = 0;
+                        Object.values(sabbathEntry.responses).forEach(cat => {
+                            totalSabbathQuestions += Object.keys(cat).length;
+                            totalSabbathMet += Object.values(cat).filter(Boolean).length;
+                        });
+                        if (totalSabbathQuestions === 0) return;
+                        
+                        const percentMet = totalSabbathMet / totalSabbathQuestions;
+                        
+                        let totalWarning = 0;
+                        if (checkin.warningResponses) {
+                            Object.values(checkin.warningResponses).forEach(cat => {
+                                totalWarning += Object.values(cat).filter(Boolean).length;
+                            });
+                        }
 
-            if (avgHighRest > avgLowRest * 1.25) {
-                const diff = Math.round(((avgHighRest - avgLowRest) / avgLowRest) * 100);
-                return `In weeks you had a high-quality Sabbath, you also reported <strong>${diff}% more "Connection" signs</strong> (like feeling connected to others and family).`;
+                        if (percentMet >= 0.7) { // "Good" Sabbath
+                            goodSabbathWarningTotal += totalWarning;
+                            goodSabbathCount++;
+                        } else if (percentMet <= 0.4) { // "Poor" Sabbath
+                            poorSabbathWarningTotal += totalWarning;
+                            poorSabbathCount++;
+                        }
+                    });
+
+                    if (goodSabbathCount > 1 && poorSabbathCount > 1) {
+                        const avgGood = goodSabbathWarningTotal / goodSabbathCount;
+                        const avgPoor = poorSabbathWarningTotal / poorSabbathCount;
+                        
+                        if (avgPoor > avgGood * 1.25) { // At least 25% more
+                            const diff = Math.round(((avgPoor / avgGood) - 1) * 100);
+                             addInsightCard('Sabbath Quality', `You reported <strong>${diff}% more Warning Signs</strong> after a poor Sabbath, compared to a restful one.`, 'bg-indigo-50', 'text-indigo-800');
+                            insightsFound++;
+                        }
+                    }
+                }
+            } catch (e) { console.error("Correlation 2 error:", e); }
+            
+            // Insight 3: Specific connections (Spiritual Warning vs. Physical Warning)
+            try {
+                 const checkinHistory = allCheckinHistory;
+                 let spiritualDisconnectCount = 0;
+                 let spiritualAndSleepProblems = 0;
+                 
+                 checkinHistory.forEach(checkin => {
+                    const spiritualWarning = checkin.warningResponses?.spiritual?.["Feeling disconnected from God or your faith"];
+                    const physicalWarning = checkin.warningResponses?.physical?.["Changes in sleep patterns (insomnia, oversleeping)"];
+                    
+                    if (spiritualWarning) {
+                        spiritualDisconnectCount++;
+                        if (physicalWarning) {
+                            spiritualAndSleepProblems++;
+                        }
+                    }
+                 });
+                 
+                 if (spiritualDisconnectCount > 2 && spiritualAndSleepProblems / spiritualDisconnectCount >= 0.5) {
+                    const percent = Math.round((spiritualAndSleepProblems / spiritualDisconnectCount) * 100);
+                    addInsightCard('Mind & Body', `In <strong>${percent}%</strong> of check-ins where you felt 'disconnected from God', you also reported <strong>'changes in sleep patterns'</strong>.`, 'bg-sky-50', 'text-sky-800');
+                    insightsFound++;
+                 }
+                
+            } catch (e) { console.error("Correlation 3 error:", e); }
+
+
+            if (insightsFound === 0) {
+                 correlationsContainerEl.innerHTML = '<p class="text-slate-500 italic text-center">Keep going! As you add more data from different modules, new insights will appear here.</p>';
             }
-            return null;
         }
         
-        /**
-         * Analyzes Spiritual Warning Signs vs. Physical Warning Signs
-         */
-        function analyzeSpiritualVsPhysical() {
-            if (allCheckinHistory.length < 3) return null;
-
-            let spiritualWarningCount = 0;
-            let physicalCoOccurenceCount = 0;
-            const spiritualSign = "Feeling disconnected from God or your faith";
-            const physicalSign = "Changes in sleep patterns (insomnia, oversleeping)";
+        function addInsightCard(title, text, bgColor, textColor) {
+            const card = document.createElement('div');
+            card.className = `p-4 rounded-lg shadow ${bgColor} ${textColor}`;
             
-            allCheckinHistory.forEach(entry => {
-                const spiritualResponses = (entry.warningResponses && entry.warningResponses.spiritual) ? entry.warningResponses.spiritual : {};
-                const physicalResponses = (entry.warningResponses && entry.warningResponses.physical) ? entry.warningResponses.physical : {};
-                
-                if (spiritualResponses[spiritualSign]) {
-                    spiritualWarningCount++;
-                    if (physicalResponses[physicalSign]) {
-                        physicalCoOccurenceCount++;
-                    }
-                }
-            });
-
-            if (spiritualWarningCount < 2) return null; // Not enough data
+            const titleEl = document.createElement('h4');
+            titleEl.className = "font-semibold mb-1";
+            titleEl.textContent = title;
             
-            const coOccurenceRate = physicalCoOccurenceCount / spiritualWarningCount;
-
-            if (coOccurenceRate >= 0.5) { // If it happens at least 50% of the time
-                return `When you reported <strong>'Feeling disconnected from God'</strong>, you also reported <strong>'Changes in sleep patterns'</strong> ${Math.round(coOccurenceRate * 100)}% of the time.`;
-            }
-            return null;
+            const textEl = document.createElement('p');
+            textEl.className = "text-sm";
+            textEl.innerHTML = text; // Use innerHTML to allow <strong> tag
+            
+            card.appendChild(titleEl);
+            card.appendChild(textEl);
+            correlationsContainerEl.appendChild(card);
         }
 
 
         // --- Data Export/Import ---
         exportDataBtn.onclick = () => {
-            if (allCheckinHistory.length === 0 && gratitudeHistory.length === 0 && sabbathHistory.length === 0 && Object.keys(userResources).length === 0 && Object.keys(ruleOfLife).length === 0 && ruleOfLifeHistory.length === 0) { 
+            if (allCheckinHistory.length === 0 && gratitudeHistory.length === 0 && sabbathHistory.length === 0 && Object.keys(userResources).length === 0 && Object.keys(ruleOfLife).length === 0 && ruleOfLifeHistory.length === 0) { // Updated check
                 showModal("No Data to Export", "There is no data to export.");
                 return;
             }
             try {
                 const exportObject = {
-                    hauoraAppVersion: APP_VERSION,
+                    appVersion: "1.0.0", // Add versioning
                     checkinHistory: allCheckinHistory,
                     gratitudeHistory: gratitudeHistory,
                     sabbathHistory: sabbathHistory,
@@ -2454,9 +2743,9 @@
                 let importedRuleOfLifeHistory = [];
                 try {
                     const importedObject = JSON.parse(e.target.result);
-                    if (Array.isArray(importedObject)) { // Old format (only check-ins)
+                    if (Array.isArray(importedObject)) { // Legacy Old format (only check-ins)
                         importedCheckinHistory = importedObject;
-                    } else if (importedObject.checkinHistory || importedObject.gratitudeHistory || importedObject.sabbathHistory || importedObject.userResources || importedObject.ruleOfLife || importedObject.ruleOfLifeHistory) { // Updated check
+                    } else if (importedObject.checkinHistory) { // New format
                         importedCheckinHistory = importedObject.checkinHistory || [];
                         importedGratitudeHistory = importedObject.gratitudeHistory || [];
                         importedSabbathHistory = importedObject.sabbathHistory || [];
@@ -2518,7 +2807,7 @@
         };
 
         clearDataBtn.onclick = () => {
-            showModal("Confirm Deletion", "Are you sure you want to clear ALL your data (Check-ins, Gratitude, Sabbath, Rule of Life, and Resources)? This action cannot be undone."); // Updated message
+            showModal("Confirm Deletion", "Are you sure you want to clear ALL your data (Check-ins, Gratitude, Sabbath, Rule of Life, Resources, and PIN)? This action cannot be undone."); // Updated message
             const confirmBtn = document.createElement('button');
             confirmBtn.textContent = "Yes, Clear All Data";
             confirmBtn.className = "btn bg-red-500 text-white hover:bg-red-600 w-full mt-2 btn-extra-modal"; 
@@ -2529,8 +2818,14 @@
                 localStorage.removeItem('tahaHinengaroUserResources');
                 localStorage.removeItem('tahaHinengaroRuleOfLife');
                 localStorage.removeItem('tahaHinengaroRuleOfLifeHistory');
-                localStorage.removeItem('hauoraOnboardComplete'); // Also clear onboarding
-                localStorage.removeItem('hauoraAppVersion');
+                localStorage.removeItem('hauoraOnboardComplete'); // Clear onboarding
+                
+                // Also clear PIN
+                localStorage.removeItem('tahaHauoraPINHash');
+                localStorage.removeItem('tahaHauoraPINSalt');
+                pinHash = null;
+                pinSalt = null;
+
                 allCheckinHistory = [];
                 gratitudeHistory = [];
                 sabbathHistory = [];
@@ -2550,9 +2845,9 @@
                 }
 
                 renderTrends(); 
-                navigateTo('welcomeView');
-                promptModal.style.display = 'none'; 
-                showModal("Data Cleared", "All your data has been removed from this browser.");
+                showModal("Data Cleared", "All your data has been removed. The app will now reload and require a new PIN setup.");
+                // Reload to force PIN setup
+                setTimeout(() => window.location.reload(), 2000);
             };
             const modalContent = promptModal.querySelector('.modal-content');
             const existingExtraButtons = modalContent.querySelectorAll('.btn-extra-modal');
@@ -2572,7 +2867,7 @@
         viewDataBtn.onclick = () => {
             try {
                 const exportObject = { 
-                    hauoraAppVersion: APP_VERSION,
+                    appVersion: "1.0.0",
                     checkinHistory: allCheckinHistory,
                     gratitudeHistory: gratitudeHistory,
                     sabbathHistory: sabbathHistory,
@@ -2609,34 +2904,34 @@
             }
         });
         
-        // --- Onboarding Logic (New) ---
-        function startOnboarding() {
-            currentOnboardingStep = 0;
-            showOnboardingStep();
+        // --- Onboarding Logic ---
+        function showOnboarding() {
             onboardingModal.style.display = 'flex';
+            currentOnboardingStep = 1;
+            updateOnboardingStep();
         }
 
-        function showOnboardingStep() {
-            const step = onboardingSteps[currentOnboardingStep];
-            onboardingModalTitle.textContent = step.title;
-            onboardingModalContent.innerHTML = `<p>${step.content.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')}</p>`; // Basic bold markdown
-            onboardingStepCounter.textContent = `Step ${currentOnboardingStep + 1} of ${onboardingSteps.length}`;
-
-            onboardingPrevBtn.style.display = currentOnboardingStep > 0 ? 'inline-block' : 'none';
-            onboardingNextBtn.style.display = currentOnboardingStep < onboardingSteps.length - 1 ? 'inline-block' : 'none';
-            onboardingFinishBtn.style.display = currentOnboardingStep === onboardingSteps.length - 1 ? 'inline-block' : 'none';
+        function updateOnboardingStep() {
+            onboardingSteps.forEach((step, index) => {
+                step.style.display = (index + 1 === currentOnboardingStep) ? 'block' : 'none';
+            });
+            
+            onboardingStepIndicator.textContent = `Step ${currentOnboardingStep} of ${onboardingSteps.length}`;
+            onboardingPrevBtn.style.display = (currentOnboardingStep > 1) ? 'inline-block' : 'none';
+            onboardingNextBtn.style.display = (currentOnboardingStep < onboardingSteps.length) ? 'inline-block' : 'none';
+            onboardingFinishBtn.style.display = (currentOnboardingStep === onboardingSteps.length) ? 'inline-block' : 'none';
         }
 
         onboardingNextBtn.onclick = () => {
-            if (currentOnboardingStep < onboardingSteps.length - 1) {
+            if (currentOnboardingStep < onboardingSteps.length) {
                 currentOnboardingStep++;
-                showOnboardingStep();
+                updateOnboardingStep();
             }
         };
         onboardingPrevBtn.onclick = () => {
-            if (currentOnboardingStep > 0) {
+             if (currentOnboardingStep > 1) {
                 currentOnboardingStep--;
-                showOnboardingStep();
+                updateOnboardingStep();
             }
         };
         onboardingFinishBtn.onclick = () => {
@@ -2644,10 +2939,67 @@
             localStorage.setItem('hauoraOnboardComplete', 'true');
         };
 
+
         // --- Initialization ---
         document.addEventListener('DOMContentLoaded', () => {
-            loadHistory();
-            navigateTo('welcomeView'); 
+            // PIN Check First
+            pinHash = localStorage.getItem('tahaHauoraPINHash');
+            pinSalt = localStorage.getItem('tahaHauoraPINSalt');
+            
+            if (pinHash && pinSalt) {
+                // PIN is set, show login
+                lockApp(); // This shows lock screen, hides app
+                lockTitleEl.textContent = "Enter PIN";
+                lockSubtitleEl.textContent = "Enter your 4-digit PIN to unlock.";
+                pinSetupStep = 0; // 0 means login
+            } else {
+                // No PIN is set, just unlock (which is now the default)
+                unlockApp('welcomeView');
+            }
+            
+            // Add keypad listeners
+            pinKeypad.addEventListener('click', (e) => {
+                const key = e.target.closest('button')?.dataset.key;
+                if (key) {
+                    onPinKeyPress(key);
+                }
+            });
+
+            // Add settings listeners for PIN
+            enablePinBtn.onclick = () => {
+                lockApp(); // Show lock screen
+                lockTitleEl.textContent = "Create PIN";
+                lockSubtitleEl.textContent = "Create a new 4-digit PIN.";
+                pinSetupStep = 1; // 1 = create new
+            };
+            
+            changePinBtn.onclick = () => {
+                lockApp(); // Show lock screen
+                lockTitleEl.textContent = "Change PIN";
+                lockSubtitleEl.textContent = "First, please enter your CURRENT PIN.";
+                pinActionCallback = () => {
+                    // This runs after current PIN is verified
+                    pinSetupStep = 1;
+                    newPinToConfirm = "";
+                    currentPinInput = "";
+                    lockTitleEl.textContent = "Enter NEW PIN";
+                    lockSubtitleEl.textContent = "Create a new 4-digit PIN.";
+                    resetPinInput();
+                };
+            };
+            
+            removePinBtn.onclick = () => {
+                lockApp(); // Show lock screen
+                lockTitleEl.textContent = "Remove PIN";
+                lockSubtitleEl.textContent = "Please enter your PIN to confirm removal.";
+                pinActionCallback = () => {
+                    // This runs after current PIN is verified
+                    removePIN();
+                    showModal("PIN Removed", "Your app is no longer secured with a PIN.");
+                    unlockApp('settingsView');
+                };
+            };
+
             
             // Add listeners for trend toggles
             trendsToggleRecentBtn.addEventListener('click', () => {
@@ -2675,19 +3027,6 @@
                             console.log('ServiceWorker registration failed: ', err);
                         });
                 });
-            }
-            
-            // Updated Onboarding Check with try...catch
-            let hasOnboarded = false;
-            try {
-                hasOnboarded = localStorage.getItem('hauoraOnboardComplete') === 'true';
-            } catch (e) {
-                console.warn('Could not access localStorage. Assuming first-time user for onboarding.');
-                hasOnboarded = false; 
-            }
-            
-            if (!hasOnboarded) {
-                startOnboarding();
             }
         });
 
