@@ -2614,3 +2614,378 @@
                     App.state.ui.currentSummaryIndex = App.state.data.checkinHistory.length - 1;
                     this.renderSummary(this.currentData);
                     App.navigation.navigateTo('summaryView');
+const btn = e.currentTarget;
+const parent = btn.parentElement;
+
+        // Clear sibling
+        const otherBtn = (value === true) ? parent.querySelector('.checkin-btn-neg') : parent.querySelector('.checkin-btn-sab');
+        otherBtn.className = `btn btn-choice ${ (value === true) ? 'checkin-btn-neg' : 'checkin-btn-sab' }`;
+        
+        // Set active
+        btn.className = `btn btn-choice ${ (value === true) ? 'checkin-btn-sab active' : 'checkin-btn-neg active' }`;
+    }
+    
+    function allSabbathQuestionsAnswered() {
+        const categoryKey = sabbathCategoryOrder[currentSabbathCategoryIndex];
+        const questions = sabbathSigns[categoryKey];
+        for (const q of questions) {
+            if (typeof currentSabbathCheckinData.responses[categoryKey][q] === 'undefined') {
+                showModal("Incomplete Section", "Please answer all questions in this category before proceeding.");
+                return false;
+            }
+        }
+        return true;
+    }
+
+    // --- Gratitude Journal Logic ---
+    startGratitudeBtn.onclick = () => navigateTo('gratitudeView');
+    
+    function loadGratitudeEntryForToday() {
+        const todayDateString = new Date().toISOString().split('T')[0];
+        const entry = gratitudeHistory.find(g => g.date === todayDateString);
+        if (entry) {
+            gratitudeEntryArea.value = entry.entry;
+        } else {
+            gratitudeEntryArea.value = '';
+        }
+    }
+    
+    saveGratitudeBtn.onclick = async () => {
+        const todayDateString = new Date().toISOString().split('T')[0];
+        const entryText = gratitudeEntryArea.value;
+        let entry = gratitudeHistory.find(g => g.date === todayDateString);
+        
+        let entryToSave;
+        if (entry) {
+            entry.entry = entryText; // Update existing in global state
+            entryToSave = entry;
+        } else {
+            entryToSave = { date: todayDateString, entry: entryText };
+            gratitudeHistory.push(entryToSave); // Add new to global state
+        }
+        
+        await saveEncryptedEntry('gratitudeHistory', entryToSave, todayDateString);
+        
+        showModal("Gratitude Saved", "Your gratitude entry for today has been saved.");
+    };
+    
+    viewPastGratitudeBtn.onclick = () => navigateTo('pastGratitudeView');
+    
+    function renderPastGratitudeEntries() {
+        pastGratitudeContainer.innerHTML = '';
+        if (gratitudeHistory.length === 0) {
+            pastGratitudeContainer.innerHTML = '<p class="text-slate-500 italic">No past gratitude entries found. Start by adding one today!</p>';
+            return;
+        }
+        
+        const reversedHistory = [...gratitudeHistory].sort((a, b) => b.date.localeCompare(a.date)); // Sort descending
+        reversedHistory.forEach(entry => {
+            if (!entry.entry || entry.entry.trim() === '') return; // Skip empty entries
+            
+            const entryWrapper = document.createElement('div');
+            entryWrapper.className = "mb-4";
+            
+            const dateEl = document.createElement('h3');
+            dateEl.className = "font-semibold text-amber-700";
+            const displayDate = parseDateString(entry.date);
+            dateEl.textContent = displayDate ? displayDate.toLocaleDateString('en-NZ', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) : 'Invalid Date';
+            
+            const entryEl = document.createElement('p');
+            entryEl.className = "entry-display";
+            entryEl.textContent = entry.entry;
+            
+            entryWrapper.appendChild(dateEl);
+            entryWrapper.appendChild(entryEl);
+            pastGratitudeContainer.appendChild(entryWrapper);
+        });
+    }
+    
+    // --- Rule of Life Logic (New) ---
+    startRuleOfLifeBtn.onclick = () => navigateTo('ruleOfLifeView');
+    startRuleOfLifeCheckinBtn.onclick = () => navigateTo('ruleOfLifeCheckinView');
+    viewPastRuleOfLifeBtn.onclick = () => navigateTo('pastRuleOfLifeView');
+    
+    function renderRuleOfLife(mode = 'read') {
+        const intentions = (ruleOfLife && ruleOfLife.intentions) ? ruleOfLife.intentions.filter(i => i) : [];
+        if (mode === 'read') {
+            ruleOfLifeReadList.innerHTML = '';
+            if (intentions.length === 0) {
+                const li = document.createElement('li');
+                li.className = "italic text-slate-500";
+                li.textContent = "You haven't set any intentions yet. Click 'Edit' to add some.";
+                ruleOfLifeReadList.appendChild(li);
+            } else {
+                intentions.forEach(intention => {
+                    if (intention && intention.trim() !== "") {
+                        const li = document.createElement('li');
+                        li.textContent = intention;
+                        ruleOfLifeReadList.appendChild(li);
+                    }
+                });
+            }
+            ruleOfLifeReadView.style.display = 'block';
+            ruleOfLifeEditView.style.display = 'none';
+            editRuleBtn.style.display = 'inline-block';
+            saveRuleBtn.style.display = 'none';
+        } else { // 'edit' mode
+            const currentIntentions = (ruleOfLife && ruleOfLife.intentions) ? ruleOfLife.intentions : [];
+            ruleIntentionInputs.forEach((input, index) => {
+                input.value = currentIntentions[index] || '';
+            });
+            ruleOfLifeReadView.style.display = 'none';
+            ruleOfLifeEditView.style.display = 'block';
+            editRuleBtn.style.display = 'none';
+            saveRuleBtn.style.display = 'inline-block';
+        }
+    }
+    
+    editRuleBtn.onclick = () => renderRuleOfLife('edit');
+    
+    saveRuleBtn.onclick = () => {
+        ruleOfLife.intentions = ruleIntentionInputs
+            .map(input => input.value.trim())
+            .filter(intention => intention !== ""); // Filter out empty strings
+        saveUserResources(); // This saves ruleOfLife as well
+        renderRuleOfLife('read');
+        showModal("Rule of Life Saved", "Your intentions have been saved.");
+    };
+    
+    function loadRuleOfLifeChecklist() {
+        const todayDateString = new Date().toISOString().split('T')[0];
+        ruleOfLifeCheckinDate.value = todayDateString;
+        ruleOfLifeChecklistContainer.innerHTML = '';
+        
+        const intentions = (ruleOfLife && ruleOfLife.intentions) ? ruleOfLife.intentions.filter(i => i) : [];
+        if (intentions.length === 0) {
+            ruleOfLifeChecklistContainer.innerHTML = '<p class="text-slate-500 italic">Please define your intentions on the "My Rule of Life" page first.</p>';
+            saveRuleOfLifeCheckinBtn.style.display = 'none';
+            return;
+        }
+        
+        saveRuleOfLifeCheckinBtn.style.display = 'block';
+        
+        // Check for existing entry for this date
+        const existingEntry = ruleOfLifeHistory.find(e => e.date === todayDateString);
+        ruleOfLifeNotesArea.value = existingEntry ? existingEntry.notes || '' : '';
+        
+        intentions.forEach((intention, index) => {
+            const isChecked = existingEntry ? (existingEntry.responses && existingEntry.responses[index]) : false;
+            
+            const label = document.createElement('label');
+            label.className = "flex items-center space-x-3 p-3 bg-white rounded-md shadow-sm border border-slate-200";
+            
+            const checkbox = document.createElement('input');
+            checkbox.type = "checkbox";
+            checkbox.id = `ruleCheck-${index}`;
+            checkbox.checked = isChecked;
+            checkbox.className = "h-5 w-5 rounded border-gray-300 text-teal-600 focus:ring-teal-500";
+            
+            const text = document.createElement('span');
+            text.className = "text-slate-700";
+            text.textContent = intention;
+            
+            label.appendChild(checkbox);
+            label.appendChild(text);
+            ruleOfLifeChecklistContainer.appendChild(label);
+        });
+    }
+    
+    saveRuleOfLifeCheckinBtn.onclick = async () => {
+        const reflectionDate = ruleOfLifeCheckinDate.value || new Date().toISOString().split('T')[0];
+        const responses = {};
+        const intentions = (ruleOfLife && ruleOfLife.intentions) ? ruleOfLife.intentions.filter(i => i) : [];
+        
+        intentions.forEach((intention, index) => {
+            const checkbox = document.getElementById(`ruleCheck-${index}`);
+            if (checkbox) {
+                responses[index] = checkbox.checked;
+            }
+        });
+        
+        const notes = ruleOfLifeNotesArea.value;
+        
+        const newEntry = {
+            date: reflectionDate,
+            responses: responses,
+            notes: notes,
+            intentionsAtTime: [...intentions] // Snapshot intentions at time of check-in
+        };
+        
+        await saveEncryptedEntry('ruleOfLifeHistory', newEntry, reflectionDate);
+        
+        // Update global state
+        const existingEntryIndex = ruleOfLifeHistory.findIndex(e => e.date === reflectionDate);
+        if (existingEntryIndex > -1) {
+            ruleOfLifeHistory[existingEntryIndex] = newEntry;
+        } else {
+            ruleOfLifeHistory.push(newEntry);
+        }
+        
+        showModal("Reflection Saved", "Your Rule of Life reflection has been saved.");
+        navigateTo('pastRuleOfLifeView');
+    };
+    
+    function renderPastRuleOfLifeEntries() {
+        pastRuleOfLifeContainer.innerHTML = '';
+        if (ruleOfLifeHistory.length === 0) {
+             // Chart function will handle the "empty" message
+        }
+        
+        const reversedHistory = [...ruleOfLifeHistory].sort((a, b) => b.date.localeCompare(a.date));
+        
+        reversedHistory.forEach(entry => {
+            const entryWrapper = document.createElement('div');
+            entryWrapper.className = "mb-4";
+            
+            const dateEl = document.createElement('h3');
+            dateEl.className = "font-semibold text-teal-700";
+            const displayDate = parseDateString(entry.date);
+            dateEl.textContent = displayDate ? displayDate.toLocaleDateString('en-NZ', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) : 'Invalid Date';
+            entryWrapper.appendChild(dateEl);
+            
+            const summaryDiv = document.createElement('div');
+            summaryDiv.className = "entry-display";
+            
+            const intentionsAtTime = entry.intentionsAtTime || (ruleOfLife && ruleOfLife.intentions) ? ruleOfLife.intentions : []; // Use snapshot or current
+            
+            if (intentionsAtTime.length > 0) {
+                const ul = document.createElement('ul');
+                ul.className = 'list-none space-y-1 text-sm';
+                
+                intentionsAtTime.forEach((intention, index) => {
+                    const wasChecked = entry.responses ? entry.responses[index] : false;
+                    const li = document.createElement('li');
+                    li.className = "flex items-center";
+                    
+                    const icon = document.createElement('span');
+                    icon.className = `mr-2 w-5 h-5 inline-block ${wasChecked ? 'text-teal-500' : 'text-slate-300'}`;
+                    icon.innerHTML = wasChecked 
+                        ? `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" /></svg>` 
+                        : `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM7 9a1 1 0 000 2h6a1 1 0 100-2H7z" clip-rule="evenodd" /></svg>`;
+                        
+                    const text = document.createElement('span');
+                    text.textContent = intention;
+                    text.className = wasChecked ? 'text-slate-700' : 'text-slate-500 line-through';
+                    
+                    li.appendChild(icon);
+                    li.appendChild(text);
+                    ul.appendChild(li);
+                });
+                summaryDiv.appendChild(ul);
+            } else {
+                summaryDiv.innerHTML = '<p class="italic text-slate-400">No intentions were defined for this entry.</p>';
+            }
+            
+            if (entry.notes && entry.notes.trim() !== "") {
+                const notesTitle = document.createElement('p');
+                notesTitle.className = "font-semibold text-sm text-amber-700 mt-3";
+                notesTitle.textContent = "Reflections:";
+                summaryDiv.appendChild(notesTitle);
+                
+                const notesEl = document.createElement('p');
+                notesEl.className = "italic whitespace-pre-wrap text-slate-600";
+                notesEl.textContent = entry.notes;
+                summaryDiv.appendChild(notesEl);
+            }
+            
+            entryWrapper.appendChild(summaryDiv);
+            pastRuleOfLifeContainer.appendChild(entryWrapper);
+        });
+    }
+    
+    // --- New Rule of Life Trends Logic ---
+    function renderRuleOfLifeTrends() {
+        if (ruleOfLifeChartInstance) {
+            ruleOfLifeChartInstance.destroy();
+            ruleOfLifeChartInstance = null;
+        }
+
+        if (ruleOfLifeHistory.length === 0) {
+            ruleOfLifeChartEmptyEl.style.display = 'block';
+            ruleOfLifeChartEl.style.display = 'none';
+            return;
+        }
+        
+        ruleOfLifeChartEmptyEl.style.display = 'none';
+        ruleOfLifeChartEl.style.display = 'block';
+        
+        const sortedHistory = [...ruleOfLifeHistory].sort((a, b) => a.date.localeCompare(b.date));
+        const dataToShow = sortedHistory.slice(-12); // Show recent 12
+        
+        const labels = dataToShow.map(entry => {
+            const displayDate = parseDateString(entry.date);
+            return displayDate ? displayDate.toLocaleDateString('en-NZ', { day: '2-digit', month: 'short' }) : 'Invalid';
+        });
+
+        const intentionsMetData = dataToShow.map(entry => {
+            if (!entry.responses) return 0;
+            return Object.values(entry.responses).filter(Boolean).length;
+        });
+        
+        const totalIntentionsData = dataToShow.map(entry => {
+             const intentions = entry.intentionsAtTime || (ruleOfLife && ruleOfLife.intentions) ? ruleOfLife.intentions : [];
+             return intentions.length;
+        });
+
+        const ctx = ruleOfLifeChartEl.getContext('2d');
+        ruleOfLifeChartInstance = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'Intentions Met',
+                        data: intentionsMetData,
+                        backgroundColor: 'rgba(13, 148, 136, 0.7)', // teal-600
+                        borderColor: 'rgba(13, 148, 136, 1)',
+                        borderWidth: 1
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            stepSize: 1, 
+                            callback: function(value) {
+                                if (value % 1 === 0) { return value; } // Only show whole numbers
+                            }
+                        },
+                        max: Math.max(...totalIntentionsData, 1) // Set max based on defined intentions
+                    }
+                },
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.dataset.label || '';
+                                if (label) {
+                                    label += ': ';
+                                }
+                                const intentionsMet = context.parsed.y;
+                                const totalIntentions = totalIntentionsData[context.dataIndex] || 0;
+                                label += `${intentionsMet} of ${totalIntentions}`;
+                                return label;
+                            }
+                        }
+                    },
+                    legend: {
+                        position: 'bottom',
+                    }
+                },
+                onClick: null, 
+                onHover: (event, chartElement) => {
+                    event.native.target.style.cursor = 'default'; 
+                }
+            }
+        });
+    }
+
+</script>
+
+
+</body>
+</html>
