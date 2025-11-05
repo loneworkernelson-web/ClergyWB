@@ -9,12 +9,12 @@
   "orientation": "portrait-primary",
   "icons": [
     {
-      "src": "httpsSeries://loneworkernelson-web.github.io/ClergyWB/Toku%20Haura.ico",
+      "src": "https://loneworkernelson-web.github.io/ClergyWB/Toku%20Haura.ico",
       "type": "image/x-icon",
       "sizes": "48x48"
     },
     {
-      "src": "httpsSeries://loneworkernelson-web.github.io/ClergyWB/Toku%20Haura.png",
+      "src": "https://loneworkernelson-web.github.io/ClergyWB/Toku%20Haura.png",
       "type": "image/png",
       "sizes": "192x192"
     },
