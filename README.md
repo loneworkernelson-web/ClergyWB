@@ -351,3 +351,49 @@ This describes the app's core runtime logic.
 * **Firebase Firestore** (CDN)
 
 * **PWA:** `manifest.json` and `sw.js` (Service Worker)
+
+Tōku Hauora PWA: GitHub Deployment Checklist
+
+Here are the essential files you need to upload to your GitHub repository to make your Progressive Web App (PWA) live and installable.
+
+1. Essential App Files (The PWA)
+
+These three files must be uploaded. They work together to create the PWA.
+
+TokuHauora_Corrected.html
+
+What it is: This is your entire application. It contains all the HTML for the UI, the CSS (from Tailwind) for styling, and all the JavaScript logic for encryption, data storage, and Firebase sync.
+
+Role: This is the "app" itself.
+
+manifest.json
+
+What it is: The Web App Manifest. This file is a simple JSON file that tells the browser that your site is an installable PWA.
+
+Role: It defines the app's name ("Tōku Hauora"), its icons (using the .ico you provided), and how it should behave when a user installs it to their home screen.
+
+sw.js
+
+What it is: The Service Worker. This is the most critical piece for a PWA. It's a JavaScript file that runs in the background, separate from the web page.
+
+Role: It controls caching and makes your app work offline. It intercepts network requests and serves the cached index.html file, which is why the app can load even with no internet connection.
+
+2. Documentation Files (Recommended)
+
+These files are not required for the app to run, but they are essential for managing the project. I highly recommend uploading them as well.
+
+Programme_Specifications_Raw.txt
+
+Recommendation: Rename this file to README.md and upload it.
+
+Role: This is your app's "blueprint." GitHub will automatically display the README.md file on your repository's main page, explaining what the project is to anyone who visits (including you, six months from now!)
+
+Firebase_Setup.md
+
+Recommendation: Keep this file in the repository (perhaps in a docs/ folder) or in a private place.
+
+Role: These are your personal setup instructions. You will be very glad you have them if you ever need to rebuild the backend or set up a new Firebase project.
+
+Summary
+
+To deploy your app, upload TokuHauora_Corrected.html, manifest.json, and sw.js to the root of your GitHub repository.
