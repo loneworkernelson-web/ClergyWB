@@ -1,14 +1,14 @@
-const CACHE_NAME = 'toku-hauora-cache-v2'; // Incremented version
+const CACHE_NAME = 'toku-hauora-cache-v3'; // Incremented version
 const CACHE_FILES = [
   '/', // The root
   'TokuHauora_Corrected.html',
   'config.js',
-  'tailwind.css', // <-- This is the fix. It now caches the local file.
+  'tailwind.css', // This is the local file
   'manifest.json',
   'https://loneworkernelson-web.github.io/ClergyWB/Toku%20Haura.png', // App icon
   // External Libraries
   'https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js',
-  'https://cdn.jsdelivr.net/npm/idb@7.1.1/build/umd.js',
+  'https://cdn.jsdelivr.net/npm/idb@7/build/umd.js', // Updated from 7.1.1 to 7
   // Firebase SDKs
   'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js',
   'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js',
@@ -59,6 +59,7 @@ self.addEventListener('activate', (e) => {
   console.log('[ServiceWorker] Activate');
   e.waitUntil(caches.keys().then((keyList) => {
     return Promise.all(keyList.map((key) => {
+      // Delete all caches *except* the new one
       if (key !== CACHE_NAME) {
         console.log('[ServiceWorker] Removing old cache', key);
         return caches.delete(key);
