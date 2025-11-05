@@ -11,6 +11,21 @@
 
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Firebase SDKs -->
+    <script type="module">
+        // These global variables are provided by the environment.
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+        
+        // Make them available to the main App script
+        window.firebaseConfig = firebaseConfig;
+        window.initialAuthToken = initialAuthToken;
+    </script>
+    <script type="module" src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js"></script>
+    <script type="module" src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js"></script>
+    <script type="module" src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js"></script>
+
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         html, body {
@@ -197,6 +212,67 @@
         </div>
     </div>
     <!-- End of Lock Screen -->
+
+    <!-- New Login Screen (HIDDEN BY DEFAULT) -->
+    <div id="loginView" class_name="view" style="display: none;">
+        <div class="p-4 sm:p-6 space-y-6">
+            <div class="text-center">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-16 h-16 text-sky-600 mx-auto mb-4">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.33-2.31 3 3 0 013.75 3.75 3 3 0 01-1.5 5.5H6.75z" />
+                </svg>
+                <h2 class="text-2xl font-semibold text-sky-800">Enable Cloud Backup?</h2>
+                <p class="text-slate-600 mt-2">
+                    You can optionally sign in to securely back up and sync your <strong>encrypted</strong> data across devices.
+                </p>
+                <p class="text-sm text-slate-500 mt-2">
+                    Your data is encrypted with your PIN. No one, not even us, can read it.
+                </p>
+            </div>
+        
+            <div class="bg-white p-6 rounded-lg shadow space-y-4">
+                <p class="text-sm text-center text-slate-600">
+                    Sign in with a provider to enable sync.
+                </p>
+                <button id="loginGoogleBtn" class="btn btn-secondary w-full flex items-center justify-center space-x-2">
+                    <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 488 512"><path fill="#4285F4" d="M488 261.8C488 403.3 381.5 512 244 512 111.8 512 0 400.2 0 261.8 0 123.3 111.8 11.8 244 11.8c70.3 0 131.2 32.4 172.4 84.2l-62.4 62.4c-20.8-26.4-48.6-42.4-79.9-42.4-60.6 0-110.3 49.4-110.3 110.3 0 61 49.7 110.3 110.3 110.3 69.1 0 100.8-48.4 104.9-72.3H244V261.8h236.1c2.6 14.7 3.9 30 3.9 45.9z"/></svg>
+                    <span>Sign in with Google</span>
+                </button>
+                <button id="loginEmailBtn" class="btn btn-secondary w-full">
+                    Sign in with Email
+                </button>
+            </div>
+            
+             <div class="text-center">
+                <button id="stayLocalBtn" class="btn-link-like text-slate-600">
+                    No thanks, I'll stay local-only
+                </button>
+            </div>
+
+            <!-- Email Login/Signup Form (Hidden) -->
+            <div id="emailLoginForm" class="bg-white p-6 rounded-lg shadow space-y-4" style="display: none;">
+                <h3 id="emailFormTitle" class="text-lg font-semibold text-center text-slate-700">Sign in with Email</h3>
+                <div class="space-y-3">
+                    <div>
+                        <label for="emailInput" class="block text-sm font-medium text-slate-700">Email</label>
+                        <input type="email" id="emailInput" class="w-full p-2 border border-slate-300 rounded-lg shadow-sm focus:ring-sky-500 focus:border-sky-500" autocomplete="email">
+                    </div>
+                    <div>
+                        <label for="passwordInput" class="block text-sm font-medium text-slate-700">Password</label>
+                        <input type="password" id="passwordInput" class="w-full p-2 border border-slate-300 rounded-lg shadow-sm focus:ring-sky-500 focus:border-sky-500" autocomplete="current-password">
+                    </div>
+                    <p id="emailError" class="text-red-500 text-sm h-4"></p>
+                    <div class="flex flex-col sm:flex-row sm:space-x-2 space-y-2 sm:space-y-0">
+                        <button id="emailSubmitBtn" class="btn btn-primary w-full sm:w-1/2">Sign In</button>
+                        <button id="emailRegisterBtn" class="btn btn-secondary w-full sm:w-1/2">Register</button>
+                    </div>
+                </div>
+                 <button id="backToLoginOptionsBtn" class="btn-link-like text-slate-600 text-sm mt-2">
+                    &larr; Back to all options
+                </button>
+            </div>
+        </div>
+    </div>
+    <!-- End of Login Screen -->
 
 
     <!-- Main App Container - VISIBLE BY DEFAULT -->
@@ -546,15 +622,15 @@
                 <h2 class="text-xl font-semibold text-sky-800">Privacy Information</h2>
                 <div class="bg-sky-50 p-4 rounded-lg shadow space-y-3 text-slate-700">
                     <p><strong>Your Privacy is Paramount.</strong></p>
-                    <p>This "Tōku Hauora" app is designed with your privacy as its core principle.</p>
+                    <p>This "Tōku Hauora" app is built on a <strong>"Zero-Knowledge"</strong> principle. We cannot see your data, even if you use cloud sync.</p>
                     <ul class="list-disc list-inside space-y-1 mt-2">
-                        <li><strong>Local Data Storage:</strong> All data you enter (check-in responses, notes, trends) is stored *exclusively* on your device within this web browser's local storage. It is not sent to any server or third party.</li>
-                        <li><strong>No Account Needed:</strong> You do not need to create an account or log in to use this app.</li>
-                        <li><strong>Offline Functionality:</strong> The core features of the app work offline once the page is loaded.</li>
-                        <li><strong>You Control Your Data:</strong> You can view and clear your data at any time using the options in the "Settings" section.</li>
+                        <li><strong>Mandatory PIN:</strong> Your 4-digit PIN is now mandatory. It is used to generate a unique encryption key on your device.</li>
+                        <li><strong>Client-Side Encryption:</strong> All your data (check-ins, notes, etc.) is <strong>encrypted on your device</strong> using your key *before* it is saved.</li>
+                        <li><strong>Local-Only (Default):</strong> By default, your encrypted data is stored *exclusively* on your device in the browser. No one can access it.</li>
+                        <li><strong>Optional Cloud Sync:</strong> If you choose to sign in, your <strong>encrypted data</strong> is synced to a private cloud database. This allows you to restore your data or use multiple devices.</li>
+                        <li><strong>Zero-Knowledge:</strong> We only store encrypted "gibberish" in the cloud. We do not have your PIN or your encryption key, so we can <strong>never</strong> read your data.</li>
                     </ul>
-                    <p class="mt-2"><strong>PIN Lock:</strong> This app uses a PIN to provide a privacy screen against casual access. It does not encrypt your data. A technical user with access to your unlocked device and browser tools could still access the stored data.</p>
-                    <p class="mt-2"><strong>Data Export & Deletion:</strong> You can copy your raw data or clear all stored data from this app via the Settings page.</p>
+                    <p class="mt-2"><strong>Data Export & Deletion:</strong> You can export your (unencrypted) data or clear all stored data from this app via the Settings page.</p>
                     <p class="mt-2">This app is a tool for personal reflection and awareness. It is not a diagnostic tool and does not replace professional medical or psychological advice.</p>
                 </div>
             </div>
@@ -566,16 +642,17 @@
                 <!-- New PIN Management Section -->
                 <div class="bg-sky-50 p-4 rounded-lg shadow space-y-3">
                     <p class="font-medium">PIN Management</p>
-                    <p class="text-sm text-slate-600">Secure your app with an optional 4-digit PIN.</p>
-                    
-                    <!-- This button shows if PIN is NOT set -->
-                    <button id="enablePinBtn" class="btn btn-secondary w-full" style="display: none;">Enable PIN Lock</button>
+                    <p class="text-sm text-slate-600">Your PIN secures your app and encrypts your data. It cannot be removed, but you can change it.</p>
                     
                     <!-- This container shows if PIN IS set -->
-                    <div id="pinManagementContainer" class="grid grid-cols-1 sm:grid-cols-2 gap-2" style="display: none;">
+                    <div id="pinManagementContainer" class="grid grid-cols-1">
                         <button id="changePinBtn" class="btn btn-secondary w-full">Change PIN</button>
-                        <button id="removePinBtn" class="btn btn-secondary w-full">Remove PIN</button>
                     </div>
+                </div>
+
+                <!-- New Sync Management Section -->
+                <div id="syncManagementContainer" class="bg-sky-50 p-4 rounded-lg shadow space-y-3">
+                    <!-- This content changes based on auth state -->
                 </div>
                  
                  <div class="bg-sky-50 p-4 rounded-lg shadow space-y-3">
@@ -686,6 +763,42 @@
 
     </div>
 
+    <script type="module">
+        // --- Firebase Imports ---
+        // We need these here to use them in the non-module script below
+        // This is a common pattern for mixing module/non-module code.
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import { 
+            getAuth, 
+            onAuthStateChanged, 
+            GoogleAuthProvider, 
+            signInWithPopup,
+            createUserWithEmailAndPassword,
+            signInWithEmailAndPassword,
+            signOut,
+            signInWithCustomToken
+        } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+        import { 
+            getFirestore, 
+            doc, 
+            setDoc, 
+            getDoc, 
+            collection, 
+            writeBatch,
+            getDocs,
+            deleteDoc
+        } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+        // Make Firebase functions available to the main App
+        window.fb = {
+            initializeApp, getAuth, onAuthStateChanged, GoogleAuthProvider, 
+            signInWithPopup, createUserWithEmailAndPassword, signInWithEmailAndPassword,
+            signOut, getFirestore, doc, setDoc, getDoc, collection, writeBatch,
+            getDocs, deleteDoc, signInWithCustomToken
+        };
+
+    </script>
+
     <script>
         // --- Refactored Application ---
         document.addEventListener('DOMContentLoaded', () => {
@@ -694,6 +807,7 @@
 
                 // --- 1. CONFIGURATION (Static Data) ---
                 config: {
+                    // ... same as before
                     warningSigns: {
                         emotional: ["Loss of joy or satisfaction in ministry", "Increased irritability, impatience, or anger", "Cynicism, negativity, or disillusionment about ministry or the Church", "Feeling emotionally exhausted, overwhelmed, or \"numb\"", "Increased anxiety or feelings of dread related to work", "Heightened sensitivity to criticism", "Feelings of failure, inadequacy, or guilt"],
                         mentalCognitive: ["Difficulty concentrating or making decisions", "Forgetfulness", "Constant rumination about work problems, even during time off", "Loss of creativity or motivation", "A sense that you are never \"not working\" mentally"],
@@ -725,7 +839,7 @@
                     sabbathSigns: {
                         disengagement: ["I was able to mentally disengage from work (e.g., not ruminating on problems)", "I successfully avoided or limited work-related emails and calls", "I felt 'off-duty' and not on call"],
                         rest: ["I experienced physical rest and renewal", "I engaged in activities I find genuinely restful (which might be active or passive)", "I felt my energy levels were restored"],
-                        connection: ["I spent quality time with family or friends", "I connected meaningfully with my community (outside of a work context)", "I took time for myself"],
+                        connection: ["I spent quality time with family or friends", "I connected meaningfully with my community (outside of a work context)",I took time for myself"],
                         spiritual: ["I engaged in spiritual practices that were life-giving (e.g., worship, prayer, nature)", "I felt connected to God", "I felt a sense of joy or peace"]
                     },
                     sabbathCategoryDisplayNames: {
@@ -739,6 +853,7 @@
 
                 // --- 2. APPLICATION STATE (Dynamic Data) ---
                 state: {
+                    // ... same as before
                     currentCategoryIndex: 0,
                     currentPositiveCategoryIndex: 0,
                     currentSabbathCategoryIndex: 0,
@@ -754,13 +869,24 @@
                     trendsChartInstance: null,
                     ruleOfLifeChartInstance: null,
                     currentTrendView: 'recent',
-                    pinHash: null,
-                    pinSalt: null,
+                    
+                    // --- New State ---
+                    pinHash: null,              // Stays in localStorage. The "password" for the local data.
+                    pinSalt: null,              // Now fetched from server if logged in, or localStorage if local.
                     currentPinInput: "",
-                    pinSetupStep: 1, // 1 for new, 2 for confirm
+                    pinSetupStep: 1, 
                     newPinToConfirm: "",
-                    pinActionCallback: null, // For remove/change PIN
+                    pinActionCallback: null,
                     currentOnboardingStep: 1,
+
+                    masterEncryptionKey: null, // The AES key used to encrypt/decrypt data. Kept in memory.
+                    encryptedMasterKey: null, // The master key, itself encrypted by the PIN key. Stored in Firestore/localStorage.
+                    
+                    auth: null,                 // Firebase auth instance
+                    db: null,                   // Firestore instance
+                    user: null,                 // Firebase auth user object
+                    storageDriver: null,        // Will be 'localStorage' or 'firestore'
+                    isAppLoaded: false,         // Tracks if initial data load is complete
                 },
 
                 // --- 3. DOM ELEMENT CACHE ---
@@ -770,21 +896,16 @@
                 init() {
                     this.initDOM();
                     this.attachListeners();
-                    this.pin.loadPIN(); // Load PIN hash/salt
-                    
-                    if (this.state.pinHash && this.state.pinSalt) {
-                        // PIN is set, show login
-                        this.pin.lockApp(true); // This shows lock screen, hides app
-                    } else {
-                        // No PIN is set, just unlock
-                        this.pin.unlockApp('welcomeView');
-                    }
+                    this.auth.initFirebase(); // Start Firebase auth listener
+                    // The auth listener (onAuthStateChanged) will now drive the app load.
+                    // It will call either `auth.showLoginScreen()` or `auth.loadUser()`
                 },
 
                 initDOM() {
-                    // --- App & Lock Screen ---
+                    // --- App, Lock, Login Screens ---
                     this.dom.appElement = document.getElementById('app');
                     this.dom.lockScreenEl = document.getElementById('lockScreen');
+                    this.dom.loginView = document.getElementById('loginView');
                     this.dom.lockTitleEl = document.getElementById('lockTitle');
                     this.dom.lockSubtitleEl = document.getElementById('lockSubtitle');
                     this.dom.lockErrorEl = document.getElementById('lockError');
@@ -795,11 +916,25 @@
                         document.getElementById('pin-dot-4')
                     ];
                     this.dom.pinKeypad = document.querySelector('#lockScreen .grid');
-                    this.dom.enablePinBtn = document.getElementById('enablePinBtn');
+                    
+                    // --- Login View ---
+                    this.dom.loginGoogleBtn = document.getElementById('loginGoogleBtn');
+                    this.dom.loginEmailBtn = document.getElementById('loginEmailBtn');
+                    this.dom.stayLocalBtn = document.getElementById('stayLocalBtn');
+                    this.dom.emailLoginForm = document.getElementById('emailLoginForm');
+                    this.dom.emailFormTitle = document.getElementById('emailFormTitle');
+                    this.dom.emailInput = document.getElementById('emailInput');
+                    this.dom.passwordInput = document.getElementById('passwordInput');
+                    this.dom.emailError = document.getElementById('emailError');
+                    this.dom.emailSubmitBtn = document.getElementById('emailSubmitBtn');
+                    this.dom.emailRegisterBtn = document.getElementById('emailRegisterBtn');
+                    this.dom.backToLoginOptionsBtn = document.getElementById('backToLoginOptionsBtn');
+
+                    // --- PIN Management (Settings) ---
                     this.dom.pinManagementContainer = document.getElementById('pinManagementContainer');
                     this.dom.changePinBtn = document.getElementById('changePinBtn');
-                    this.dom.removePinBtn = document.getElementById('removePinBtn');
-
+                    this.dom.syncManagementContainer = document.getElementById('syncManagementContainer');
+                    
                     // --- Views ---
                     this.dom.views = document.querySelectorAll('.view');
                     
@@ -960,10 +1095,20 @@
                         if (key) this.pin.onPinKeyPress(key);
                     });
 
+                    // --- Auth Listeners ---
+                    this.dom.loginGoogleBtn.addEventListener('click', () => this.auth.signInWithGoogle());
+                    this.dom.loginEmailBtn.addEventListener('click', () => this.auth.showEmailForm(false));
+                    this.dom.emailRegisterBtn.addEventListener('click', () => this.auth.showEmailForm(true));
+                    this.dom.backToLoginOptionsBtn.addEventListener('click', () => this.auth.showEmailForm(false, true));
+                    this.dom.emailSubmitBtn.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        this.auth.handleEmailSignIn();
+                    });
+                    this.dom.stayLocalBtn.addEventListener('click', () => this.auth.stayLocal());
+
+
                     // --- Settings & PIN Buttons ---
-                    this.dom.enablePinBtn.addEventListener('click', () => this.pin.setupNewPIN());
                     this.dom.changePinBtn.addEventListener('click', () => this.pin.setupChangePIN());
-                    this.dom.removePinBtn.addEventListener('click', () => this.pin.setupRemovePIN());
                     this.dom.clearDataBtn.addEventListener('click', () => this.settings.confirmClearData());
                     this.dom.viewDataBtn.addEventListener('click', () => this.settings.toggleViewRawData());
                     this.dom.exportDataBtn.addEventListener('click', () => this.settings.exportData());
@@ -1048,69 +1193,316 @@
                     }
                 },
 
-                // --- 5. PIN & CRYPTO MODULE ---
-                pin: {
-                    loadPIN() {
+                // --- 5. AUTH MODULE ---
+                auth: {
+                    initFirebase() {
+                        try {
+                            if (!window.firebaseConfig || Object.keys(window.firebaseConfig).length === 0) {
+                                console.log("Firebase config not found, running in local-only mode.");
+                                App.auth.showLoginScreen(); // Show login options
+                                return;
+                            }
+                            
+                            const app = fb.initializeApp(window.firebaseConfig);
+                            App.state.auth = fb.getAuth(app);
+                            App.state.db = fb.getFirestore(app);
+
+                            fb.onAuthStateChanged(App.state.auth, async (user) => {
+                                if (user) {
+                                    // User is signed in.
+                                    App.state.user = user;
+                                    App.state.storageDriver = 'firestore';
+                                    console.log("User signed in:", user.uid);
+                                    await App.auth.loadUser();
+                                } else if (window.initialAuthToken) {
+                                    // Try to sign in with the provided token
+                                    try {
+                                        await fb.signInWithCustomToken(App.state.auth, window.initialAuthToken);
+                                        // onAuthStateChanged will fire again with the user
+                                    } catch (e) {
+                                        console.error("Custom token sign-in failed:", e);
+                                        window.initialAuthToken = null; // Don't try again
+                                        App.auth.showLoginScreen();
+                                    }
+                                } else {
+                                    // User is signed out, and no token.
+                                    App.state.user = null;
+                                    // If app hasn't loaded, show login screen.
+                                    // If it *has* loaded, it means user signed out, so we reload.
+                                    if (App.state.isAppLoaded) {
+                                        window.location.reload();
+                                    } else {
+                                        App.auth.showLoginScreen();
+                                    }
+                                }
+                            });
+                        } catch (e) {
+                            console.error("Firebase initialization failed:", e);
+                            App.auth.showLoginScreen(); // Fallback to login/local screen
+                        }
+                    },
+
+                    async loadUser() {
+                        // 1. Get user's meta doc (salt, encryptedMasterKey)
+                        const metaRef = fb.doc(App.state.db, 'users', App.state.user.uid);
+                        const metaDoc = await fb.getDoc(metaRef);
+                        
+                        if (metaDoc.exists()) {
+                            // User exists, load their salt
+                            const meta = metaDoc.data();
+                            App.state.pinSalt = meta.pinSalt;
+                            App.state.encryptedMasterKey = meta.encryptedMasterKey;
+                            // Now show PIN lock screen to get PIN
+                            App.pin.lockApp(true, 'login');
+                        } else {
+                            // New user (or user enabling sync first time)
+                            // Need to check for local data to migrate.
+                            const localData = App.storage.getLocalDataForMigration();
+                            
+                            if (localData.pinHash) {
+                                // User had local data. Ask for their PIN to re-use it.
+                                App.state.pinSalt = localData.pinSalt;
+                                App.state.encryptedMasterKey = localData.encryptedMasterKey;
+                                // Show PIN screen, with a callback to migrate data on success
+                                App.pin.lockApp(true, 'migrate', async (pinKey) => {
+                                    // On success, save the meta doc to Firestore
+                                    await fb.setDoc(metaRef, { 
+                                        pinSalt: App.state.pinSalt, 
+                                        encryptedMasterKey: App.state.encryptedMasterKey 
+                                    });
+                                    // And migrate their data
+                                    await App.storage.migrateLocalToFirestore(pinKey, localData);
+                                    // Then unlock
+                                    await App.pin.unlockApp('welcomeView');
+                                });
+                            } else {
+                                // Completely new user. Force PIN setup.
+                                App.pin.lockApp(true, 'setup');
+                            }
+                        }
+                    },
+                    
+                    showLoginScreen() {
+                        App.dom.lockScreenEl.style.display = 'none';
+                        App.dom.appElement.style.display = 'none';
+                        App.dom.loginView.style.display = 'block';
+                    },
+                    
+                    stayLocal() {
+                        console.log("User opted to stay local.");
+                        App.state.storageDriver = 'localStorage';
+                        // Check for existing local PIN/data
                         App.state.pinHash = localStorage.getItem('tahaHauoraPINHash');
                         App.state.pinSalt = localStorage.getItem('tahaHauoraPINSalt');
+                        App.state.encryptedMasterKey = localStorage.getItem('tahaHauoraEncMasterKey');
+
+                        if (App.state.pinHash && App.state.pinSalt && App.state.encryptedMasterKey) {
+                            // User has existing local data, show PIN lock
+                            App.pin.lockApp(true, 'login');
+                        } else {
+                            // No local data, force new PIN setup
+                            App.pin.lockApp(true, 'setup');
+                        }
                     },
+                    
+                    async signInWithGoogle() {
+                        try {
+                            const provider = new fb.GoogleAuthProvider();
+                            await fb.signInWithPopup(App.state.auth, provider);
+                            // onAuthStateChanged will handle the rest
+                        } catch (error) {
+                            console.error("Google Sign-In Error:", error);
+                            App.ui.showModal("Sign-In Failed", `Could not sign in with Google: ${error.message}`);
+                        }
+                    },
+                    
+                    showEmailForm(isRegister = false, back = false) {
+                        if (back) {
+                            App.dom.emailLoginForm.style.display = 'none';
+                            App.dom.loginGoogleBtn.style.display = 'block';
+                            App.dom.loginEmailBtn.style.display = 'block';
+                            App.dom.stayLocalBtn.style.display = 'block';
+                            return;
+                        }
+                        App.dom.emailLoginForm.style.display = 'block';
+                        App.dom.loginGoogleBtn.style.display = 'none';
+                        App.dom.loginEmailBtn.style.display = 'none';
+                        App.dom.stayLocalBtn.style.display = 'none';
+                        
+                        App.dom.emailFormTitle.textContent = isRegister ? "Register with Email" : "Sign in with Email";
+                        App.dom.emailSubmitBtn.style.display = isRegister ? 'none' : 'block';
+                        App.dom.emailRegisterBtn.style.display = isRegister ? 'block' : 'none';
+                        App.dom.emailError.textContent = '';
+                    },
+                    
+                    async handleEmailSignIn() {
+                        const email = App.dom.emailInput.value;
+                        const password = App.dom.passwordInput.value;
+                        if (!email || !password) {
+                            App.dom.emailError.textContent = "Please enter email and password.";
+                            return;
+                        }
+                        try {
+                            if (App.dom.emailSubmitBtn.style.display === 'block') { // Sign In
+                                await fb.signInWithEmailAndPassword(App.state.auth, email, password);
+                            } else { // Register
+                                await fb.createUserWithEmailAndPassword(App.state.auth, email, password);
+                            }
+                            // onAuthStateChanged will handle the rest
+                        } catch (error) {
+                            console.error("Email Sign-In/Register Error:", error);
+                            App.dom.emailError.textContent = error.message;
+                        }
+                    },
+                    
+                    async signOut() {
+                        try {
+                            await fb.signOut(App.state.auth);
+                            // onAuthStateChanged will reload the page
+                        } catch (error) {
+                            console.error("Sign Out Error:", error);
+                        }
+                    },
+                    
+                    async handleAccountDeletion() {
+                        if (!App.state.user) return;
+                        console.log("Deleting user data from Firestore...");
+                        const batch = fb.writeBatch(App.state.db);
+                        
+                        // 1. Delete meta doc
+                        const metaRef = fb.doc(App.state.db, 'users', App.state.user.uid);
+                        batch.delete(metaRef);
+                        
+                        // 2. Delete all data collections (must list them)
+                        const collections = ['checkinHistory', 'gratitudeHistory', 'sabbathHistory', 'ruleOfLifeHistory', 'userResources', 'ruleOfLife'];
+                        for (const col of collections) {
+                            const colRef = fb.collection(App.state.db, 'users', App.state.user.uid, 'data', col);
+                            const snapshot = await fb.getDocs(colRef);
+                            snapshot.docs.forEach(doc => batch.delete(doc.ref));
+                        }
+                        
+                        await batch.commit();
+                        console.log("Firestore data deleted.");
+                    }
+                },
+
+                // --- 6. PIN & CRYPTO MODULE ---
+                pin: {
+                    // This function is now just for local-only mode.
+                    // For cloud, salt comes from server.
+                    loadLocalPINData() {
+                        App.state.pinHash = localStorage.getItem('tahaHauoraPINHash');
+                        App.state.pinSalt = localStorage.getItem('tahaHauoraPINSalt');
+                        App.state.encryptedMasterKey = localStorage.getItem('tahaHauoraEncMasterKey');
+                    },
+                    
                     async hashPIN(pin, salt) {
                         const encoder = new TextEncoder();
                         const data = encoder.encode(pin + salt);
                         const hashBuffer = await window.crypto.subtle.digest('SHA-256', data);
                         return App.util.bufferToHex(hashBuffer);
                     },
+
                     generateSalt() {
                         const array = new Uint8Array(16);
                         window.crypto.getRandomValues(array);
                         return App.util.bufferToHex(array);
                     },
+
                     async verifyPIN(enteredPin) {
-                        if (!App.state.pinHash || !App.state.pinSalt) return false;
+                        // Verifies against the *local* hash.
+                        const localPinHash = localStorage.getItem('tahaHauoraPINHash');
+                        if (!localPinHash || !App.state.pinSalt) return false;
                         const enteredHash = await this.hashPIN(enteredPin, App.state.pinSalt);
-                        return enteredHash === App.state.pinHash;
+                        return enteredHash === localPinHash;
                     },
+
                     async setPIN(newPin) {
-                        App.state.pinSalt = this.generateSalt();
+                        // This function creates/updates the PIN hash and master key
+                        
+                        // 1. Generate/re-use salt
+                        if (!App.state.pinSalt) {
+                            App.state.pinSalt = this.generateSalt();
+                        }
+                        
+                        // 2. Hash the PIN (used for verification)
                         App.state.pinHash = await this.hashPIN(newPin, App.state.pinSalt);
-                        localStorage.setItem('tahaHauoraPINHash', App.state.pinHash);
-                        localStorage.setItem('tahaHauoraPINSalt', App.state.pinSalt);
-                        console.log("PIN has been set.");
+                        
+                        // 3. Derive a key from the PIN (used for encrypting the master key)
+                        const pinKey = await App.crypto.deriveKeyFromPIN(newPin, App.state.pinSalt);
+                        
+                        // 4. Generate/re-use a master key
+                        if (!App.state.masterEncryptionKey) {
+                            App.state.masterEncryptionKey = await App.crypto.generateMasterKey();
+                        }
+                        
+                        // 5. Encrypt the master key with the PIN key
+                        App.state.encryptedMasterKey = await App.crypto.encryptMasterKey(App.state.masterEncryptionKey, pinKey);
+
+                        // 6. Save keys/salt locally and (if authed) to cloud
+                        await App.storage.saveKeysAndSalt();
+                        
+                        console.log("PIN and master key have been set/updated.");
                     },
+                    
                     removePIN() {
-                        localStorage.removeItem('tahaHauoraPINHash');
-                        localStorage.removeItem('tahaHauoraPINSalt');
-                        App.state.pinHash = null;
-                        App.state.pinSalt = null;
-                        console.log("PIN has been removed.");
+                        // This is now disabled. PIN is mandatory for encryption.
+                        console.warn("removePIN() called but PIN is mandatory.");
                     },
-                    unlockApp(targetView = 'welcomeView') {
+                    
+                    async unlockApp(targetView = 'welcomeView') {
+                        // This is called *after* master key is in memory
+                        if (!App.state.masterEncryptionKey) {
+                             console.error("UnlockApp called without master key!");
+                             this.resetPinInput("An error occurred. Please reload.");
+                             return;
+                        }
+                        
+                        App.dom.loginView.style.display = 'none';
                         App.dom.lockScreenEl.style.display = 'none';
                         App.dom.appElement.style.display = 'flex';
-                        App.storage.loadHistory(); 
+                        
+                        await App.storage.loadHistory(); // Load all data using the master key
                         App.navigation.navigateTo(targetView);
+                        App.state.isAppLoaded = true;
                         
                         const hasOnboarded = localStorage.getItem('hauoraOnboardComplete');
                         if (hasOnboarded !== 'true') {
                             App.moduleOnboarding.show();
                         }
                     },
-                    lockApp(isStartup = false) {
+
+                    lockApp(isStartup = false, mode = 'login', onUnlockCallback = null) {
+                        // Modes: 'login', 'setup', 'migrate', 'change'
                         App.dom.appElement.style.display = 'none';
+                        App.dom.loginView.style.display = 'none';
                         App.dom.lockScreenEl.style.display = 'flex';
+                        
                         App.state.currentPinInput = "";
-                        App.state.pinAttempt = "";
                         App.state.newPinToConfirm = "";
-                        App.state.pinSetupStep = 0; // Default to login
-                        App.state.pinActionCallback = null;
+                        App.state.pinSetupStep = 0;
+                        App.state.pinActionCallback = onUnlockCallback;
                         this.updatePinDots();
 
-                        if(isStartup) {
+                        if (mode === 'login') {
                             App.dom.lockTitleEl.textContent = "Enter PIN";
                             App.dom.lockSubtitleEl.textContent = "Enter your 4-digit PIN to unlock.";
-                            App.state.pinSetupStep = 0; // 0 means login
+                            App.state.pinSetupStep = 0; // 0 = login
+                        } else if (mode === 'setup') {
+                            App.dom.lockTitleEl.textContent = "Create PIN";
+                            App.dom.lockSubtitleEl.textContent = "Create a 4-digit PIN to secure your data.";
+                            App.state.pinSetupStep = 1; // 1 = create new
+                        } else if (mode === 'migrate') {
+                            App.dom.lockTitleEl.textContent = "Confirm PIN";
+                            App.dom.lockSubtitleEl.textContent = "Enter your existing PIN to migrate your data to the cloud.";
+                            App.state.pinSetupStep = 0; // 0 = login (but with a callback)
+                        } else if (mode === 'change') {
+                            App.dom.lockTitleEl.textContent = "Change PIN";
+                            App.dom.lockSubtitleEl.textContent = "First, please enter your CURRENT PIN.";
+                            App.state.pinSetupStep = 0; // 0 = login (with a callback)
                         }
                     },
+                    
                     updatePinDots() {
                         App.dom.pinDots.forEach((dot, index) => {
                             if (index < App.state.currentPinInput.length) {
@@ -1120,12 +1512,14 @@
                             }
                         });
                     },
+
                     resetPinInput(error = "") {
                         App.state.currentPinInput = "";
                         App.dom.lockErrorEl.textContent = error;
                         this.updatePinDots();
                         if (navigator.vibrate) navigator.vibrate(100);
                     },
+                    
                     async onPinKeyPress(key) {
                         App.dom.lockErrorEl.textContent = ""; 
                         
@@ -1141,15 +1535,14 @@
                         this.updatePinDots();
 
                         if (App.state.currentPinInput.length === 4) {
-                            if (App.state.pinActionCallback) {
-                                await this.handlePinAction();
-                            } else if (App.state.pinSetupStep > 0) {
+                            if (App.state.pinSetupStep > 0) {
                                 await this.handlePinSetup();
                             } else {
                                 await this.handlePinLogin();
                             }
                         }
                     },
+                    
                     async handlePinSetup() {
                         if (App.state.pinSetupStep === 1) {
                             App.state.newPinToConfirm = App.state.currentPinInput;
@@ -1162,8 +1555,16 @@
                             }, 200);
                         } else {
                             if (App.state.currentPinInput === App.state.newPinToConfirm) {
-                                await this.setPIN(App.state.currentPinInput);
-                                setTimeout(() => this.unlockApp('settingsView'), 200);
+                                // --- PIN CREATED SUCCESSFULLY ---
+                                // This single function now handles setting hash, keys, and saving
+                                await this.setPIN(App.state.currentPinInput); 
+                                
+                                // Check if there was a callback (e.g., from changing PIN)
+                                if (App.state.pinActionCallback) {
+                                    App.state.pinActionCallback();
+                                }
+                                
+                                setTimeout(() => this.unlockApp(App.state.user ? 'settingsView' : 'welcomeView'), 200);
                             } else {
                                 App.dom.lockTitleEl.textContent = "Create PIN";
                                 App.dom.lockSubtitleEl.textContent = "PINs did not match. Please try again.";
@@ -1173,140 +1574,380 @@
                             }
                         }
                     },
+                    
                     async handlePinLogin() {
-                        const isValid = await this.verifyPIN(App.state.currentPinInput);
-                        if (isValid) {
-                            setTimeout(() => this.unlockApp('welcomeView'), 200);
+                        // 1. Get PIN key
+                        const pinKey = await App.crypto.deriveKeyFromPIN(App.state.currentPinInput, App.state.pinSalt);
+                        if (!pinKey) {
+                             setTimeout(() => this.resetPinInput("Invalid PIN. Please try again."), 200);
+                             return;
+                        }
+                        
+                        // 2. Try to decrypt master key
+                        const masterKey = await App.crypto.decryptMasterKey(App.state.encryptedMasterKey, pinKey);
+                        
+                        if (masterKey) {
+                            // SUCCESS! Save master key to memory
+                            App.state.masterEncryptionKey = masterKey;
+                            
+                            // Also save the pinHash locally (for "Change PIN" verification)
+                            // This is safe, it's just a hash.
+                            const pinHash = await this.hashPIN(App.state.currentPinInput, App.state.pinSalt);
+                            localStorage.setItem('tahaHauoraPINHash', pinHash);
+                            
+                            // 3. Run callback if it exists (e.g., for migration)
+                            if (App.state.pinActionCallback) {
+                                await App.state.pinActionCallback(pinKey);
+                            } else {
+                                // 4. Or just unlock
+                                setTimeout(() => this.unlockApp('welcomeView'), 200);
+                            }
                         } else {
+                            // FAILED DECRYPTION (wrong PIN)
                             setTimeout(() => this.resetPinInput("Invalid PIN. Please try again."), 200);
                         }
                     },
+                    
                     async handlePinAction() {
-                        const isValid = await this.verifyPIN(App.state.currentPinInput);
-                        if (isValid) {
-                            if (App.state.pinActionCallback) {
-                                App.state.pinActionCallback();
-                            }
-                        } else {
-                             setTimeout(() => {
-                                this.resetPinInput("Invalid PIN. Please try again.");
-                                App.state.pinActionCallback = null;
-                                this.unlockApp('settingsView');
-                             }, 200);
-                        }
+                        // This function is obsolete, merged into handlePinLogin
                     },
+                    
                     setupNewPIN() {
-                        this.lockApp();
-                        App.dom.lockTitleEl.textContent = "Create PIN";
-                        App.dom.lockSubtitleEl.textContent = "Create a new 4-digit PIN.";
-                        App.state.pinSetupStep = 1; // 1 = create new
+                        // This is now just 'setup' mode
+                        this.lockApp(false, 'setup');
                     },
+                    
                     setupChangePIN() {
-                        this.lockApp();
-                        App.dom.lockTitleEl.textContent = "Change PIN";
-                        App.dom.lockSubtitleEl.textContent = "First, please enter your CURRENT PIN.";
-                        App.state.pinActionCallback = () => {
+                        this.lockApp(false, 'change', () => {
+                            // This callback runs *after* old PIN is verified
                             App.state.pinSetupStep = 1;
                             App.state.newPinToConfirm = "";
                             App.state.currentPinInput = "";
                             App.dom.lockTitleEl.textContent = "Enter NEW PIN";
                             App.dom.lockSubtitleEl.textContent = "Create a new 4-digit PIN.";
                             this.resetPinInput();
-                        };
+                        });
                     },
+                    
                     setupRemovePIN() {
-                        this.lockApp();
-                        App.dom.lockTitleEl.textContent = "Remove PIN";
-                        App.dom.lockSubtitleEl.textContent = "Please enter your PIN to confirm removal.";
-                        App.state.pinActionCallback = () => {
-                            this.removePIN();
-                            App.ui.showModal("PIN Removed", "Your app is no longer secured with a PIN.");
-                            this.unlockApp('settingsView');
-                        };
+                       // Removed, PIN is mandatory
                     }
                 },
                 
-                // --- 6. STORAGE MODULE ---
+                // --- NEW 6. CRYPTO MODULE ---
+                crypto: {
+                    async deriveKeyFromPIN(pin, saltHex) {
+                        try {
+                            const salt = App.util.hexToBuffer(saltHex);
+                            const encoder = new TextEncoder();
+                            const pinBuffer = encoder.encode(pin);
+                            
+                            const keyMaterial = await window.crypto.subtle.importKey(
+                                'raw',
+                                pinBuffer,
+                                { name: 'PBKDF2' },
+                                false,
+                                ['deriveKey']
+                            );
+                            
+                            return await window.crypto.subtle.deriveKey(
+                                {
+                                    name: 'PBKDF2',
+                                    salt: salt,
+                                    iterations: 100000,
+                                    hash: 'SHA-256'
+                                },
+                                keyMaterial,
+                                { name: 'AES-GCM', length: 256 },
+                                true,
+                                ['encrypt', 'decrypt']
+                            );
+                        } catch (e) {
+                            console.error("Error deriving PIN key:", e);
+                            return null;
+                        }
+                    },
+                    
+                    async generateMasterKey() {
+                        return await window.crypto.subtle.generateKey(
+                            { name: 'AES-GCM', length: 256 },
+                            true,
+                            ['encrypt', 'decrypt']
+                        );
+                    },
+                    
+                    async encryptMasterKey(masterKey, pinKey) {
+                        try {
+                            const exportedKey = await window.crypto.subtle.exportKey('raw', masterKey);
+                            const iv = window.crypto.getRandomValues(new Uint8Array(12));
+                            const encryptedData = await window.crypto.subtle.encrypt(
+                                { name: 'AES-GCM', iv: iv },
+                                pinKey,
+                                exportedKey
+                            );
+                            
+                            // Return IV + data, hex encoded
+                            return App.util.bufferToHex(iv) + App.util.bufferToHex(encryptedData);
+                        } catch (e) {
+                            console.error("Error encrypting master key:", e);
+                            return null;
+                        }
+                    },
+                    
+                    async decryptMasterKey(encryptedKeyHex, pinKey) {
+                        try {
+                            const iv = App.util.hexToBuffer(encryptedKeyHex.slice(0, 24));
+                            const encryptedData = App.util.hexToBuffer(encryptedKeyHex.slice(24));
+                            
+                            const decryptedKeyBuffer = await window.crypto.subtle.decrypt(
+                                { name: 'AES-GCM', iv: iv },
+                                pinKey,
+                                encryptedData
+                            );
+                            
+                            return await window.crypto.subtle.importKey(
+                                'raw',
+                                decryptedKeyBuffer,
+                                { name: 'AES-GCM', length: 256 },
+                                true,
+                                ['encrypt', 'decrypt']
+                            );
+                        } catch (e) {
+                            // This will fail if the PIN is wrong
+                            console.log("Failed to decrypt master key (likely wrong PIN):", e.message);
+                            return null;
+                        }
+                    },
+                    
+                    async encryptData(data) {
+                        if (!App.state.masterEncryptionKey) throw new Error("No master key to encrypt data");
+                        try {
+                            const encoder = new TextEncoder();
+                            const dataBuffer = encoder.encode(JSON.stringify(data));
+                            const iv = window.crypto.getRandomValues(new Uint8Array(12));
+                            
+                            const encryptedData = await window.crypto.subtle.encrypt(
+                                { name: 'AES-GCM', iv: iv },
+                                App.state.masterEncryptionKey,
+                                dataBuffer
+                            );
+                            
+                            // Return IV + data, base64 encoded for Firestore
+                            return App.util.bufferToBase64(iv) + "." + App.util.bufferToBase64(encryptedData);
+                        } catch (e) {
+                            console.error("Error encrypting data:", e);
+                            return null;
+                        }
+                    },
+                    
+                    async decryptData(encryptedString) {
+                        if (!App.state.masterEncryptionKey) throw new Error("No master key to decrypt data");
+                        try {
+                            const [ivBase64, dataBase64] = encryptedString.split('.');
+                            const iv = App.util.base64ToBuffer(ivBase64);
+                            const encryptedData = App.util.base64ToBuffer(dataBase64);
+                            
+                            const decryptedBuffer = await window.crypto.subtle.decrypt(
+                                { name: 'AES-GCM', iv: iv },
+                                App.state.masterEncryptionKey,
+                                encryptedData
+                            );
+                            
+                            const decoder = new TextDecoder();
+                            const json = decoder.decode(decryptedBuffer);
+                            return JSON.parse(json);
+                        } catch (e) {
+                            console.error("Error decrypting data:", e);
+                            // This could mean data is corrupt or key is wrong
+                            return null;
+                        }
+                    }
+                },
+                
+                // --- 7. STORAGE MODULE (Now fully encrypted) ---
                 storage: {
-                    loadHistory() {
+                    async loadHistory() {
+                        if (App.state.storageDriver === 'firestore') {
+                            await this.loadFromFirestore();
+                        } else {
+                            await this.loadFromLocalStorage();
+                        }
+                    },
+                    
+                    async loadFromLocalStorage() {
+                        console.log("Loading from Encrypted LocalStorage");
                         try {
-                            const historyJson = localStorage.getItem('tahaHinengaroCheckHistory');
-                            App.state.allCheckinHistory = historyJson ? JSON.parse(historyJson) : [];
-                        } catch (error) { console.error("Error loading check-in history:", error); App.state.allCheckinHistory = []; }
-                        
-                        try {
-                            const gratitudeJson = localStorage.getItem('tahaHinengaroGratitudeJournal');
-                            App.state.gratitudeHistory = gratitudeJson ? JSON.parse(gratitudeJson) : [];
-                        } catch (error) { console.error("Error loading gratitude history:", error); App.state.gratitudeHistory = []; }
-                        
-                        try {
-                            const sabbathJson = localStorage.getItem('tahaHinengaroSabbathCheck');
-                            App.state.sabbathHistory = sabbathJson ? JSON.parse(sabbathJson) : [];
-                        } catch (error) { console.error("Error loading sabbath history:", error); App.state.sabbathHistory = []; }
+                            const encHistory = localStorage.getItem('tahaHauoraCheckHistory');
+                            App.state.allCheckinHistory = encHistory ? await App.crypto.decryptData(encHistory) : [];
+                            
+                            const encGratitude = localStorage.getItem('tahaHauoraGratitudeJournal');
+                            App.state.gratitudeHistory = encGratitude ? await App.crypto.decryptData(encGratitude) : [];
+                            
+                            const encSabbath = localStorage.getItem('tahaHauoraSabbathCheck');
+                            App.state.sabbathHistory = encSabbath ? await App.crypto.decryptData(encSabbath) : [];
 
-                        try {
-                            const resourcesJson = localStorage.getItem('tahaHinengaroUserResources');
-                            App.state.userResources = resourcesJson ? JSON.parse(resourcesJson) : {};
-                        } catch (error) { console.error("Error loading user resources:", error); App.state.userResources = {}; }
+                            const encResources = localStorage.getItem('tahaHauoraUserResources');
+                            App.state.userResources = encResources ? await App.crypto.decryptData(encResources) : {};
+                            
+                            const encRule = localStorage.getItem('tahaHauoraRuleOfLife');
+                            App.state.ruleOfLife = encRule ? await App.crypto.decryptData(encRule) : {};
+                            
+                            const encRuleHistory = localStorage.getItem('tahaHauoraRuleOfLifeHistory');
+                            App.state.ruleOfLifeHistory = encRuleHistory ? await App.crypto.decryptData(encRuleHistory) : [];
+                            
+                        } catch (error) { console.error("Error loading encrypted local data:", error); this.clearAllState(); }
+                    },
+                    
+                    async loadFromFirestore() {
+                        console.log("Loading from Encrypted Firestore");
+                        const collRef = fb.collection(App.state.db, 'users', App.state.user.uid, 'data');
+                        const dataMap = {
+                            checkinHistory: [], gratitudeHistory: [], sabbathHistory: [], 
+                            userResources: {}, ruleOfLife: {}, ruleOfLifeHistory: []
+                        };
                         
                         try {
-                            const ruleJson = localStorage.getItem('tahaHinengaroRuleOfLife');
-                            App.state.ruleOfLife = ruleJson ? JSON.parse(ruleJson) : {};
-                        } catch (error) { console.error("Error loading rule of life:", error); App.state.ruleOfLife = {}; }
+                            const snapshot = await fb.getDocs(collRef);
+                            for (const doc of snapshot.docs) {
+                                const docData = doc.data();
+                                const decryptedData = await App.crypto.decryptData(docData.payload);
+                                if (decryptedData) {
+                                    dataMap[doc.id] = decryptedData;
+                                } else {
+                                    console.warn(`Could not decrypt data for ${doc.id}`);
+                                }
+                            }
+                            
+                            App.state.allCheckinHistory = dataMap.checkinHistory;
+                            App.state.gratitudeHistory = dataMap.gratitudeHistory;
+                            App.state.sabbathHistory = dataMap.sabbathHistory;
+                            App.state.userResources = dataMap.userResources;
+                            App.state.ruleOfLife = dataMap.ruleOfLife;
+                            App.state.ruleOfLifeHistory = dataMap.ruleOfLifeHistory;
+
+                        } catch (e) {
+                            console.error("Error loading from Firestore:", e);
+                            App.ui.showModal("Load Error", "Could not load data from cloud. Please check connection.");
+                        }
+                    },
+
+                    async saveData(key, data) {
+                        try {
+                            const encryptedData = await App.crypto.encryptData(data);
+                            if (!encryptedData) throw new Error("Encryption failed.");
+                            
+                            if (App.state.storageDriver === 'firestore') {
+                                const docRef = fb.doc(App.state.db, 'users', App.state.user.uid, 'data', key);
+                                await fb.setDoc(docRef, { payload: encryptedData });
+                            } else {
+                                localStorage.setItem(`tahaHauora${key.charAt(0).toUpperCase() + key.slice(1)}`, encryptedData);
+                            }
+                        } catch (error) {
+                             console.error(`Error saving ${key}:`, error);
+                             App.ui.showModal("Save Error", `Could not save your ${key} data.`);
+                        }
+                    },
+                    
+                    // Specific save functions, now using the generic saveData
+                    saveHistory() { this.saveData('checkinHistory', App.state.allCheckinHistory); },
+                    saveGratitudeHistory() { this.saveData('gratitudeHistory', App.state.gratitudeHistory); },
+                    saveSabbathHistory() { this.saveData('sabbathHistory', App.state.sabbathHistory); },
+                    saveUserResources() { this.saveData('userResources', App.state.userResources); },
+                    saveRuleOfLife() { this.saveData('ruleOfLife', App.state.ruleOfLife); },
+                    saveRuleOfLifeHistory() { this.saveData('ruleOfLifeHistory', App.state.ruleOfLifeHistory); },
+
+                    async saveKeysAndSalt() {
+                        // This function saves the critical keys locally and, if opted-in, to the cloud.
                         
+                        // 1. Always save locally (for PIN verification and local-only mode)
+                        localStorage.setItem('tahaHauoraPINHash', App.state.pinHash);
+                        localStorage.setItem('tahaHauoraPINSalt', App.state.pinSalt);
+                        localStorage.setItem('tahaHauoraEncMasterKey', App.state.encryptedMasterKey);
+                        
+                        // 2. If logged in, also save meta doc to Firestore
+                        if (App.state.storageDriver === 'firestore' && App.state.user) {
+                            console.log("Saving keys to Firestore");
+                            const metaRef = fb.doc(App.state.db, 'users', App.state.user.uid);
+                            await fb.setDoc(metaRef, { 
+                                pinSalt: App.state.pinSalt, 
+                                encryptedMasterKey: App.state.encryptedMasterKey 
+                            });
+                        }
+                    },
+                    
+                    getLocalDataForMigration() {
+                        // Used by auth module when a user signs in for the first time
+                        this.loadLocalPINData(); // Loads hash, salt, key from localStorage
+                        return {
+                            pinHash: App.state.pinHash,
+                            pinSalt: App.state.pinSalt,
+                            encryptedMasterKey: App.state.encryptedMasterKey,
+                            
+                            // Get all data, *still encrypted*
+                            checkinHistory: localStorage.getItem('tahaHauoraCheckHistory'),
+                            gratitudeHistory: localStorage.getItem('tahaHauoraGratitudeJournal'),
+                            sabbathHistory: localStorage.getItem('tahaHauoraSabbathCheck'),
+                            userResources: localStorage.getItem('tahaHauoraUserResources'),
+                            ruleOfLife: localStorage.getItem('tahaHauoraRuleOfLife'),
+                            ruleOfLifeHistory: localStorage.getItem('tahaHauoraRuleOfLifeHistory')
+                        };
+                    },
+                    
+                    async migrateLocalToFirestore(pinKey, localData) {
+                        console.log("Migrating local data to Firestore...");
                         try {
-                            const ruleHistoryJson = localStorage.getItem('tahaHinengaroRuleOfLifeHistory');
-                            App.state.ruleOfLifeHistory = ruleHistoryJson ? JSON.parse(ruleHistoryJson) : [];
-                        } catch (error) { console.error("Error loading rule of life history:", error); App.state.ruleOfLifeHistory = []; }
-                    },
-                    saveHistory() {
-                        try {
-                            localStorage.setItem('tahaHinengaroCheckHistory', JSON.stringify(App.state.allCheckinHistory));
-                        } catch (error) {
-                            console.error("Error saving check-in history:", error);
-                            App.ui.showModal("Save Error", "Could not save your check-in data. Your browser's storage might be full or unavailable.");
+                            // 1. Decrypt the master key (we already have it, but for safety)
+                            const masterKey = await App.crypto.decryptMasterKey(localData.encryptedMasterKey, pinKey);
+                            if (!masterKey) throw new Error("Migration failed: could not get master key");
+                            App.state.masterEncryptionKey = masterKey; // Set in memory
+                            
+                            // 2. Create batch write
+                            const batch = fb.writeBatch(App.state.db);
+                            
+                            const dataKeys = ['checkinHistory', 'gratitudeHistory', 'sabbathHistory', 'userResources', 'ruleOfLife', 'ruleOfLifeHistory'];
+                            
+                            for (const key of dataKeys) {
+                                const encryptedData = localData[key];
+                                if (encryptedData) {
+                                    // 3. Decrypt with old key, re-encrypt with new key (they are the same key, but this is safer)
+                                    // This is actually not needed. The encrypted data is fine, just copy it.
+                                    const docRef = fb.doc(App.state.db, 'users', App.state.user.uid, 'data', key);
+                                    batch.set(docRef, { payload: encryptedData });
+                                }
+                            }
+                            
+                            // 4. Commit batch
+                            await batch.commit();
+                            console.log("Migration successful.");
+                            
+                            // 5. Clear local storage (except PIN/Key data)
+                            localStorage.removeItem('tahaHinengaroCheckHistory');
+                            localStorage.removeItem('tahaHinengaroGratitudeJournal');
+                            localStorage.removeItem('tahaHinengaroSabbathCheck');
+                            localStorage.removeItem('tahaHinengaroUserResources');
+                            localStorage.removeItem('tahaHinengaroRuleOfLife');
+                            localStorage.removeItem('tahaHinengaroRuleOfLifeHistory');
+                            // We KEEP the tahaHauora... keys (PIN, salt, masterKey)
+                            
+                        } catch (e) {
+                            console.error("Migration failed:", e);
+                            App.ui.showModal("Sync Error", "Could not migrate your local data to the cloud. Please sign out and sign in again.");
                         }
                     },
-                    saveGratitudeHistory() {
-                         try {
-                            localStorage.setItem('tahaHinengaroGratitudeJournal', JSON.stringify(App.state.gratitudeHistory));
-                        } catch (error) {
-                            console.error("Error saving gratitude history:", error);
-                            App.ui.showModal("Save Error", "Could not save your gratitude data. Your browser's storage might be full or unavailable.");
-                        }
+                    
+                    clearAllState() {
+                        // Used by clear data function
+                        App.state.allCheckinHistory = [];
+                        App.state.gratitudeHistory = [];
+                        App.state.sabbathHistory = [];
+                        App.state.userResources = {};
+                        App.state.ruleOfLife = {};
+                        App.state.ruleOfLifeHistory = [];
+                        App.state.currentlyViewedSummaryIndex = -1;
+                        App.state.currentEditingNotesIndex = -1;
+                        App.state.masterEncryptionKey = null;
                     },
-                    saveSabbathHistory() {
-                         try {
-                            localStorage.setItem('tahaHinengaroSabbathCheck', JSON.stringify(App.state.sabbathHistory));
-                        } catch (error) {
-                            console.error("Error saving sabbath history:", error);
-                            App.ui.showModal("Save Error", "Could not save your sabbath data. Your browser's storage might be full or unavailable.");
-                        }
-                    },
-                    saveUserResources() {
-                         try {
-                            localStorage.setItem('tahaHinengaroUserResources', JSON.stringify(App.state.userResources));
-                        } catch (error) {
-                            console.error("Error saving user resources:", error);
-                            App.ui.showModal("Save Error", "Could not save your resource contacts.");
-                        }
-                    },
-                    saveRuleOfLife() {
-                         try {
-                            localStorage.setItem('tahaHinengaroRuleOfLife', JSON.stringify(App.state.ruleOfLife));
-                        } catch (error) {
-                            console.error("Error saving rule of life:", error);
-                            App.ui.showModal("Save Error", "Could not save your Rule of Life.");
-                        }
-                    },
-                    saveRuleOfLifeHistory() {
-                         try {
-                            localStorage.setItem('tahaHinengaroRuleOfLifeHistory', JSON.stringify(App.state.ruleOfLifeHistory));
-                        } catch (error) {
-                            console.error("Error saving rule of life history:", error);
-                            App.ui.showModal("Save Error", "Could not save your Rule of Life reflection.");
-                        }
-                    },
+
                     findOrCreateEntryForToday() {
                         const todayDateString = new Date().toISOString().split('T')[0];
                         let entryIndex = App.state.allCheckinHistory.findIndex(entry => entry.date === todayDateString);
@@ -1325,7 +1966,7 @@
                     }
                 },
 
-                // --- 7. NAVIGATION MODULE ---
+                // --- 8. NAVIGATION MODULE ---
                 navigation: {
                     navigateTo(viewId, params = {}) {
                         App.dom.views.forEach(view => view.classList.remove('active-view'));
@@ -1375,6 +2016,7 @@
                             App.ui.renderDashboardPreview();
                         } else if (viewId === 'settingsView') { 
                             App.moduleSettings.renderPINButtons();
+                            App.moduleSettings.renderSyncContainer();
                         }
                         
                         const targetViewEl = document.getElementById(targetViewId);
@@ -1403,7 +2045,7 @@
                     }
                 },
                 
-                // --- 8. UI MODULE (Modals, Renders, etc) ---
+                // --- 9. UI MODULE (Modals, Renders, etc) ---
                 ui: {
                     showModal(title, message) {
                         App.dom.promptModalTitle.textContent = title;
@@ -1545,7 +2187,7 @@
                     }
                 },
                 
-                // --- 9. FEATURE MODULES ---
+                // --- 10. FEATURE MODULES ---
                 
                 moduleCheckin: {
                     startWarningCheckin() {
@@ -1695,7 +2337,7 @@
                     },
                     finishCheckin(type) {
                         if (!App.ui.checkAllQuestionsAnswered(type)) return;
-                        App.storage.saveHistory();
+                        App.storage.saveHistory(); // Now async and encrypted
                         App.state.currentlyViewedSummaryIndex = App.state.allCheckinHistory.findIndex(entry => entry.date === App.state.currentCheckinData.date);
                         App.moduleSummaryTrends.renderSummary(App.state.currentCheckinData);
                         App.navigation.navigateTo('summaryView'); 
@@ -1800,7 +2442,7 @@
                             App.state.sabbathHistory.push(App.state.currentSabbathCheckinData);
                         }
                         
-                        App.storage.saveSabbathHistory();
+                        App.storage.saveSabbathHistory(); // Now async and encrypted
                         App.ui.showModal("Reflection Saved", "Your Sabbath reflection has been saved.");
                         App.navigation.navigateTo('pastSabbathView');
                     },
@@ -1890,7 +2532,7 @@
                         } else {
                             App.state.gratitudeHistory.push({ date: todayDateString, entry: entryText }); // Add new
                         }
-                        App.storage.saveGratitudeHistory();
+                        App.storage.saveGratitudeHistory(); // Now async and encrypted
                         App.ui.showModal("Gratitude Saved", "Your gratitude entry for today has been saved.");
                     },
                     renderPastEntries() {
@@ -1960,7 +2602,7 @@
                         App.state.ruleOfLife.intentions = App.dom.ruleIntentionInputs
                             .map(input => input.value.trim())
                             .filter(intention => intention !== "");
-                        App.storage.saveRuleOfLife();
+                        App.storage.saveRuleOfLife(); // Now async and encrypted
                         this.renderRuleOfLife('read');
                         App.ui.showModal("Rule of Life Saved", "Your intentions have been saved.");
                     },
@@ -2030,7 +2672,7 @@
                             App.state.ruleOfLifeHistory.push(newEntry);
                         }
                         
-                        App.storage.saveRuleOfLifeHistory();
+                        App.storage.saveRuleOfLifeHistory(); // Now async and encrypted
                         App.ui.showModal("Reflection Saved", "Your Rule of Life reflection has been saved.");
                         App.navigation.navigateTo('pastRuleOfLifeView');
                     },
@@ -2350,7 +2992,7 @@
                     saveNotes() {
                         if (App.state.currentEditingNotesIndex !== -1 && App.state.allCheckinHistory[App.state.currentEditingNotesIndex]) {
                             App.state.allCheckinHistory[App.state.currentEditingNotesIndex].notes = App.dom.personalNotesArea.value;
-                            App.storage.saveHistory();
+                            App.storage.saveHistory(); // Now async and encrypted
                             App.ui.showModal("Notes Saved", "Your personal notes have been saved locally for this entry.");
                         } else {
                             App.ui.showModal("Error Saving Notes", "Could not determine which entry to save notes for. Please try again.");
@@ -2638,7 +3280,7 @@
                             counsellor: App.dom.editCounsellor.value.trim(),
                             other: App.dom.editOther.value.trim(),
                         };
-                        App.storage.saveUserResources();
+                        App.storage.saveUserResources(); // Now async and encrypted
                         this.render('read');
                         App.ui.showModal("Resources Saved", "Your personal contacts have been saved.");
                     }
@@ -2646,14 +3288,44 @@
 
                 moduleSettings: {
                     renderPINButtons() {
-                        if (App.state.pinHash) {
-                            App.dom.pinManagementContainer.style.display = 'grid';
-                            App.dom.enablePinBtn.style.display = 'none';
+                        // PIN is now mandatory, so just show "Change PIN"
+                        App.dom.pinManagementContainer.style.display = 'grid';
+                        // App.dom.enablePinBtn is removed/hidden
+                    },
+                    
+                    renderSyncContainer() {
+                        const container = App.dom.syncManagementContainer;
+                        if (App.state.user) {
+                            // User is logged in
+                            container.innerHTML = `
+                                <p class="font-medium">Cloud Sync</p>
+                                <p class="text-sm text-slate-600">
+                                    You are signed in as: <strong class="text-sky-700">${App.state.user.email || 'Google User'}</strong>. 
+                                    Your encrypted data is syncing to the cloud.
+                                </p>
+                                <button id="signOutBtn" class="btn btn-secondary w-full">Sign Out</button>
+                            `;
+                            document.getElementById('signOutBtn').addEventListener('click', () => {
+                                App.ui.showModal("Sign Out?", "Are you sure you want to sign out? Your data will remain in the cloud, but you will need to sign in again to access it.");
+                                App.ui.addModalConfirmButton("Yes, Sign Out", () => App.auth.signOut(), 'bg-red-500');
+                            });
                         } else {
-                            App.dom.pinManagementContainer.style.display = 'none';
-                            App.dom.enablePinBtn.style.display = 'block';
+                            // User is local-only
+                             container.innerHTML = `
+                                <p class="font-medium">Cloud Sync</p>
+                                <p class="text-sm text-slate-600">
+                                   Your encrypted data is currently <strong>only saved on this device</strong>.
+                                   Sign in to enable secure cloud backup and sync.
+                                </p>
+                                <button id="signInBtn" class="btn btn-primary w-full">Enable Cloud Sync</button>
+                            `;
+                            document.getElementById('signInBtn').addEventListener('click', () => {
+                                // Reload the app to go back to the login screen
+                                window.location.reload();
+                            });
                         }
                     },
+                    
                     exportData() {
                         const { allCheckinHistory, gratitudeHistory, sabbathHistory, userResources, ruleOfLife, ruleOfLifeHistory } = App.state;
                         if (allCheckinHistory.length === 0 && gratitudeHistory.length === 0 && sabbathHistory.length === 0 && Object.keys(userResources).length === 0 && Object.keys(ruleOfLife).length === 0 && ruleOfLifeHistory.length === 0) {
@@ -2721,13 +3393,15 @@
                                     App.state.userResources = importedUserResources;
                                     App.state.ruleOfLife = importedRuleOfLife;
                                     App.state.ruleOfLifeHistory = importedRuleOfLifeHistory;
+                                    
+                                    // Save all imported data (will be re-encrypted and saved)
                                     App.storage.saveHistory();
                                     App.storage.saveGratitudeHistory();
                                     App.storage.saveSabbathHistory();
                                     App.storage.saveUserResources();
                                     App.storage.saveRuleOfLife();
                                     App.storage.saveRuleOfLifeHistory();
-                                    App.storage.loadHistory();
+                                    
                                     App.navigation.navigateTo('welcomeView');
                                     App.dom.promptModal.style.display = 'none'; 
                                     App.ui.showModal("Import Successful", `Successfully imported all data.`);
@@ -2758,48 +3432,44 @@
                         };
                         reader.readAsText(file);
                     },
-                    confirmClearData() {
+                    async confirmClearData() {
                         App.ui.showModal("Confirm Deletion", "Are you sure you want to clear ALL your data (Check-ins, Gratitude, Sabbath, Rule of Life, Resources, and PIN)? This action cannot be undone.");
-                        const confirmBtn = document.createElement('button');
-                        confirmBtn.textContent = "Yes, Clear All Data";
-                        confirmBtn.className = "btn bg-red-500 text-white hover:bg-red-600 w-full mt-2 btn-extra-modal"; 
-                        confirmBtn.onclick = () => {
-                            localStorage.removeItem('tahaHinengaroCheckHistory');
-                            localStorage.removeItem('tahaHinengaroGratitudeJournal');
-                            localStorage.removeItem('tahaHinengaroSabbathCheck');
-                            localStorage.removeItem('tahaHinengaroUserResources');
-                            localStorage.removeItem('tahaHinengaroRuleOfLife');
-                            localStorage.removeItem('tahaHinengaroRuleOfLifeHistory');
+                        
+                        const confirmBtn = App.ui.addModalConfirmButton("Yes, Clear All Data", async () => {
+                            // 1. Clear local storage
+                            localStorage.removeItem('tahaHauoraCheckHistory');
+                            localStorage.removeItem('tahaHauoraGratitudeJournal');
+                            localStorage.removeItem('tahaHauoraSabbathCheck');
+                            localStorage.removeItem('tahaHauoraUserResources');
+                            localStorage.removeItem('tahaHauoraRuleOfLife');
+                            localStorage.removeItem('tahaHauoraRuleOfLifeHistory');
                             localStorage.removeItem('hauoraOnboardComplete');
                             localStorage.removeItem('tahaHauoraPINHash');
                             localStorage.removeItem('tahaHauoraPINSalt');
+                            localStorage.removeItem('tahaHauoraEncMasterKey');
                             
+                            // 2. Clear from Firestore if logged in
+                            if (App.state.user) {
+                                await App.auth.handleAccountDeletion();
+                            }
+                            
+                            // 3. Clear in-memory state
+                            App.storage.clearAllState();
                             App.state.pinHash = null;
                             App.state.pinSalt = null;
-                            App.state.allCheckinHistory = [];
-                            App.state.gratitudeHistory = [];
-                            App.state.sabbathHistory = [];
-                            App.state.userResources = {};
-                            App.state.ruleOfLife = {};
-                            App.state.ruleOfLifeHistory = [];
-                            App.state.currentlyViewedSummaryIndex = -1;
-                            App.state.currentEditingNotesIndex = -1;
+                            App.state.encryptedMasterKey = null;
                             
                             if (App.state.trendsChartInstance) { App.state.trendsChartInstance.destroy(); App.state.trendsChartInstance = null; }
                             if (App.state.ruleOfLifeChartInstance) { App.state.ruleOfLifeChartInstance.destroy(); App.state.ruleOfLifeChartInstance = null; }
 
-                            App.moduleSummaryTrends.renderTrends(); 
-                            App.ui.showModal("Data Cleared", "All your data has been removed. The app will now reload and require a new PIN setup.");
+                            App.ui.showModal("Data Cleared", "All your data has been removed. The app will now reload.");
                             setTimeout(() => window.location.reload(), 2000);
-                        };
-                        const modalContent = App.dom.promptModal.querySelector('.modal-content');
-                        const existingExtraButtons = modalContent.querySelectorAll('.btn-extra-modal');
-                        existingExtraButtons.forEach(btn => modalContent.removeChild(btn));
-                        modalContent.appendChild(confirmBtn);
+                        }, 'bg-red-500');
+                        
                         App.dom.closePromptModalBtn.textContent = "Cancel"; 
                         App.dom.closePromptModalBtn.onclick = () => { 
                             App.dom.promptModal.style.display = 'none';
-                            if (modalContent.contains(confirmBtn)) modalContent.removeChild(confirmBtn);
+                            App.ui.removeModalConfirmButton(confirmBtn);
                             App.dom.closePromptModalBtn.textContent = "Okay, I Understand"; 
                             App.dom.closePromptModalBtn.onclick = () => { App.dom.promptModal.style.display = 'none'; }; 
                         };
@@ -2854,7 +3524,7 @@
                     }
                 },
 
-                // --- 10. UTILITIES ---
+                // --- 11. UTILITIES ---
                 util: {
                     parseDateString(dateString) {
                         if (!dateString || !/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
@@ -2885,11 +3555,30 @@
                             bytes[i / 2] = parseInt(hex.substr(i, 2), 16);
                         }
                         return bytes.buffer;
+                    },
+                    bufferToBase64(buffer) {
+                        let binary = '';
+                        const bytes = new Uint8Array(buffer);
+                        const len = bytes.byteLength;
+                        for (let i = 0; i < len; i++) {
+                            binary += String.fromCharCode(bytes[i]);
+                        }
+                        return window.btoa(binary);
+                    },
+                    base64ToBuffer(base64) {
+                        const binary_string = window.atob(base64);
+                        const len = binary_string.length;
+                        const bytes = new Uint8Array(len);
+                        for (let i = 0; i < len; i++) {
+                            bytes[i] = binary_string.charCodeAt(i);
+                        }
+                        return bytes.buffer;
                     }
                 }
             };
 
             // Start the application
+            // This is now handled by the Firebase Auth listener
             App.init();
 
         }); // End DOMContentLoaded
