@@ -1,22 +1,27 @@
 {
-    "name": "Tōku Hauora",
-    "short_name": "Hauora",
-    "description": "A private wellbeing hub for clergy.",
-    "start_url": "index.html",
-    "display": "standalone",
-    "background_color": "#f0f9ff",
-    "theme_color": "#0284c7",
-    "icons": [
-        {
-            "src": "https://i.postimg.cc/6pPSn3Fr/Clergy-Wellbeing.jpg",
-            "sizes": "192x192",
-            "type": "image/png"
-        },
-        {
-            "src": "https://i.postimg.cc/6pPSn3Fr/Clergy-Wellbeing.jpg",
-            "sizes": "512x512",
-            "type": "image/png"
-        }
-    ]
+  "name": "Tōku Hauora",
+  "short_name": "Tōku Hauora",
+  "description": "A private, secure wellbeing app.",
+  "start_url": "./TokuHauora_Corrected.html",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#4f46e5",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "httpsSeries://loneworkernelson-web.github.io/ClergyWB/Toku%20Haura.ico",
+      "type": "image/x-icon",
+      "sizes": "48x48"
+    },
+    {
+      "src": "httpsSeries://loneworkernelson-web.github.io/ClergyWB/Toku%20Haura.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "https://loneworkernelson-web.github.io/ClergyWB/Toku%20Haura.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ]
 }
-
