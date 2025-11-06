@@ -9,7 +9,7 @@ const URLS_TO_CACHE = [
     'manifest.json',
     'https://cdn.jsdelivr.net/npm/chart.js',
     'https://cdn.jsdelivr.net/npm/idb@7/build/umd.js',
-    'https://loneworkernelson-web.github.io/ClergyWB/Toku%20Haura.png' // Icon
+    'https://loneworkernelson-web.github.io/ClergyWB/Tōku%20Haura.png' // Icon
 ];
 
 // Install event: cache the app shell
