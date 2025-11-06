@@ -936,6 +936,818 @@
                 sabbathCategoryOrder: ["disengagement", "rest", "connection", "spiritual"],
                 
                 DB_NAME: 'TokuHauoraDB_v2', // New DB name for encrypted store
+                DB_VERSION: 1,
+                // New, safer DB structure
+                STORES: {
+                    APP_STATE: 'appState', // For PIN, rule, resources
+                    CHECKIN: 'checkinHistory',
+                    GRATITUDE: 'gratitudeHistory',
+                    SABBATH: 'sabbathHistory',
+                    RULE_HISTORY: 'ruleOfLifeHistory'
+                }
+            },
+
+            // --- DOM Element Cache ---
+            dom: {},
+
+            // --- Initialization ---
+            init: async function() {
+                console.log("App.init() started");
+                
+                // 1. Cache DOM Elements
+                this.cacheDom();
+                
+                // 2. Attach Core Listeners
+                // This is now done *after* init to avoid race conditions
+                // this.attachListeners();
+
+                // 3. Initialize Firebase (if config is present)
+                this.state.appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+                const fbConfig = window.firebaseConfig || null;
+
+                if (fbConfig && fbConfig.apiKey && fbConfig.apiKey !== "YOUR_API_KEY") {
+                    try {
+                        console.log("Initializing Firebase...");
+                        this.state.fb.app = initializeApp(fbConfig);
+                        this.state.fb.auth = getAuth(this.state.fb.app);
+                        this.state.fb.db = getFirestore(this.state.fb.app);
+                        this.state.fb.googleProvider = new GoogleAuthProvider();
+                        setLogLevel('debug');
+                        console.log("Firebase initialized successfully.");
+                    } catch (e) {
+                        console.error("Firebase initialization failed:", e);
+                        this.ui.showAlert("Firebase Error: " + e.message, "error");
+                    }
+                } else {
+                    console.warn("Firebase config is not set or is still placeholder. App will run in local-only mode.");
+                }
+
+                // 4. Initialize Local DB (IndexedDB)
+                try {
+                    this.state.db = await this.storage.initDB();
+                } catch (e) {
+                    console.error("Failed to initialize local DB:", e);
+                    this.ui.showModal("Critical Error", "Could not load the app's database. Please try refreshing or clearing your browser cache if the problem persists.");
+                    if(this.dom.lock.keypad) this.dom.lock.keypad.style.display = 'none';
+                    return; // Stop initialization
+                }
+
+                // 5. Check PIN status and start Auth flow
+                await this.auth.checkPinAndAuthState();
+
+                // 6. Attach Listeners *after* DOM is cached
+                this.attachListeners();
+                
+                console.log("App.init() complete.");
+            },
+            
+            // --- Caches all common DOM elements ---
+            cacheDom: function() {
+                this.dom.app = document.getElementById('app');
+                this.dom.main = document.querySelector('main');
+                this.dom.views = document.querySelectorAll('.view');
+                this.dom.navButtons = document.querySelectorAll('.nav-tab-btn');
+                
+                // Lock Screen
+                this.dom.lock = {
+                    screen: document.getElementById('lockScreen'),
+                    title: document.getElementById('lockTitle'),
+                    subtitle: document.getElementById('lockSubtitle'),
+                    error: document.getElementById('lockError'),
+                    dots: document.querySelectorAll('.pin-dot'),
+                    keypad: document.querySelector('#lockScreen .grid')
+                };
+                
+                // Login View
+                this.dom.login = {
+                    view: document.getElementById('loginView'),
+                    signInGoogleBtn: document.getElementById('signInGoogleBtn'),
+                    showEmailLoginBtn: document.getElementById('showEmailLoginBtn'),
+                    stayLocalBtn: document.getElementById('stayLocalBtn'),
+                    emailLoginView: document.getElementById('emailLoginView'),
+                    emailInput: document.getElementById('emailInput'),
+                    passwordInput: document.getElementById('passwordInput'),
+                    emailLoginBtn: document.getElementById('emailLoginBtn'),
+                    emailSignUpBtn: document.getElementById('emailSignUpBtn'),
+                    backToLoginOptionsBtn: document.getElementById('backToLoginOptionsBtn'),
+                    authError: document.getElementById('authError')
+                };
+
+                // Modals
+                this.dom.onboarding = {
+                    modal: document.getElementById('onboardingModal'),
+                    stepIndicator: document.getElementById('onboardingStepIndicator'),
+                    prevBtn: document.getElementById('onboardingPrevBtn'),
+                    nextBtn: document.getElementById('onboardingNextBtn'),
+                    finishBtn: document.getElementById('onboardingFinishBtn'),
+                    steps: document.querySelectorAll('.onboarding-step')
+                };
+                this.dom.prompt = {
+                    modal: document.getElementById('promptModal'),
+                    title: document.getElementById('promptModalTitle'),
+                    message: document.getElementById('promptModalMessage'),
+                    buttons: document.getElementById('promptModalButtons'),
+                    closeBtn: document.getElementById('closePromptModalBtn')
+                };
+                this.dom.alert = {
+                    box: document.getElementById('alert-box'),
+                    content: document.getElementById('alert-content'),
+                    icon: document.getElementById('alert-icon'),
+                    message: document.getElementById('alert-message')
+                };
+                
+                // Dashboard
+                this.dom.dashboard = {
+                    preview: document.getElementById('dashboardPreview'),
+                    rulePreview: document.getElementById('dashboardRulePreview'),
+                    startWarningBtn: document.getElementById('startWarningCheckinBtn'),
+                    startPositiveBtn: document.getElementById('startPositiveCheckinBtn'),
+                    startSabbathBtn: document.getElementById('startSabbathCheckinBtn'),
+                    startRuleBtn: document.getElementById('startRuleOfLifeBtn'),
+                    startGratitudeBtn: document.getElementById('startGratitudeBtn'),
+                    navToPrivacyBtn: document.getElementById('navToPrivacyBtn')
+                };
+                
+                // Check-in (Warning)
+                this.dom.warn = {
+                    title: document.getElementById('categoryTitle'),
+                    container: document.getElementById('questionsContainer'),
+                    prevBtn: document.getElementById('prevCategoryBtn'),
+                    nextBtn: document.getElementById('nextCategoryBtn'),
+                    finishBtn: document.getElementById('finishCheckinBtn'),
+                    progress: document.getElementById('checkinProgress'),
+                    progressText: document.getElementById('progressText'),
+                    btnContainer: document.getElementById('checkinButtonContainer')
+                };
+                
+                // Check-in (Positive)
+                this.dom.positive = {
+                    title: document.getElementById('positiveCategoryTitle'),
+                    container: document.getElementById('positiveQuestionsContainer'),
+                    prevBtn: document.getElementById('positivePrevCategoryBtn'),
+                    nextBtn: document.getElementById('positiveNextCategoryBtn'),
+                    finishBtn: document.getElementById('positiveFinishCheckinBtn'),
+                    progress: document.getElementById('positiveCheckinProgress'),
+                    progressText: document.getElementById('positiveProgressText'),
+                    btnContainer: document.getElementById('positiveCheckinButtonContainer')
+                };
+                
+                // Sabbath
+                this.dom.sabbath = {
+                    title: document.getElementById('sabbathCategoryTitle'),
+                    container: document.getElementById('sabbathQuestionsContainer'),
+                    prevBtn: document.getElementById('sabbathPrevCategoryBtn'),
+                    nextBtn: document.getElementById('sabbathNextCategoryBtn'),
+                    finishBtn: document.getElementById('sabbathFinishCheckinBtn'),
+                    progress: document.getElementById('sabbathCheckinProgress'),
+                    progressText: document.getElementById('sabbathProgressText'),
+                    btnContainer: document.getElementById('sabbathCheckinButtonContainer'),
+                    dateInput: document.getElementById('sabbathCheckinDate'),
+                    notes: document.getElementById('sabbathNotesArea'),
+                    viewPastBtn: document.getElementById('viewPastSabbathBtn'),
+                    pastContainer: document.getElementById('pastSabbathContainer'),
+                    backToSabbathCheckinBtn: document.getElementById('backToSabbathCheckinBtn')
+                };
+                
+                // Gratitude
+                this.dom.gratitude = {
+                    notes: document.getElementById('gratitudeEntryArea'),
+                    saveBtn: document.getElementById('saveGratitudeBtn'),
+                    viewPastBtn: document.getElementById('viewPastGratitudeBtn'),
+                    pastContainer: document.getElementById('pastGratitudeContainer'),
+                    backToGratitudeBtn: document.getElementById('backToGratitudeBtn')
+                };
+                
+                // Rule of Life
+                this.dom.rule = {
+                    editBtn: document.getElementById('editRuleBtn'),
+                    saveBtn: document.getElementById('saveRuleBtn'),
+                    readView: document.getElementById('ruleOfLifeReadView'),
+                    editView: document.getElementById('ruleOfLifeEditView'),
+                    readList: document.getElementById('ruleOfLifeReadList'),
+                    inputs: document.querySelectorAll('#ruleOfLifeEditView input'),
+                    startCheckinBtn: document.getElementById('startRuleOfLifeCheckinBtn'),
+                    viewPastBtn: document.getElementById('viewPastRuleOfLifeBtn'),
+                    checkinDate: document.getElementById('ruleOfLifeCheckinDate'),
+                    checklistContainer: document.getElementById('ruleOfLifeChecklistContainer'),
+                    checkinNotes: document.getElementById('ruleOfLifeNotesArea'),
+                    saveCheckinBtn: document.getElementById('saveRuleOfLifeCheckinBtn'),
+                    pastContainer: document.getElementById('pastRuleOfLifeContainer'),
+                    chart: document.getElementById('ruleOfLifeChart'),
+                    chartEmpty: document.getElementById('ruleOfLifeChartEmpty'),
+                    backToRuleOfLifeBtn: document.getElementById('backToRuleOfLifeBtn'),
+                    backToRuleOfLifeBtn2: document.getElementById('backToRuleOfLifeBtn2')
+                };
+
+                // Summary & Notes
+                this.dom.summary = {
+                    content: document.getElementById('summaryContent'),
+                    prompt: document.getElementById('summaryPrompt'),
+                    backToTrendsBtn: document.getElementById('backToTrendsBtn'),
+                    addNotesBtn: document.getElementById('notesForSummaryBtn')
+                };
+                this.dom.notes = {
+                    notes: document.getElementById('personalNotesArea'),
+                    saveBtn: document.getElementById('saveNotesBtn'),
+                    dateText: document.getElementById('notesForDateText'),
+                    backBtn: document.getElementById('backToSummaryFromNotesBtn')
+                };
+                
+                // Trends
+                this.dom.trends = {
+                    chart: document.getElementById('wellbeingChart'),
+                    chartEmpty: document.getElementById('trendsChartEmpty'),
+                    toggleRecentBtn: document.getElementById('trendsToggleRecent'),
+                    toggleAllBtn: document.getElementById('trendsToggleAll'),
+                    correlationsContainer: document.getElementById('correlationsContainer')
+                };
+                
+                // Resources
+                this.dom.resources = {
+                    editBtn: document.getElementById('editResourcesBtn'),
+                    saveBtn: document.getElementById('saveResourcesBtn'),
+                    readView: document.getElementById('resourcesReadView'),
+                    editView: document.getElementById('resourcesEditView'),
+                    readSpans: {
+                        supervisor: document.getElementById('readSupervisor'),
+                        mentor: document.getElementById('readMentor'),
+                        spiritualDirector: document.getElementById('readSpiritualDirector'),
+                        doctor: document.getElementById('readDoctor'),
+                        counsellor: document.getElementById('readCounsellor'),
+                        other: document.getElementById('readOther')
+                    },
+                    editInputs: {
+                        supervisor: document.getElementById('editSupervisor'),
+                        mentor: document.getElementById('editMentor'),
+                        spiritualDirector: document.getElementById('editSpiritualDirector'),
+                        doctor: document.getElementById('editDoctor'),
+                        counsellor: document.getElementById('editCounsellor'),
+                        other: document.getElementById('editOther')
+                    }
+                };
+
+                // Settings
+                this.dom.settings = {
+                    syncLoading: document.getElementById('syncStatusLoading'),
+                    syncOut: document.getElementById('syncStatusOut'),
+                    syncIn: document.getElementById('syncStatusIn'),
+                    userEmail: document.getElementById('userEmailDisplay'),
+                    signInToSyncBtn: document.getElementById('signInToSyncBtn'),
+                    signOutBtn: document.getElementById('signOutBtn'),
+                    changePinBtn: document.getElementById('changePinBtn'),
+                    exportBtn: document.getElementById('exportDataBtn'),
+                    importInput: document.getElementById('importDataInput'),
+                    viewDataBtn: document.getElementById('viewDataBtn'),
+                    clearDataBtn: document.getElementById('clearDataBtn'),
+                    rawDataDisplay: document.getElementById('rawDataDisplay')
+                };
+            },
+            
+            // --- Attaches all event listeners ---
+            attachListeners: function() {
+                // --- Navigation ---
+                // FIX: Attach listeners by ID, not onclick attributes
+                document.getElementById('navHomeBtn').onclick = () => this.navigation.navigateTo('welcomeView');
+                document.getElementById('navSummaryBtn').onclick = () => this.navigation.navigateTo('summaryViewLast');
+                document.getElementById('navTrendsBtn').onclick = () => this.navigation.navigateTo('trendsView');
+                document.getElementById('navResourcesBtn').onclick = () => this.navigation.navigateTo('resourcesView');
+                document.getElementById('navSettingsBtn').onclick = () => this.navigation.navigateTo('settingsView');
+
+                // --- PIN Pad ---
+                if (this.dom.lock.keypad) {
+                    this.dom.lock.keypad.addEventListener('click', (e) => {
+                        const key = e.target.closest('button')?.dataset.key;
+                        if (key) {
+                            this.pin.onKeyPress(key);
+                        }
+                    });
+                } else {
+                    console.error("PIN keypad DOM not found!");
+                }
+
+
+                // --- Login ---
+                this.dom.login.signInGoogleBtn.onclick = () => this.auth.signInWithGoogle();
+                this.dom.login.showEmailLoginBtn.onclick = () => this.auth.showEmailLogin(true);
+                this.dom.login.stayLocalBtn.onclick = () => this.auth.stayLocal();
+                this.dom.login.emailLoginBtn.onclick = () => this.auth.signInWithEmail();
+                this.dom.login.emailSignUpBtn.onclick = () => this.auth.signUpWithEmail();
+                this.dom.login.backToLoginOptionsBtn.onclick = () => this.auth.showEmailLogin(false);
+                
+                // --- Modals ---
+                this.dom.prompt.closeBtn.onclick = () => this.ui.hideModal();
+                this.dom.prompt.modal.onclick = (e) => {
+                    if (e.target === this.dom.prompt.modal) this.ui.hideModal();
+                };
+                this.dom.onboarding.nextBtn.onclick = () => this.ui.updateOnboardingStep(1);
+                this.dom.onboarding.prevBtn.onclick = () => this.ui.updateOnboardingStep(-1);
+                this.dom.onboarding.finishBtn.onclick = () => {
+                    this.dom.onboarding.modal.classList.remove('visible');
+                    // Add a slight delay for the animation
+                    setTimeout(() => {
+                        this.dom.onboarding.modal.style.display = 'none';
+                    }, 200);
+                    localStorage.setItem('hauoraOnboardComplete', 'true');
+                };
+                
+                // --- Dashboard ---
+                this.dom.dashboard.startWarningBtn.onclick = () => this.moduleCheckin.start('warning');
+                this.dom.dashboard.startPositiveBtn.onclick = () => this.moduleCheckin.start('positive');
+                this.dom.dashboard.startSabbathBtn.onclick = () => this.navigation.navigateTo('sabbathCheckinView');
+                this.dom.dashboard.startRuleBtn.onclick = () => this.navigation.navigateTo('ruleOfLifeView');
+                this.dom.dashboard.startGratitudeBtn.onclick = () => this.navigation.navigateTo('gratitudeView');
+                this.dom.dashboard.navToPrivacyBtn.onclick = () => this.navigation.navigateTo('privacyView');
+                
+                // --- Check-ins ---
+                this.dom.warn.prevBtn.onclick = () => this.moduleCheckin.navigateCategory(-1, 'warning');
+                this.dom.warn.nextBtn.onclick = () => this.moduleCheckin.navigateCategory(1, 'warning');
+                this.dom.warn.finishBtn.onclick = () => this.moduleCheckin.finish('warning');
+                
+                this.dom.positive.prevBtn.onclick = () => this.moduleCheckin.navigateCategory(-1, 'positive');
+                this.dom.positive.nextBtn.onclick = () => this.moduleCheckin.navigateCategory(1, 'positive');
+                this.dom.positive.finishBtn.onclick = () => this.moduleCheckin.finish('positive');
+
+                // --- Sabbath ---
+                this.dom.sabbath.dateInput.onchange = () => this.moduleSabbath.loadForDate();
+                this.dom.sabbath.prevBtn.onclick = () => this.moduleSabbath.navigateCategory(-1);
+                this.dom.sabbath.nextBtn.onclick = () => this.moduleSabbath.navigateCategory(1);
+                this.dom.sabbath.finishBtn.onclick = () => this.moduleSabbath.finish();
+                this.dom.sabbath.viewPastBtn.onclick = () => this.navigation.navigateTo('pastSabbathView');
+                this.dom.sabbath.backToSabbathCheckinBtn.onclick = () => this.navigation.navigateTo('sabbathCheckinView');
+                
+                // --- Gratitude ---
+                this.dom.gratitude.saveBtn.onclick = () => this.moduleGratitude.save();
+                this.dom.gratitude.viewPastBtn.onclick = () => this.navigation.navigateTo('pastGratitudeView');
+                this.dom.gratitude.backToGratitudeBtn.onclick = () => this.navigation.navigateTo('gratitudeView');
+
+                // --- Rule of Life ---
+                this.dom.rule.editBtn.onclick = () => this.moduleRule.renderRule('edit');
+                this.dom.rule.saveBtn.onclick = () => this.moduleRule.saveRule();
+                this.dom.rule.startCheckinBtn.onclick = () => this.navigation.navigateTo('ruleOfLifeCheckinView');
+                this.dom.rule.viewPastBtn.onclick = () => this.navigation.navigateTo('pastRuleOfLifeView');
+                this.dom.rule.saveCheckinBtn.onclick = () => this.moduleRule.saveCheckin();
+                this.dom.rule.backToRuleOfLifeBtn.onclick = () => this.navigation.navigateTo('ruleOfLifeView');
+                this.dom.rule.backToRuleOfLifeBtn2.onclick = () => this.navigation.navigateTo('ruleOfLifeView');
+
+                // --- Summary & Notes ---
+                this.dom.summary.backToTrendsBtn.onclick = () => this.navigation.navigateTo('trendsView');
+                this.dom.summary.addNotesBtn.onclick = () => this.moduleCheckin.editNotesForSummary();
+                this.dom.notes.saveBtn.onclick = () => this.moduleCheckin.saveNotes();
+                this.dom.notes.backBtn.onclick = () => this.moduleCheckin.backToSummary();
+
+                // --- Trends ---
+                this.dom.trends.toggleRecentBtn.onclick = () => this.moduleTrends.setTrendView('recent');
+                this.dom.trends.toggleAllBtn.onclick = () => this.moduleTrends.setTrendView('all');
+
+                // --- Resources ---
+                this.dom.resources.editBtn.onclick = () => this.moduleResources.render('edit');
+                this.dom.resources.saveBtn.onclick = () => this.moduleResources.save();
+
+                // --- Settings ---
+                this.dom.settings.signInToSyncBtn.onclick = () => this.auth.showLogin();
+                this.dom.settings.signOutBtn.onclick = () => this.auth.signOut();
+                this.dom.settings.changePinBtn.onclick = () => this.pin.startChangePin();
+                this.dom.settings.exportBtn.onclick = () => this.storage.exportData();
+                this.dom.settings.importInput.onchange = (e) => this.storage.importData(e);
+                this.dom.settings.viewDataBtn.onclick = () => this.storage.toggleViewRawData();
+                this.dom.settings.clearDataBtn.onclick = () => this.storage.confirmClearAllData();
+            },
+            
+            // --- UI & Navigation Module ---
+            ui: {
+                showAlert: function(message, type = 'info', duration = 3000) {
+                    const { alert } = App.dom;
+                    // This was the source of the error.
+                    // We must check if alert and its children exist *before* using them.
+                    if (!alert || !alert.box || !alert.content || !alert.message) {
+                        console.error("Alert DOM elements not found! Message:", message);
+                        return;
+                    }
+
+                    if (App.state.ui.alertTimeout) {
+                        clearTimeout(App.state.ui.alertTimeout);
+                    }
+                    
+                    // Set text
+                    alert.message.textContent = message;
+                    
+                    // Set color and icon
+                    alert.content.classList.remove('bg-green-600', 'bg-red-600', 'bg-indigo-600'); // Use indigo for info
+                    if (type === 'success') {
+                        alert.content.classList.add('bg-green-600');
+                        alert.icon.innerHTML = `<svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>`;
+                    } else if (type === 'error') {
+                        alert.content.classList.add('bg-red-600');
+                        alert.icon.innerHTML = `<svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path></svg>`;
+                    } else { // info
+                        alert.content.classList.add('bg-indigo-600');
+                        alert.icon.innerHTML = `<svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm-1-9a1 1 0 112 0v4a1 1 0 11-2 0V9zm1-4a1 1 0 100 2 1 1 0 000-2z" clip-rule="evenodd"></path></svg>`;
+                    }
+                    
+                    // Show
+                    alert.box.classList.add('show');
+
+                    // Hide after duration
+                    App.state.ui.alertTimeout = setTimeout(() => {
+                        alert.box.classList.remove('show');
+                        App.state.ui.alertTimeout = null;
+                    }, duration);
+                },
+
+                showModal: function(title, message) {
+                    const { prompt } = App.dom;
+                    prompt.title.textContent = title;
+                    prompt.message.innerHTML = message.replace(/\n/g, '<br>'); // Support newlines
+                    prompt.modal.style.display = 'flex'; // Use flex to center
+                    
+                    // Use setTimeout to allow browser to render modal, then add class
+                    setTimeout(() => {
+                        prompt.modal.classList.add('visible');
+                    }, 10); // 10ms delay
+
+                    // Clear old buttons
+                    prompt.buttons.innerHTML = '';
+                    // Add default close button
+                    const closeBtn = document.createElement('button');
+                    closeBtn.id = 'closePromptModalBtn';
+                    closeBtn.className = 'px-4 py-2 rounded-lg shadow-md font-semibold transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 bg-indigo-600 text-white hover:bg-indigo-700 focus:ring-indigo-500';
+                    closeBtn.textContent = "Okay, I Understand";
+                    closeBtn.onclick = () => this.hideModal();
+                    prompt.buttons.appendChild(closeBtn);
+                },
+                
+                hideModal: function() {
+                    const { prompt } = App.dom;
+                    prompt.modal.classList.remove('visible');
+                    // Wait for transition to finish before hiding
+                    setTimeout(() => {
+                        prompt.modal.style.display = 'none';
+                    }, 200); // Match transition duration
+                },
+                
+                // Adds a second button (e.g., "Confirm") to the modal
+                addModalButton: function(text, type, onClick) {
+                    const { prompt } = App.dom;
+                    const btn = document.createElement('button');
+                    btn.textContent = text;
+                    const typeClass = type === 'danger' 
+                        ? 'bg-red-600 text-white hover:bg-red-700 focus:ring-red-500' 
+                        : 'bg-white text-slate-700 border border-slate-300 hover:bg-slate-50 focus:ring-indigo-500';
+                    btn.className = `px-4 py-2 rounded-lg shadow-md font-semibold transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 ${typeClass}`;
+                    btn.onclick = () => {
+                        onClick();
+                        this.hideModal(); // Auto-hide after click
+                    };
+                    
+                    // Re-style default button
+                    const defaultBtn = document.getElementById('closePromptModalBtn');
+                    if (defaultBtn) {
+                        defaultBtn.textContent = "Cancel";
+                        defaultBtn.className = 'px-4 py-2 rounded-lg shadow-md font-semibold transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 bg-white text-slate-700 border border-slate-300 hover:bg-slate-50 focus:ring-indigo-500';
+                    }
+                    
+                    prompt.buttons.prepend(btn); // Add new button before "Cancel"
+                },
+                
+                updateOnboardingStep: function(direction) {
+                    const { onboarding } = App.dom;
+                    const totalSteps = onboarding.steps.length;
+                    let currentStep = App.state.ui.currentOnboardingStep;
+                    
+                    currentStep += direction;
+                    if (currentStep < 1) currentStep = 1;
+                    if (currentStep > totalSteps) currentStep = totalSteps;
+                    App.state.ui.currentOnboardingStep = currentStep;
+
+                    onboarding.steps.forEach((step, index) => {
+                        step.style.display = (index + 1 === currentStep) ? 'block' : 'none';
+                    });
+                    
+                    onboarding.stepIndicator.textContent = `Step ${currentStep} of ${totalSteps}`;
+                    onboarding.prevBtn.style.display = (currentStep > 1) ? 'inline-block' : 'none';
+                    onboarding.nextBtn.style.display = (currentStep < totalSteps) ? 'inline-block' : 'none';
+                    onboarding.finishBtn.style.display = (currentStep === totalSteps) ? 'inline-block' : 'none';
+                },
+                
+                renderDashboardPreview: function() {
+                    const { dashboard } = App.dom;
+                    const { checkinHistory, ruleOfLife } = App.state.data;
+
+                    // 1. Render Last Check-in Preview
+                    if (checkinHistory.length > 0) {
+                        const lastEntry = checkinHistory[checkinHistory.length - 1];
+                        const totals = App.moduleCheckin.calculateTotals(lastEntry);
+                        
+                        const totalSigns = totals.warning + totals.positive;
+                        const warningPercent = totalSigns === 0 ? 0 : (totals.warning / totalSigns) * 100;
+                        const positivePercent = totalSigns === 0 ? 0 : (totals.positive / totalSigns) * 100;
+                        
+                        const d = App.util.parseDateString(lastEntry.date);
+                        const dateStr = d ? d.toLocaleDateString('en-NZ', { day: 'numeric', month: 'short' }) : 'Last Entry';
+                        
+                        dashboard.preview.innerHTML = `
+                            <p class="text-sm text-slate-600 mb-2">Your last check-in (${dateStr}):</p>
+                            <div class="flex w-full h-6 rounded-full overflow-hidden bg-gray-200">
+                                <div class="bg-indigo-600" style="width: ${warningPercent}%" title="Warning Signs"></div>
+                                <div class="bg-emerald-600" style="width: ${positivePercent}%" title="Positive Signs"></div>
+                            </div>
+                            <div class="flex justify-between text-sm mt-1">
+                                <span class="font-semibold text-indigo-700">${totals.warning} Warning</span>
+                                <span class="font-semibold text-emerald-700">${totals.positive} Positive</span>
+                            </div>
+                            <button id="dashboardViewSummaryBtn" class="text-indigo-600 hover:text-indigo-700 hover:underline cursor-pointer text-sm font-medium mt-3">View Full Summary</button>
+                        `;
+                        // FIX: Add listener for the new button
+                        document.getElementById('dashboardViewSummaryBtn').onclick = () => App.navigation.navigateTo('summaryViewLast');
+
+                    } else {
+                        dashboard.preview.innerHTML = '<p class="text-slate-500 italic">You haven\'t completed a check-in yet. Start one below!</p>';
+                    }
+
+                    // 2. Render Rule of Life Preview
+                    const intentions = (ruleOfLife && ruleOfLife.intentions) ? ruleOfLife.intentions.filter(i => i) : [];
+                    if (intentions.length > 0) {
+                        dashboard.rulePreview.innerHTML = `
+                            <ul class="list-disc list-inside text-teal-700 font-medium space-y-1">
+                                ${intentions.map(i => `<li>${this.escapeHTML(i)}</li>`).join('')}
+                            </ul>`;
+                    } else {
+                        dashboard.rulePreview.innerHTML = '<p class="text-slate-500 italic">You haven\'t set your intentions yet. Tap "My Rule of Life" to begin.</p>';
+                    }
+                },
+                // Helper to prevent XSS
+                escapeHTML: function(str) {
+                    if (typeof str !== 'string') return '';
+                    return str.replace(/[&<>"']/g, function(m) {
+                        return {
+                            '&': '&amp;',
+                            '<': '&lt;',
+                            '>': '&gt;',
+                            '"': '&quot;',
+                            "'": '&#039;'
+                        }[m];
+                    });
+                }
+            },
+
+            // --- Navigation Module ---
+            navigation: {
+                navigateTo: function(viewId, params = {}) {
+                    const { dom, state } = App;
+                    dom.views.forEach(view => view.classList.remove('active-view'));
+                    
+                    let targetViewId = viewId;
+                    state.ui.currentSummaryIndex = -1; // Reset summary index by default
+                    dom.summary.backToTrendsBtn.style.display = 'none'; 
+
+                    if (viewId === 'summaryViewLast') { 
+                        const history = state.data.checkinHistory;
+                        if (history.length > 0) {
+                            state.ui.currentSummaryIndex = history.length - 1;
+                            App.moduleCheckin.renderSummary(history[state.ui.currentSummaryIndex]);
+                            targetViewId = 'summaryView';
+                        } else {
+                            targetViewId = 'welcomeView'; 
+                            App.ui.renderDashboardPreview(); // Re-render dashboard
+                            App.ui.showAlert("No Summary Yet. Please complete a check-in.", "info");
+                        }
+                    } else if (viewId === 'summaryView' && typeof params.entryIndex !== 'undefined') { 
+                        const history = state.data.checkinHistory;
+                        state.ui.currentSummaryIndex = params.entryIndex;
+                        if (history[state.ui.currentSummaryIndex]) {
+                            App.moduleCheckin.renderSummary(history[state.ui.currentSummaryIndex]);
+                            dom.summary.backToTrendsBtn.style.display = 'block'; 
+                        } else {
+                            console.error("Historical entry not found for index:", params.entryIndex);
+                            targetViewId = 'trendsView'; 
+                        }
+                    } else if (viewId === 'notesView') {
+                        const history = state.data.checkinHistory;
+                        if (state.ui.currentNotesIndex !== -1 && history[state.ui.currentNotesIndex]) {
+                            const entry = history[state.ui.currentNotesIndex];
+                            dom.notes.notes.value = entry.notes || '';
+                            const d = App.util.parseDateString(entry.date);
+                            dom.notes.dateText.textContent = d ? `Notes for: ${d.toLocaleDateString('en-NZ', { day: '2-digit', month: 'short', year: 'numeric' })}` : "Notes";
+                        }
+                    } else if (viewId === 'gratitudeView') {
+                        App.moduleGratitude.loadForToday();
+                    } else if (viewId === 'pastGratitudeView') {
+                        App.moduleGratitude.renderPast();
+                    } else if (viewId === 'sabbathCheckinView') {
+                        App.moduleSabbath.loadForDate();
+                    } else if (viewId === 'pastSabbathView') {
+                        App.moduleSabbath.renderPast();
+                    } else if (viewId === 'resourcesView') {
+                        App.moduleResources.render('read');
+                    } else if (viewId === 'ruleOfLifeView') {
+                        App.moduleRule.renderRule('read');
+                    } else if (viewId === 'ruleOfLifeCheckinView') {
+                        App.moduleRule.loadChecklist();
+                    } else if (viewId === 'pastRuleOfLifeView') { 
+                        App.moduleRule.renderPast();
+                        App.moduleRule.renderTrends();
+                    } else if (viewId === 'welcomeView') { 
+                        App.ui.renderDashboardPreview();
+                    } else if (viewId === 'settingsView') {
+                        App.auth.updateSyncStatusUI();
+                    }
+                    
+                    const targetViewEl = document.getElementById(targetViewId);
+                    if (targetViewEl) {
+                        targetViewEl.classList.add('active-view');
+                        state.ui.currentView = targetViewId;
+                    } else {
+                        console.error("Target view not found:", targetViewId);
+                        document.getElementById('welcomeView').classList.add('active-view'); 
+                        state.ui.currentView = 'welcomeView';
+                    }
+                    
+                    dom.navButtons.forEach(btn => {
+                        const btnView = btn.dataset.view;
+                        if (btnView === state.ui.currentView || (viewId === 'summaryViewLast' && btnView === 'summaryView')) {
+                            btn.classList.add('active');
+                        } else {
+                            btn.classList.remove('active');
+                        }
+                    });
+
+                    dom.main.scrollTop = 0;
+
+                    if (targetViewId === 'trendsView') {
+                        App.moduleTrends.renderTrends();
+                        App.moduleTrends.renderCorrelations(); 
+                    }
+                }
+            },
+
+            // --- Utility Module ---
+            util: {
+                parseDateString: function(dateString) {
+                    if (!dateString || !/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+                        console.warn("Invalid date string format for parsing:", dateString); 
+                        return null; 
+                    }
+                    // Fix for Safari/iOS date parsing: replace '-' with '/'
+                    const safeDateString = dateString.replace(/-/g, '/');
+                    const d = new Date(safeDateString);
+                    
+                    // Check if the date is valid
+                    if (isNaN(d.getTime())) {
+                         console.warn("Invalid date constructed:", safeDateString); 
+                         return null;
+                    }
+                    
+                    return d;
+                },
+                bufferToHex: function(buffer) {
+                    return Array.from(new Uint8Array(buffer))
+                        .map(b => b.toString(16).padStart(2, '0'))
+                        .join('');
+                },
+                hexToBuffer: function(hex) {
+                    const bytes = new Uint8Array(hex.length / 2);
+                    for (let i = 0; i < hex.length; i += 2) {
+                        bytes[i / 2] = parseInt(hex.substr(i, 2), 16);
+                    }
+                    return bytes.buffer;
+                },
+                generateSalt: function() {
+                    const array = new Uint8Array(16);
+                    window.crypto.getRandomValues(array);
+                    return this.bufferToHex(array);
+                }
+            }, // <-- THIS IS THE CORRECTED END of App.util<!-- 
+    ================================================================
+    APP JAVASCRIPT
+    This is one single module script. All app logic is inside.
+    ================================================================
+    -->
+    <script type="module">
+        // Import Firebase modules from the SDKs loaded in <head>
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { 
+            getAuth, 
+            signInAnonymously, 
+            signInWithCustomToken, 
+            onAuthStateChanged,
+            GoogleAuthProvider,
+            signInWithPopup,
+            createUserWithEmailAndPassword,
+            signInWithEmailAndPassword,
+            signOut
+        } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { 
+            getFirestore, 
+            doc, 
+            getDoc, 
+            setDoc, 
+            updateDoc, 
+            deleteDoc, 
+            onSnapshot, 
+            collection, 
+            query, 
+            writeBatch,
+            setLogLevel,
+            enableNetwork,
+            disableNetwork,
+            getDocs // Added getDocs
+        } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+
+        // --- Main App Namespace ---
+        const App = {
+            // --- State ---
+            state: {
+                db: null, // IndexedDB instance
+                fb: { // Firebase services
+                    app: null,
+                    auth: null,
+                    db: null,
+                    googleProvider: null
+                },
+                appId: 'default-app-id',
+                userId: null, // Firebase Auth User ID
+                pin: {
+                    hash: null,
+                    salt: null,
+                    encryptionKey: null, // CryptoKey
+                    input: "",
+                    setupStep: 0, // 0=login, 1=new, 2=confirm
+                    confirmPin: "",
+                    attempt: "",
+                    actionCallback: null
+                },
+                storageDriver: 'local', // 'local' or 'firestore'
+                data: {
+                    checkinHistory: [],
+                    gratitudeHistory: [],
+                    sabbathHistory: [],
+                    ruleOfLifeHistory: [],
+                    userResources: {},
+                    ruleOfLife: {}
+                },
+                ui: {
+                    currentView: 'welcomeView',
+                    currentWarningCategory: 0,
+                    currentPositiveCategory: 0,
+                    currentSabbathCategory: 0,
+                    currentSummaryIndex: -1,
+                    currentNotesIndex: -1,
+                    currentTrendView: 'recent',
+                    currentOnboardingStep: 1,
+                    charts: {
+                        trends: null,
+                        rule: null
+                    },
+                    alertTimeout: null
+                }
+            },
+
+            // --- Config (Static Data) ---
+            config: {
+                warningSigns: {
+                    emotional: ["Loss of joy or satisfaction in ministry", "Increased irritability, impatience, or anger", "Cynicism, negativity, or disillusionment about ministry or the Church", "Feeling emotionally exhausted, overwhelmed, or \"numb\"", "Increased anxiety or feelings of dread related to work", "Heightened sensitivity to criticism", "Feelings of failure, inadequacy, or guilt"],
+                    mentalCognitive: ["Difficulty concentrating or making decisions", "Forgetfulness", "Constant rumination about work problems, even during time off", "Loss of creativity or motivation", "A sennse that you are never \"not working\" mentally"],
+                    physical: ["Persistent fatigue, exhaustion, or low energy", "Changes in sleep patterns (insomnia, oversleeping)", "Headaches, muscle tension, or other physical ailments", "Changes in appetite or weight", "Increased susceptibility to illness"],
+                    spiritual: ["Feeling disconnected from God or your faith", "Finding prayer or spiritual practices a burden rather than a source of strength", "Loss of meaning or purpose in your ministry", "Questioning your calling"],
+                    behaviouralRelational: ["Withdrawal from colleagues, friends, or family", "Increased conflict in relationships", "Neglecting personal needs or hobbies", "Increased use of alcohol, medication, or other coping mechanisms (e.g., overeating, excessive screen time, escapist behaviours)", "Procrastination or avoidance of tasks", "Working longer hours but feeling less effective", "Reduced empathy or compassion for others (depersonalisation)"]
+                },
+                categoryDisplayNames: {
+                    emotional: "Emotional Signs", mentalCognitive: "Mental/Cognitive Signs", physical: "Physical Signs", spiritual: "Spiritual Signs", behaviouralRelational: "Behavioural/Relational Signs"
+                },
+                categoryOrder: ["emotional", "mentalCognitive", "physical", "spiritual", "behaviouralRelational"],
+                
+                positiveSigns: {
+                    connection: ["Felt a sense of connection with others", "Had a positive interaction with a colleague", "Spent quality time with family or friends", "Felt connected to my community"],
+                    purpose: ["Felt a sense of meaning or purpose in my work", "Felt I made a positive difference", "Engaged in an activity I find truly meaningful"],
+                    engagement: ["Felt engaged and interested in a task (flow)", "Enjoyed a hobby or leisure activity", "Felt creative or generative"],
+                    selfCare: ["Had a restful Sabbath or day off", "Got enough sleep", "Ate well", "Was physically active", "Took time for quiet reflection"],
+                    spiritual: ["Felt a sense of connection to God", "Found prayer or spiritual practice life-giving", "Felt gratitude", "Experienced a moment of awe or wonder"]
+                },
+                positiveCategoryDisplayNames: {
+                    connection: "Connection & Relationships",
+                    purpose: "Purpose & Meaning",
+                    engagement: "Engagement & Joy",
+                    selfCare: "Rest & Self-Care",
+                    spiritual: "Spiritual Life"
+                },
+                positiveCategoryOrder: ["connection", "purpose", "engagement", "selfCare", "spiritual"],
+
+                sabbathSigns: {
+                    disengagement: ["I was able to mentally disengage from work (e.g., not ruminating on problems)", "I successfully avoided or limited work-related emails and calls", "I felt 'off-duty' and not on call"],
+                    rest: ["I experienced physical rest and renewal", "I engaged in activities I find genuinely restful (which might be active or passive)", "I felt my energy levels were restored"],
+                    connection: ["I spent quality time with family or friends", "I connected meaningfully with my community (outside of a work context)", "I took time for myself"],
+                    spiritual: ["I engaged in spiritual practices that were life-giving (e.g., worship, prayer, nature)", "I felt connected to God", "I felt a sense of joy or peace"]
+                },
+                sabbathCategoryDisplayNames: {
+                    disengagement: "Disengagement from Work",
+                    rest: "Physical & Mental Rest",
+                    connection: "Connection (Self, Others, Community)",
+                    spiritual: "Spiritual Refreshment"
+                },
+                sabbathCategoryOrder: ["disengagement", "rest", "connection", "spiritual"],
+                
+                DB_NAME: 'TokuHauoraDB_v2', // New DB name for encrypted store
                 DB_VERSION: 1
             },
 
