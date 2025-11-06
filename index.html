@@ -790,13 +790,13 @@
                 <h3 id="promptModalTitle" class="text-2xl font-semibold text-indigo-800">Wellbeing Reflection</h3>
                 <p id="promptModalMessage" class="text-slate-700"></p>
                 <div id="promptModalButtons" class="flex justify-end space-x-3">
-                    <button id="closePromptModalBtn" class="px-4 py-2 rounded-lg shadow-md font-semibold transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 bg-indigo-600 text-white hover:bg-indigo-700 focus:ring-indigo-500">Okay, I Understand</button>
+                    <button id="closePromptModalBtn" class_commented_out="btn btn-primary" class="px-4 py-2 rounded-lg shadow-md font-semibold transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 bg-indigo-600 text-white hover:bg-indigo-700 focus:ring-indigo-500">Okay, I Understand</button>
                 </div>
             </div>
         </div>
 
         <!-- Custom Alert/Toast Box -->
-        <div id="alert-box" class="fixed bottom-[-100px] left-1/2 -translate-x-1/2 min-w-[250px] z-[3000] transition-all duration-500">
+        <div id="alert-box">
              <div id="alert-content" class="p-4 rounded-lg shadow-xl text-white font-medium flex items-center space-x-3">
                 <svg id="alert-icon" class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm-1-9a1 1 0 112 0v4a1 1 0 11-2 0V9zm1-4a1 1 0 100 2 1 1 0 000-2z" clip-rule="evenodd"></path></svg>
                 <span id="alert-message">This is an alert</span>
