@@ -808,7 +808,6 @@
 <!-- 
     ================================================================
     APP JAVASCRIPT
-    This is one single module script. All app logic is inside.
     ================================================================
     -->
     <script type="module">
@@ -937,8 +936,9 @@
                 },
                 sabbathCategoryOrder: ["disengagement", "rest", "connection", "spiritual"],
                 
-                DB_NAME: 'TokuHauoraDB_v2',
+                DB_NAME: 'TokuHauoraDB_v2', // New DB name for encrypted store
                 DB_VERSION: 1,
+                // New, safer DB structure
                 STORES: {
                     APP_STATE: 'appState', // For PIN, rule, resources
                     CHECKIN: 'checkinHistory',
@@ -950,53 +950,6 @@
 
             // --- DOM Element Cache ---
             dom: {},
-
-            // --- Initialization ---
-            init: async function() {
-                console.log("App.init() started");
-                
-                // 1. Cache DOM Elements
-                this.cacheDom();
-                
-                // 2. Initialize Firebase (if config is present)
-                this.state.appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-                const fbConfig = window.firebaseConfig || null;
-
-                if (fbConfig && fbConfig.apiKey && fbConfig.apiKey !== "YOUR_API_KEY") {
-                    try {
-                        console.log("Initializing Firebase...");
-                        this.state.fb.app = initializeApp(fbConfig);
-                        this.state.fb.auth = getAuth(this.state.fb.app);
-                        this.state.fb.db = getFirestore(this.state.fb.app);
-                        this.state.fb.googleProvider = new GoogleAuthProvider();
-                        setLogLevel('debug');
-                        console.log("Firebase initialized successfully.");
-                    } catch (e) {
-                        console.error("Firebase initialization failed:", e);
-                        this.ui.showAlert("Firebase Error: " + e.message, "error");
-                    }
-                } else {
-                    console.warn("Firebase config is not set or is still placeholder. App will run in local-only mode.");
-                }
-
-                // 3. Initialize Local DB (IndexedDB)
-                try {
-                    this.state.db = await this.storage.initDB();
-                } catch (e) {
-                    console.error("Failed to initialize local DB:", e);
-                    this.ui.showModal("Critical Error", "Could not load the app's database. Please try refreshing or clearing your browser cache if the problem persists.");
-                    if(this.dom.lock.keypad) this.dom.lock.keypad.style.display = 'none';
-                    return; // Stop initialization
-                }
-
-                // 4. Check PIN status and start Auth flow
-                await this.auth.checkPinAndAuthState();
-
-                // 5. Attach Listeners *after* DOM is cached
-                this.attachListeners();
-                
-                console.log("App.init() complete.");
-            },
             
             // --- Caches all common DOM elements ---
             cacheDom: function() {
@@ -1200,121 +1153,10 @@
                 };
             },
             
-            // --- Attaches all event listeners ---
-            attachListeners: function() {
-                // --- Navigation ---
-                document.getElementById('navHomeBtn').onclick = () => this.navigation.navigateTo('welcomeView');
-                document.getElementById('navSummaryBtn').onclick = () => this.navigation.navigateTo('summaryViewLast');
-                document.getElementById('navTrendsBtn').onclick = () => this.navigation.navigateTo('trendsView');
-                document.getElementById('navResourcesBtn').onclick = () => this.navigation.navigateTo('resourcesView');
-                document.getElementById('navSettingsBtn').onclick = () => this.navigation.navigateTo('settingsView');
-
-                // --- PIN Pad ---
-                if (this.dom.lock.keypad) {
-                    this.dom.lock.keypad.addEventListener('click', (e) => {
-                        const key = e.target.closest('button')?.dataset.key;
-                        if (key) {
-                            this.pin.onKeyPress(key);
-                        }
-                    });
-                } else {
-                    console.error("PIN keypad DOM not found!");
-                }
-
-
-                // --- Login ---
-                this.dom.login.signInGoogleBtn.onclick = () => this.auth.signInWithGoogle();
-                this.dom.login.showEmailLoginBtn.onclick = () => this.auth.showEmailLogin(true);
-                this.dom.login.stayLocalBtn.onclick = () => this.auth.stayLocal();
-                this.dom.login.emailLoginBtn.onclick = () => this.auth.signInWithEmail();
-                this.dom.login.emailSignUpBtn.onclick = () => this.auth.signUpWithEmail();
-                this.dom.login.backToLoginOptionsBtn.onclick = () => this.auth.showEmailLogin(false);
-                
-                // --- Modals ---
-                this.dom.prompt.closeBtn.onclick = () => this.ui.hideModal();
-                this.dom.prompt.modal.onclick = (e) => {
-                    if (e.target === this.dom.prompt.modal) this.ui.hideModal();
-                };
-                this.dom.onboarding.nextBtn.onclick = () => this.ui.updateOnboardingStep(1);
-                this.dom.onboarding.prevBtn.onclick = () => this.ui.updateOnboardingStep(-1);
-                this.dom.onboarding.finishBtn.onclick = () => {
-                    this.dom.onboarding.modal.classList.remove('visible');
-                    // Add a slight delay for the animation
-                    setTimeout(() => {
-                        this.dom.onboarding.modal.style.display = 'none';
-                    }, 200);
-                    localStorage.setItem('hauoraOnboardComplete', 'true');
-                };
-                
-                // --- Dashboard ---
-                this.dom.dashboard.startWarningBtn.onclick = () => this.moduleCheckin.start('warning');
-                this.dom.dashboard.startPositiveBtn.onclick = () => this.moduleCheckin.start('positive');
-                this.dom.dashboard.startSabbathBtn.onclick = () => this.navigation.navigateTo('sabbathCheckinView');
-                this.dom.dashboard.startRuleBtn.onclick = () => this.navigation.navigateTo('ruleOfLifeView');
-                this.dom.dashboard.startGratitudeBtn.onclick = () => this.navigation.navigateTo('gratitudeView');
-                this.dom.dashboard.navToPrivacyBtn.onclick = () => this.navigation.navigateTo('privacyView');
-                
-                // --- Check-ins ---
-                this.dom.warn.prevBtn.onclick = () => this.moduleCheckin.navigateCategory(-1, 'warning');
-                this.dom.warn.nextBtn.onclick = () => this.moduleCheckin.navigateCategory(1, 'warning');
-                this.dom.warn.finishBtn.onclick = () => this.moduleCheckin.finish('warning');
-                
-                this.dom.positive.prevBtn.onclick = () => this.moduleCheckin.navigateCategory(-1, 'positive');
-                this.dom.positive.nextBtn.onclick = () => this.moduleCheckin.navigateCategory(1, 'positive');
-                this.dom.positive.finishBtn.onclick = () => this.moduleCheckin.finish('positive');
-
-                // --- Sabbath ---
-                this.dom.sabbath.dateInput.onchange = () => this.moduleSabbath.loadForDate();
-                this.dom.sabbath.prevBtn.onclick = () => this.moduleSabbath.navigateCategory(-1);
-                this.dom.sabbath.nextBtn.onclick = () => this.moduleSabbath.navigateCategory(1);
-                this.dom.sabbath.finishBtn.onclick = () => this.moduleSabbath.finish();
-                this.dom.sabbath.viewPastBtn.onclick = () => this.navigation.navigateTo('pastSabbathView');
-                this.dom.sabbath.backToSabbathCheckinBtn.onclick = () => this.navigation.navigateTo('sabbathCheckinView');
-                
-                // --- Gratitude ---
-                this.dom.gratitude.saveBtn.onclick = () => this.moduleGratitude.save();
-                this.dom.gratitude.viewPastBtn.onclick = () => this.navigation.navigateTo('pastGratitudeView');
-                this.dom.gratitude.backToGratitudeBtn.onclick = () => this.navigation.navigateTo('gratitudeView');
-
-                // --- Rule of Life ---
-                this.dom.rule.editBtn.onclick = () => this.moduleRule.renderRule('edit');
-                this.dom.rule.saveBtn.onclick = () => this.moduleRule.saveRule();
-                this.dom.rule.startCheckinBtn.onclick = () => this.navigation.navigateTo('ruleOfLifeCheckinView');
-                this.dom.rule.viewPastBtn.onclick = () => this.navigation.navigateTo('pastRuleOfLifeView');
-                this.dom.rule.saveCheckinBtn.onclick = () => this.moduleRule.saveCheckin();
-                this.dom.rule.backToRuleOfLifeBtn.onclick = () => this.navigation.navigateTo('ruleOfLifeView');
-                this.dom.rule.backToRuleOfLifeBtn2.onclick = () => this.navigation.navigateTo('ruleOfLifeView');
-
-                // --- Summary & Notes ---
-                this.dom.summary.backToTrendsBtn.onclick = () => this.navigation.navigateTo('trendsView');
-                this.dom.summary.addNotesBtn.onclick = () => this.moduleCheckin.editNotesForSummary();
-                this.dom.notes.saveBtn.onclick = () => this.moduleCheckin.saveNotes();
-                this.dom.notes.backBtn.onclick = () => this.moduleCheckin.backToSummary();
-
-                // --- Trends ---
-                this.dom.trends.toggleRecentBtn.onclick = () => this.moduleTrends.setTrendView('recent');
-                this.dom.trends.toggleAllBtn.onclick = () => this.moduleTrends.setTrendView('all');
-
-                // --- Resources ---
-                this.dom.resources.editBtn.onclick = () => this.moduleResources.render('edit');
-                this.dom.resources.saveBtn.onclick = () => this.moduleResources.save();
-
-                // --- Settings ---
-                this.dom.settings.signInToSyncBtn.onclick = () => this.auth.showLogin();
-                this.dom.settings.signOutBtn.onclick = () => this.auth.signOut();
-                this.dom.settings.changePinBtn.onclick = () => this.pin.startChangePin();
-                this.dom.settings.exportBtn.onclick = () => this.storage.exportData();
-                this.dom.settings.importInput.onchange = (e) => this.storage.importData(e);
-                this.dom.settings.viewDataBtn.onclick = () => this.storage.toggleViewRawData();
-                this.dom.settings.clearDataBtn.onclick = () => this.storage.confirmClearAllData();
-            },
-            
             // --- UI & Navigation Module ---
             ui: {
                 showAlert: function(message, type = 'info', duration = 3000) {
                     const { alert } = App.dom;
-                    // This was the source of the error.
-                    // We must check if alert and its children exist *before* using them.
                     if (!alert || !alert.box || !alert.content || !alert.message) {
                         console.error("Alert DOM elements not found! Message:", message);
                         return;
@@ -1324,11 +1166,9 @@
                         clearTimeout(App.state.ui.alertTimeout);
                     }
                     
-                    // Set text
                     alert.message.textContent = message;
                     
-                    // Set color and icon
-                    alert.content.classList.remove('bg-green-600', 'bg-red-600', 'bg-indigo-600'); // Use indigo for info
+                    alert.content.classList.remove('bg-green-600', 'bg-red-600', 'bg-indigo-600');
                     if (type === 'success') {
                         alert.content.classList.add('bg-green-600');
                         alert.icon.innerHTML = `<svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>`;
@@ -1340,10 +1180,8 @@
                         alert.icon.innerHTML = `<svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm-1-9a1 1 0 112 0v4a1 1 0 11-2 0V9zm1-4a1 1 0 100 2 1 1 0 000-2z" clip-rule="evenodd"></path></svg>`;
                     }
                     
-                    // Show
                     alert.box.classList.add('show');
 
-                    // Hide after duration
                     App.state.ui.alertTimeout = setTimeout(() => {
                         alert.box.classList.remove('show');
                         App.state.ui.alertTimeout = null;
@@ -1353,17 +1191,14 @@
                 showModal: function(title, message) {
                     const { prompt } = App.dom;
                     prompt.title.textContent = title;
-                    prompt.message.innerHTML = message.replace(/\n/g, '<br>'); // Support newlines
-                    prompt.modal.style.display = 'flex'; // Use flex to center
+                    prompt.message.innerHTML = message.replace(/\n/g, '<br>');
+                    prompt.modal.style.display = 'flex';
                     
-                    // Use setTimeout to allow browser to render modal, then add class
                     setTimeout(() => {
                         prompt.modal.classList.add('visible');
-                    }, 10); // 10ms delay
+                    }, 10);
 
-                    // Clear old buttons
                     prompt.buttons.innerHTML = '';
-                    // Add default close button
                     const closeBtn = document.createElement('button');
                     closeBtn.id = 'closePromptModalBtn';
                     closeBtn.className = 'px-4 py-2 rounded-lg shadow-md font-semibold transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 bg-indigo-600 text-white hover:bg-indigo-700 focus:ring-indigo-500';
@@ -1375,13 +1210,11 @@
                 hideModal: function() {
                     const { prompt } = App.dom;
                     prompt.modal.classList.remove('visible');
-                    // Wait for transition to finish before hiding
                     setTimeout(() => {
                         prompt.modal.style.display = 'none';
-                    }, 200); // Match transition duration
+                    }, 200);
                 },
                 
-                // Adds a second button (e.g., "Confirm") to the modal
                 addModalButton: function(text, type, onClick) {
                     const { prompt } = App.dom;
                     const btn = document.createElement('button');
@@ -1392,17 +1225,16 @@
                     btn.className = `px-4 py-2 rounded-lg shadow-md font-semibold transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 ${typeClass}`;
                     btn.onclick = () => {
                         onClick();
-                        this.hideModal(); // Auto-hide after click
+                        this.hideModal();
                     };
                     
-                    // Re-style default button
                     const defaultBtn = document.getElementById('closePromptModalBtn');
                     if (defaultBtn) {
                         defaultBtn.textContent = "Cancel";
                         defaultBtn.className = 'px-4 py-2 rounded-lg shadow-md font-semibold transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 bg-white text-slate-700 border border-slate-300 hover:bg-slate-50 focus:ring-indigo-500';
                     }
                     
-                    prompt.buttons.prepend(btn); // Add new button before "Cancel"
+                    prompt.buttons.prepend(btn);
                 },
                 
                 updateOnboardingStep: function(direction) {
@@ -1429,7 +1261,6 @@
                     const { dashboard } = App.dom;
                     const { checkinHistory, ruleOfLife } = App.state.data;
 
-                    // 1. Render Last Check-in Preview
                     if (checkinHistory.length > 0) {
                         const lastEntry = checkinHistory[checkinHistory.length - 1];
                         const totals = App.moduleCheckin.calculateTotals(lastEntry);
@@ -1453,14 +1284,12 @@
                             </div>
                             <button id="dashboardViewSummaryBtn" class="text-indigo-600 hover:text-indigo-700 hover:underline cursor-pointer text-sm font-medium mt-3">View Full Summary</button>
                         `;
-                        // FIX: Add listener for the new button
                         document.getElementById('dashboardViewSummaryBtn').onclick = () => App.navigation.navigateTo('summaryViewLast');
 
                     } else {
                         dashboard.preview.innerHTML = '<p class="text-slate-500 italic">You haven\'t completed a check-in yet. Start one below!</p>';
                     }
 
-                    // 2. Render Rule of Life Preview
                     const intentions = (ruleOfLife && ruleOfLife.intentions) ? ruleOfLife.intentions.filter(i => i) : [];
                     if (intentions.length > 0) {
                         dashboard.rulePreview.innerHTML = `
@@ -1615,6 +1444,7 @@
             },
 
             // --- Expose Firebase modules to the App (used by Auth module) ---
+            // THIS IS THE FIX.
             Firebase: {
                 initializeApp, getAuth, signInAnonymously, signInWithCustomToken, 
                 onAuthStateChanged, GoogleAuthProvider, 
@@ -1623,6 +1453,7 @@
                 getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, onSnapshot, 
                 collection, query, writeBatch, setLogLevel, enableNetwork, disableNetwork, getDocs
             }
+        }; // End App object
 //******************************************************************************************************************************************* PART3 *******************************
 <!-- 
             ================================================================
