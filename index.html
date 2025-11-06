@@ -1617,6 +1617,7 @@
                     return this.bufferToHex(array);
                 }
             }, // <-- THIS IS THE CORRECTED END of App.util<!-- 
+//******************************************************************************************************************************************* PART3 *******************************
 // --- Storage & Crypto Module ---
             storage: {
                 initDB: async function() {
@@ -2039,10 +2040,11 @@
                 checkPinAndAuthState: async function() {
                     const { db } = App.state;
                     // FIX: Get PIN data from 'appState' store
-                    // And check for 'value' property
+                    // And check for 'value' property, not 'data'
                     const saltEntry = await db.get(App.config.STORES.APP_STATE, 'securitySalt');
                     const hashEntry = await db.get(App.config.STORES.APP_STATE, 'securityHash');
 
+                    // FIX: Check for the 'value' property
                     if (saltEntry && hashEntry && saltEntry.value && hashEntry.value) {
                         // PIN is set.
                         App.state.pin.salt = saltEntry.value;
@@ -2050,6 +2052,20 @@
                         
                         console.log("PIN info found in local DB.");
                         if (App.state.fb.auth) {
+                             // *** START FIX for Cross-Origin-Opener-Policy ***
+                            // Check for a redirect result *before* setting up the listener
+                            try {
+                                const result = await getRedirectResult(App.state.fb.auth);
+                                if (result) {
+                                    // This was a redirect login.
+                                    console.log("Redirect result obtained:", result.user);
+                                    // The onAuthStateChanged listener will now fire with this user.
+                                }
+                            } catch (error) {
+                                console.error("Error getting redirect result:", error);
+                                App.ui.showAlert(`Sign-in failed: ${error.message}`, "error");
+                            }
+                            // *** END FIX ***
                             this.setupAuthListener();
                         } else {
                             App.pin.showLockScreen('login');
@@ -2080,6 +2096,7 @@
                                 App.state.pin.hash = cloudPin.hash;
                                 
                                 // Overwrite local PIN info to sync
+                                // FIX: Use 'value' key, not 'data'
                                 await App.state.db.put(App.config.STORES.APP_STATE, {id: 'securitySalt', value: cloudPin.salt});
                                 await App.state.db.put(App.config.STORES.APP_STATE, {id: 'securityHash', value: cloudPin.hash});
                                 
@@ -2146,8 +2163,9 @@
                         return;
                     }
                     try {
-                        await signInWithPopup(App.state.fb.auth, App.state.fb.googleProvider);
-                        // onAuthStateChanged will handle the rest
+                        // *** FIX: Use signInWithRedirect instead of signInWithPopup ***
+                        await signInWithRedirect(App.state.fb.auth, App.state.fb.googleProvider);
+                        // The app will now reload. onAuthStateChanged and getRedirectResult will handle it.
                     } catch (e) { this.showAuthError(e.message); }
                 },
                 
@@ -2319,6 +2337,7 @@
                     const newHash = App.util.bufferToHex(await window.crypto.subtle.digest('SHA-256', new TextEncoder().encode(pin + newSalt)));
                     
                     // Save to local DB (unencrypted)
+                    // FIX: Use 'value' key, not 'data'
                     await App.state.db.put(App.config.STORES.APP_STATE, {id: 'securitySalt', value: newSalt});
                     await App.state.db.put(App.config.STORES.APP_STATE, {id: 'securityHash', value: newHash});
                     
@@ -2455,7 +2474,8 @@
                         }
                     }.bind(this); // Bind the function to App.pin scope
                 }
-            }, // End of App.pin module
+            },
+// **************************************************************************************************** Part 4 **************************************************
 // --- Feature Modules ---
             moduleCheckin: {
                 currentData: {},
