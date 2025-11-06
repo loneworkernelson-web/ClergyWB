@@ -804,6 +804,7 @@
         </div>
 
     </div>
+// **************************************************************************************** PART 2 **************************************************************************
 <!-- 
     ================================================================
     APP JAVASCRIPT
@@ -819,7 +820,8 @@
             signInWithCustomToken, 
             onAuthStateChanged,
             GoogleAuthProvider,
-            signInWithPopup,
+            signInWithPopup, // This will be changed to signInWithRedirect in Part 3
+            getRedirectResult, // <<< THIS IS THE FIX FOR THE ReferenceError
             createUserWithEmailAndPassword,
             signInWithEmailAndPassword,
             signOut
@@ -958,7 +960,7 @@
                 this.cacheDom();
                 
                 // 2. Attach Core Listeners
-                // This is now done *after* init to avoid race conditions
+                // This is now done *inside* the main app logic to avoid race conditions
                 // this.attachListeners();
 
                 // 3. Initialize Firebase (if config is present)
@@ -1616,7 +1618,7 @@
                     window.crypto.getRandomValues(array);
                     return this.bufferToHex(array);
                 }
-            }, // <-- THIS IS THE CORRECTED END of App.util<!-- 
+            },
 //******************************************************************************************************************************************* PART3 *******************************
 // --- Storage & Crypto Module ---
             storage: {
