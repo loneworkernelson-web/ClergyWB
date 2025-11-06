@@ -1710,8 +1710,15 @@
                 saveAppState: async function(id, data) {
                      try {
                         const db = App.state.db;
-                        const encryptedData = await this.encrypt(data);
-                        await db.put(App.config.STORES.APP_STATE, { id: id, data: encryptedData });
+                        // FIX: The pin/salt should NOT be encrypted.
+                        // We store 'value' directly for unencrypted pin info.
+                        if (id === 'securitySalt' || id === 'securityHash') {
+                            await db.put(App.config.STORES.APP_STATE, { id: id, value: data });
+                        } else {
+                            // Encrypt all other app state data
+                            const encryptedData = await this.encrypt(data);
+                            await db.put(App.config.STORES.APP_STATE, { id: id, data: encryptedData });
+                        }
                         console.log(`AppState item saved: ${id}`);
                      } catch (error) {
                         console.error(`Error saving app state ${id}:`, error);
@@ -2042,7 +2049,6 @@
                 checkPinAndAuthState: async function() {
                     const { db } = App.state;
                     // FIX: Get PIN data from 'appState' store
-                    // And check for 'value' property, not 'data'
                     const saltEntry = await db.get(App.config.STORES.APP_STATE, 'securitySalt');
                     const hashEntry = await db.get(App.config.STORES.APP_STATE, 'securityHash');
 
@@ -2259,7 +2265,7 @@
                 
                 resetInput: function(errorMsg = '') {
                     App.state.pin.input = "";
-                    if(App.state.pin.setupStep !== 0) { // Don't clear callback if mid-change
+                    if(App.state.pin.setupStep === 0) { // Only clear callback if in login mode
                         App.state.pin.actionCallback = null;
                     }
                     App.dom.lock.error.textContent = errorMsg;
@@ -2276,7 +2282,7 @@
                     if (setupStep === 0) { // Login
                         await this.handleLogin();
                     } else { // Setup
-                        await this.handleSetup();
+                        await this.handleSetup(this.startChangePinFlow_original); // Pass original setup handler
                     }
                 },
                 
@@ -2396,7 +2402,7 @@
                     const oldKey = App.state.pin.encryptionKey; // Keep the old key for re-encryption
                     
                     // Store original handler and override
-                    const originalSetupHandler = this.handleSetup.bind(this);
+                    this.startChangePinFlow_original = this.handleSetup.bind(this);
                     
                     this.handleSetup = async function() {
                         const { setupStep, input, confirmPin } = App.state.pin;
@@ -2463,7 +2469,8 @@
                                     this.unlock('settingsView');
                                 } finally {
                                     // Restore original setup handler
-                                    App.pin.handleSetup = originalSetupHandler;
+                                    App.pin.handleSetup = this.startChangePinFlow_original;
+                                    this.startChangePinFlow_original = null; // Clear temp handler
                                 }
                             } else {
                                 // PINs don't match
@@ -2476,7 +2483,7 @@
                         }
                     }.bind(this); // Bind the function to App.pin scope
                 }
-            },
+            }, // End of App.pin module
 // **************************************************************************************************** Part 4 **************************************************
 // --- Feature Modules ---
             moduleCheckin: {
