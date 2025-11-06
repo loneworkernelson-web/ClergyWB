@@ -16,14 +16,13 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/idb@7/build/umd.js"></script>
    
-    <!-- Firebase SDKs (as modules) -->
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js" type="module"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js" type="module"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js" type="module"></script>
-    <!--
-      REMOVED: <script src="config.js"></script>
-      This file doesn't exist. The app uses the global __firebase_config variable injected by the environment.
-    -->
+    <!-- Firebase Config -->
+    <script src="config.js"></script>
+   
+    <!-- Firebase SDKs (compat versions for global access) -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
    
     <style>
@@ -265,1775 +264,816 @@
                     <div class="absolute inset-0 flex items-center"><span class="w-full border-t border-slate-300"></span></div>
                     <div class="relative flex justify-center text-sm"><span class="px-2 bg-white text-slate-500">OR</span></div>
                 </div>
-                <button id="stayLocalBtn" class="text-indigo-600 hover:text-indigo-700 hover:underline cursor-pointer font-medium">No thanks, stay local-only</button>
+                <button id="stayLocalBtn" class="text-indigo-600 hover:text-indigo-700 hover:underline cursor-pointer">Stay Local (No Sync)</button>
             </div>
-           
-            <!-- Email Login Form (Hidden) -->
-            <div id="emailLoginView" class="hidden space-y-4 mt-6 text-left">
-                <input type="email" id="emailInput" placeholder="Email" class="w-full px-4 py-2 border border-slate-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                <input type="password" id="passwordInput" placeholder="Password (min. 6 characters)" class="w-full px-4 py-2 border border-slate-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                <div class="grid grid-cols-2 gap-3">
-                    <button id="emailLoginBtn" class="px-4 py-2 rounded-lg shadow-md font-semibold transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 bg-white text-slate-700 border border-slate-300 hover:bg-slate-50 focus:ring-indigo-500">Login</button>
-                    <button id="emailSignUpBtn" class="px-4 py-2 rounded-lg shadow-md font-semibold transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 bg-indigo-600 text-white hover:bg-indigo-700 focus:ring-indigo-500">Sign Up</button>
-                </div>
-                <button id="backToLoginOptionsBtn" class="text-indigo-600 hover:text-indigo-700 hover:underline cursor-pointer text-sm">&larr; Back</button>
+            <!-- Email Login Form (Hidden by default) -->
+            <div id="emailLoginForm" class="mt-6 hidden">
+                <input id="emailInput" type="email" placeholder="Email" class="w-full px-4 py-2 mb-4 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <input id="passwordInput" type="password" placeholder="Password" class="w-full px-4 py-2 mb-4 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <button id="emailLoginBtn" class="w-full px-4 py-2 rounded-lg shadow-md font-semibold transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 bg-indigo-600 text-white hover:bg-indigo-700 focus:ring-indigo-500">Login</button>
+                <button id="emailSignUpBtn" class="w-full px-4 py-2 mt-2 rounded-lg shadow-md font-semibold transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 bg-white text-indigo-600 border border-indigo-300 hover:bg-indigo-50 focus:ring-indigo-500">Sign Up</button>
+                <button id="backToLoginOptionsBtn" class="w-full text-sm text-slate-600 hover:underline mt-4">Back</button>
             </div>
-            <p id="authError" class="text-red-500 text-sm mt-4 h-5"></p>
         </div>
     </div>
-    <!-- Main App Container -->
-    <div id="app" class="max-w-2xl mx-auto bg-white shadow-xl flex flex-col">
-        <header class="bg-indigo-700 text-white p-4 text-center sticky top-0 z-50 shadow-md">
-            <h1 class="text-2xl font-bold">Tōku Hauora</h1>
-            <p class="text-sm opacity-90">My Clergy Wellbeing Hub</p>
-        </header>
-        <!-- Main content area, scrolls independently -->
-        <main class="flex-grow p-4 sm:p-6 space-y-6 overflow-y-auto">
-            <!-- Welcome View (Dashboard) -->
-            <div id="welcomeView" class="view active-view space-y-6">
-                <div class="bg-slate-50 p-6 rounded-xl shadow-sm border border-slate-200">
-                    <h2 class="text-xl font-semibold text-indigo-800 mb-3">Nau Mai, Haere Mai</h2>
-                    <p class="text-slate-600 mb-4">Welcome to your private wellbeing hub. How are you today?</p>
-                </div>
-               
-                <!-- At a Glance Preview -->
-                <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
-                    <h3 class="text-lg font-semibold text-slate-800 mb-3">At a Glance</h3>
-                    <div id="dashboardPreview">
-                        <p class="text-slate-500 italic">You haven't completed a check-in yet. Start one below!</p>
-                    </div>
-                </div>
-                <!-- Main Module Grid -->
-                <div class="grid grid-cols-2 gap-4">
-                    <button id="startWarningCheckinBtn" class="dashboard-btn bg-indigo-600 hover:bg-indigo-700">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" /></svg>
-                        <span>Warning Signs</span>
-                    </button>
-                    <button id="startPositiveCheckinBtn" class="dashboard-btn bg-emerald-600 hover:bg-emerald-700">
-                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18l-1.813-2.096a.5.5 0 00-.621-.194l-1.925.872a.5.5 0 01-.621-.194L3 13.75l-2.096-1.813a.5.5 0 01-.194-.621l.872-1.925a.5.5 0 00-.194-.621L.25 9 2.096 7.187a.5.5 0 01.194-.621l-.872-1.925a.5.5 0 01.194-.621L3 2.25l2.096 1.813a.5.5 0 00.621.194l1.925-.872a.5.5 0 01.621.194L9 5.25l1.813-2.096a.5.5 0 01.621-.194l1.925.872a.5.5 0 00.621.194L15 2.25l2.096 1.813a.5.5 0 01.194.621l-.872 1.925a.5.5 0 00.194.621L21.75 9l-2.096 1.813a.5.5 0 01-.194.621l.872 1.925a.5.5 0 01-.194.621L15 15.75l-2.096-1.813a.5.5 0 00-.621-.194l-1.925.872a.5.5 0 01-.621.194zM18 9l1.5-1.5-1.5-1.5-1.5 1.5 1.5 1.5zM3 9l1.5-1.5-1.5-1.5-1.5 1.5 1.5 1.5z" /></svg>
-                        <span>Positive Signs</span>
-                    </button>
-                    <button id="startSabbathCheckinBtn" class="dashboard-btn bg-violet-600 hover:bg-violet-700">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" /></svg>
-                        <span>Sabbath Quality</span>
-                    </button>
-                    <button id="startRuleOfLifeBtn" class="dashboard-btn bg-teal-600 hover:bg-teal-700">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 3.75V16.5a2.25 2.25 0 01-2.25 2.25H15v-1.5a.75.75 0 00-.75-.75H9.75a.75.75 0 00-.75.75v1.5H7.5a2.25 2.25 0 01-2.25-2.25V3.75m.75 0H15.75c.414 0 .75.336.75.75v1.5H5.25v-1.5c0-.414.336-.75.75-.75zM15 3.75a.75.75 0 00-.75-.75H9.75a.75.75 0 00-.75.75V15H15V3.75z" /></svg>
-                        <span>My Rule of Life</span>
-                    </button>
-                </div>
-                <!-- Quick Add Gratitude -->
-                <button id="startGratitudeBtn" class="w-full py-3 font-semibold flex items-center justify-center px-4 rounded-lg shadow-md transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 bg-amber-500 text-white hover:bg-amber-600 focus:ring-amber-400">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 mr-2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.099 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" /></svg>
-                    <span>Add Gratitude Entry</span>
-                </button>
-               
-                <!-- Rule of Life Preview -->
-                <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
-                    <h3 class="text-lg font-semibold text-slate-800 mb-3">My Rule of Life Intentions</h3>
-                    <div id="dashboardRulePreview">
-                        <p class="text-slate-500 italic">You haven't set your intentions yet. Tap "My Rule of Life" to begin.</p>
-                    </div>
-                </div>
-                <div class="text-center">
-                    <button id="navToPrivacyBtn" class="text-indigo-600 hover:text-indigo-700 hover:underline cursor-pointer text-sm font-medium">Privacy & Security Information</button>
-                </div>
-            </div>
-            <!-- Warning Signs Check-in View -->
-            <div id="checkinView" class="view space-y-6">
-                <h2 id="categoryTitle" class="text-2xl font-bold text-indigo-800">Warning Signs</h2>
-                <div id="questionsContainer" class="space-y-4">
-                    <!-- Questions injected here -->
-                </div>
-                <div id="checkinButtonContainer" class="flex flex-col sm:flex-row sm:justify-between space-y-3 sm:space-y-0 sm:space-x-3">
-                    <button id="prevCategoryBtn" class="px-4 py-2 rounded-lg shadow-md font-semibold transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 bg-white text-slate-700 border border-slate-300 hover:bg-slate-50 focus:ring-indigo-500 w-full sm:w-auto">Previous</button>
-                    <button id="nextCategoryBtn" class="px-4 py-2 rounded-lg shadow-md font-semibold transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 bg-indigo-600 text-white hover:bg-indigo-700 focus:ring-indigo-500 w-full sm:w-auto py-3 font-semibold">Next</button>
-                    <!-- FIX: Replaced inline style with Tailwind 'hidden' class -->
-                    <button id="finishCheckinBtn" class="px-4 py-2 rounded-lg shadow-md font-semibold transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 bg-indigo-600 text-white hover:bg-indigo-700 focus:ring-indigo-500 w-full sm:w-auto hidden">Finish Check-in</button>
-                </div>
-                 <div class="mt-4 text-center">
-                    <progress id="checkinProgress" value="0" max="100" class="w-full h-2 rounded-full overflow-hidden [&::-webkit-progress-bar]:bg-slate-200 [&::-webkit-progress-value]:bg-indigo-600"></progress>
-                    <p id="progressText" class="text-sm text-slate-500 mt-1"></p>
-                 </div>
-            </div>
-            <!-- Positive Signs Check-in View -->
-            <div id="positiveCheckinView" class="view space-y-6">
-                <h2 id="positiveCategoryTitle" class="text-2xl font-bold text-emerald-800">Positive Signs</h2>
-                <div id="positiveQuestionsContainer" class="space-y-4">
-                    <!-- Questions injected here -->
-                </div>
-                <div id="positiveCheckinButtonContainer" class="flex flex-col sm:flex-row sm:justify-between space-y-3 sm:space-y-0 sm:space-x-3">
-                    <button id="positivePrevCategoryBtn" class="px-4 py-2 rounded-lg shadow-md font-semibold transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 bg-white text-slate-700 border border-slate-300 hover:bg-slate-50 focus:ring-indigo-500 w-full sm:w-auto">Previous</button>
-                    <button id="positiveNextCategoryBtn" class="px-4 py-2 rounded-lg shadow-md font-semibold transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 bg-emerald-600 text-white hover:bg-emerald-700 focus:ring-emerald-500 w-full sm:w-auto py-3 font-semibold">Next</button>
-                    <!-- FIX: Replaced inline style with Tailwind 'hidden' class -->
-                    <button id="positiveFinishCheckinBtn" class="px-4 py-2 rounded-lg shadow-md font-semibold transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 bg-emerald-600 text-white hover:bg-emerald-700 focus:ring-emerald-500 w-full sm:w-auto hidden">Finish Check-in</button>
-                </div>
-                 <div class="mt-4 text-center">
-                    <progress id="positiveCheckinProgress" value="0" max="100" class="w-full h-2 rounded-full overflow-hidden [&::-webkit-progress-bar]:bg-slate-200 [&::-webkit-progress-value]:bg-emerald-600"></progress>
-                    <p id="positiveProgressText" class="text-sm text-slate-500 mt-1"></p>
-                 </div>
-            </div>
-            <!-- Sabbath Check-in View -->
-            <div id="sabbathCheckinView" class="view space-y-6">
-                <h2 id="sabbathCategoryTitle" class="text-2xl font-bold text-violet-800">Sabbath Quality</h2>
-                <p class="text-sm text-slate-600">Reflect on your most recent Sabbath or day off. Select the date for this reflection:</p>
-                <input type="date" id="sabbathCheckinDate" class="w-full p-2 border border-slate-300 rounded-lg shadow-sm focus:ring-2 focus:ring-violet-500">
-               
-                <div id="sabbathQuestionsContainer" class="space-y-4">
-                    <!-- Sabbath questions will be injected here -->
-                </div>
-               
-                <div class="mt-4">
-                    <label for="sabbathNotesArea" class="block text-sm font-medium text-slate-700 mb-1">Additional Reflections (Private):</label>
-                    <textarea id="sabbathNotesArea" rows="4" class="w-full p-3 border border-slate-300 rounded-lg shadow-sm focus:ring-2 focus:ring-violet-500" placeholder="e.g., What was life-giving? What was difficult?"></textarea>
-                </div>
-                <div id="sabbathCheckinButtonContainer" class="flex flex-col sm:flex-row sm:justify-between space-y-3 sm:space-y-0 sm:space-x-3">
-                    <button id="sabbathPrevCategoryBtn" class="px-4 py-2 rounded-lg shadow-md font-semibold transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 bg-white text-slate-700 border border-slate-300 hover:bg-slate-50 focus:ring-indigo-500 w-full sm:w-auto">Previous</button>
-                    <button id="sabbathNextCategoryBtn" class="px-4 py-2 rounded-lg shadow-md font-semibold transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 bg-violet-600 text-white hover:bg-violet-700 focus:ring-violet-500 w-full sm:w-auto py-3 font-semibold">Next</button>
-                    <!-- FIX: Replaced inline style with Tailwind 'hidden' class -->
-                    <button id="sabbathFinishCheckinBtn" class="px-4 py-2 rounded-lg shadow-md font-semibold transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 bg-violet-600 text-white hover:bg-violet-700 focus:ring-violet-500 w-full sm:w-auto hidden">Save Reflection</button>
-                </div>
-                 <div class="mt-4 text-center">
-                    <progress id="sabbathCheckinProgress" value="0" max="100" class="w-full h-2 rounded-full overflow-hidden [&::-webkit-progress-bar]:bg-slate-200 [&::-webkit-progress-value]:bg-violet-600"></progress>
-                    <p id="sabbathProgressText" class="text-sm text-slate-500 mt-1"></p>
-                 </div>
-                <button id="viewPastSabbathBtn" class="px-4 py-2 rounded-lg shadow-md font-semibold transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 bg-white text-slate-700 border border-slate-300 hover:bg-slate-50 focus:ring-indigo-500 w-full mt-4">View Past Sabbath Reflections</button>
-            </div>
-            <!-- Past Sabbath Entries View -->
-            <div id="pastSabbathView" class="view space-y-4">
-                <h2 class="text-2xl font-bold text-violet-800">Past Sabbath Reflections</h2>
-                <button id="backToSabbathCheckinBtn" class="px-4 py-2 rounded-lg shadow-md font-semibold transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 bg-white text-slate-700 border border-slate-300 hover:bg-slate-50 focus:ring-indigo-500 w-full mb-3">Back to Sabbath Check-in</button>
-                <div id="pastSabbathContainer" class="space-y-3">
-                    <p class="text-slate-500 italic">No past Sabbath reflections found. Start by adding one!</p>
-                </div>
-            </div>
-            <!-- Gratitude Journal View -->
-            <div id="gratitudeView" class="view space-y-4">
-                <h2 class="text-2xl font-bold text-amber-700">Gratitude Journal</h2>
-                <p class="text-sm text-slate-600">Take a moment to note 1-3 things you are grateful to God for today.</p>
-                <textarea id="gratitudeEntryArea" rows="6" class="w-full p-3 border border-slate-300 rounded-lg shadow-sm focus:ring-2 focus:ring-amber-500" placeholder="Today I am grateful for..."></textarea>
-                <button id="saveGratitudeBtn" class="px-4 py-2 rounded-lg shadow-md font-semibold transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 bg-amber-500 text-white hover:bg-amber-600 focus:ring-amber-400 w-full">Save Today's Entry</button>
-                <button id="viewPastGratitudeBtn" class="px-4 py-2 rounded-lg shadow-md font-semibold transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 bg-white text-slate-700 border border-slate-300 hover:bg-slate-50 focus:ring-indigo-500 w-full mt-2">View Past Entries</button>
-            </div>
-            <!-- Past Gratitude Entries View -->
-            <div id="pastGratitudeView" class="view space-y-4">
-                <h2 class="text-2xl font-bold text-amber-700">Past Gratitude Entries</h2>
-                <button id="backToGratitudeBtn" class="px-4 py-2 rounded-lg shadow-md font-semibold transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 bg-white text-slate-700 border border-slate-300 hover:bg-slate-50 focus:ring-indigo-500 w-full mb-3">Back to Journal</button>
-                <div id="pastGratitudeContainer" class="space-y-3">
-                    <p class="text-slate-500 italic">No past gratitude entries found. Start by adding one today!</p>
-                </div>
-            </div>
-            <!-- Rule of Life Hub View -->
-            <div id="ruleOfLifeView" class="view space-y-4">
-                <div class="flex justify-between items-center">
-                    <h2 class="text-2xl font-bold text-teal-800">My Rule of Life</h2>
-                    <div>
-                        <button id="editRuleBtn" class="px-4 py-2 rounded-lg shadow-md font-semibold transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 bg-white text-slate-700 border border-slate-300 hover:bg-slate-50 focus:ring-indigo-500 btn-sm py-1 px-3">Edit</button>
-                        <button id="saveRuleBtn" class="px-4 py-2 rounded-lg shadow-md font-semibold transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 bg-indigo-600 text-white hover:bg-indigo-700 focus:ring-indigo-500 btn-sm py-1 px-3 hidden">Save</button>
-                    </div>
-                </div>
-                <p class="text-sm text-slate-600">Define 3-5 key intentions for your wellbeing. These are the things you want to intentionally practice.</p>
-               
-                <div class="bg-teal-50 p-4 rounded-xl shadow-sm border border-teal-200 space-y-3">
-                    <!-- Read View -->
-                    <div id="ruleOfLifeReadView" class="space-y-2">
-                        <ul id="ruleOfLifeReadList" class="list-disc list-inside text-teal-700 font-medium space-y-1">
-                            <!-- Intentions will be populated here -->
-                        </ul>
-                    </div>
-                    <!-- Edit View -->
-                    <div id="ruleOfLifeEditView" class="space-y-2 hidden">
-                        <div>
-                            <label for="ruleIntention1" class="block text-sm font-medium text-slate-700">Intention 1:</label>
-                            <input type="text" id="ruleIntention1" class="w-full p-2 border border-slate-300 rounded-lg shadow-sm focus:ring-2 focus:ring-teal-500" placeholder="e.g., Pray daily">
-                        </div>
-                        <div>
-                            <label for="ruleIntention2" class="block text-sm font-medium text-slate-700">Intention 2:</label>
-                            <input type="text" id="ruleIntention2" class="w-full p-2 border border-slate-300 rounded-lg shadow-sm focus:ring-2 focus:ring-teal-500" placeholder="e.g., Walk 3x a week">
-                        </div>
-                        <div>
-                            <label for="ruleIntention3" class="block text-sm font-medium text-slate-700">Intention 3:</label>
-                            <input type="text" id="ruleIntention3" class="w-full p-2 border border-slate-300 rounded-lg shadow-sm focus:ring-2 focus:ring-teal-500">
-                        </div>
-                        <div>
-                            <label for="ruleIntention4" class="block text-sm font-medium text-slate-700">Intention 4:</label>
-                            <input type="text" id="ruleIntention4" class="w-full p-2 border border-slate-300 rounded-lg shadow-sm focus:ring-2 focus:ring-teal-500">
-                        </div>
-                        <div>
-                            <label for="ruleIntention5" class="block text-sm font-medium text-slate-700">Intention 5:</label>
-                            <input type="text" id="ruleIntention5" class="w-full p-2 border border-slate-300 rounded-lg shadow-sm focus:ring-2 focus:ring-teal-500">
-                        </div>
-                    </div>
-                </div>
-                <button id="startRuleOfLifeCheckinBtn" class="px-4 py-2 rounded-lg shadow-md font-semibold transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 bg-teal-600 text-white hover:bg-teal-700 focus:ring-teal-500 w-full mt-4">Start Weekly Check-in</button>
-                <button id="viewPastRuleOfLifeBtn" class="px-4 py-2 rounded-lg shadow-md font-semibold transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 bg-white text-slate-700 border border-slate-300 hover:bg-slate-50 focus:ring-indigo-500 w-full mt-2">View Trends & History</button>
-            </div>
-            <!-- Rule of Life Check-in View -->
-            <div id="ruleOfLifeCheckinView" class="view space-y-4">
-                <h2 class="text-2xl font-bold text-teal-800">Rule of Life Check-in</h2>
-                <p class="text-sm text-slate-600">For the week ending on:</p>
-                <input type="date" id="ruleOfLifeCheckinDate" class="w-full p-2 border border-slate-300 rounded-lg shadow-sm focus:ring-2 focus:ring-teal-500">
-               
-                <div id="ruleOfLifeChecklistContainer" class="space-y-3 bg-white p-4 rounded-xl shadow-sm border border-slate-200">
-                    <!-- Checkboxes will be injected here -->
-                </div>
-               
-                <div class="mt-4">
-                    <label for="ruleOfLifeNotesArea" class="block text-sm font-medium text-slate-700 mb-1">Reflections for this week (Private):</label>
-                    <textarea id="ruleOfLifeNotesArea" rows="4" class="w-full p-3 border border-slate-300 rounded-lg shadow-sm focus:ring-2 focus:ring-teal-500" placeholder="e.g., What went well? What was a challenge?"></textarea>
-                </div>
-                <button id="saveRuleOfLifeCheckinBtn" class="px-4 py-2 rounded-lg shadow-md font-semibold transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 bg-teal-600 text-white hover:bg-teal-700 focus:ring-teal-500 w-full">Save Reflection</button>
-                <button id="backToRuleOfLifeBtn" class="px-4 py-2 rounded-lg shadow-md font-semibold transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 bg-white text-slate-700 border border-slate-300 hover:bg-slate-50 focus:ring-indigo-500 w-full mt-2">Back to Rule of Life</button>
-            </div>
-           
-            <!-- Past Rule of Life Reflections View -->
-            <div id="pastRuleOfLifeView" class="view space-y-4">
-                <h2 class="text-2xl font-bold text-teal-800">Rule of Life Trends & History</h2>
-                <button id="backToRuleOfLifeBtn2" class="px-4 py-2 rounded-lg shadow-md font-semibold transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 bg-white text-slate-700 border border-slate-300 hover:bg-slate-50 focus:ring-indigo-500 w-full mb-3">Back to Rule of Life</button>
-               
-                <!-- New Chart Section -->
-                <div class="bg-teal-50 p-4 rounded-xl shadow-sm border border-teal-200 min-h-[250px] sm:min-h-[300px] relative">
-                    <canvas id="ruleOfLifeChart"></canvas>
-                    <div id="ruleOfLifeChartEmpty" class="text-slate-500 italic text-center p-8" style="display: none;">
-                        No reflections found. Complete a few check-ins to see your trends.
-                    </div>
-                </div>
-               
-                <h3 class="text-lg font-semibold text-teal-800 pt-4">Past Reflections</h3>
-                <div id="pastRuleOfLifeContainer" class="space-y-3">
-                    <!-- Past entries will be injected here -->
-                </div>
-            </div>
-            <div id="summaryView" class="view space-y-6">
-                <h2 class="text-2xl font-bold text-indigo-800">This Week's Reflection</h2>
-                <button id="backToTrendsBtn" class="px-4 py-2 rounded-lg shadow-md font-semibold transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 bg-white text-slate-700 border border-slate-300 hover:bg-slate-50 focus:ring-indigo-500 w-full mb-3 hidden">Back to Trends</button>
-                <div id="summaryContent" class="bg-slate-50 p-4 rounded-xl shadow-sm border border-slate-200 space-y-2">
-                    <!-- Summary and notes will be injected here -->
-                </div>
-                <div id="summaryPrompt" class="bg-yellow-100 border-l-4 border-yellow-400 p-4 rounded-md shadow-sm text-yellow-800 hidden">
-                    <!-- Prompt will be injected here -->
-                </div>
-                <button id="notesForSummaryBtn" class="px-4 py-2 rounded-lg shadow-md font-semibold transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 bg-indigo-600 text-white hover:bg-indigo-700 focus:ring-indigo-500 w-full">Add/Edit Personal Notes for this Summary</button>
-            </div>
-            <div id="notesView" class="view space-y-4">
-                <h2 class="text-2xl font-bold text-indigo-800">Personal Notes (Private)</h2>
-                <p id="notesForDateText" class="text-sm text-slate-600">Notes for: </p>
-                <textarea id="personalNotesArea" rows="6" class="w-full p-3 border border-slate-300 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500" placeholder="Type your private reflections here..."></textarea>
-                <button id="saveNotesBtn" class="px-4 py-2 rounded-lg shadow-md font-semibold transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 bg-indigo-600 text-white hover:bg-indigo-700 focus:ring-indigo-500 w-full">Save Notes</button>
-                 <button id="backToSummaryFromNotesBtn" class="px-4 py-2 rounded-lg shadow-md font-semibold transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 bg-white text-slate-700 border border-slate-300 hover:bg-slate-50 focus:ring-indigo-500 w-full mt-2">Back to Summary</button>
-            </div>
-            <!-- Trends View -->
-            <div id="trendsView" class="view space-y-4">
-                <h2 class="text-2xl font-bold text-indigo-800">Wellbeing Trends</h2>
-                <p class="text-sm text-slate-600">This chart shows your warning and positive signs over time. Click on a bar to view the summary for that day.</p>
-               
-                <div class="flex justify-center p-1 bg-slate-100 rounded-lg">
-                    <button id="trendsToggleRecent" class="trends-toggle-btn active">Recent 12</button>
-                    <button id="trendsToggleAll" class="trends-toggle-btn">All Time</button>
-                </div>
-                <div class="bg-slate-50 p-4 rounded-xl shadow-sm border border-slate-200 min-h-[300px] sm:min-h-[400px] relative">
-                    <canvas id="wellbeingChart"></canvas>
-                    <div id="trendsChartEmpty" class="text-slate-500 italic text-center p-8" style="display: none;">
-                        No check-in history yet. Complete a few weekly check-ins to see your trends.
-                    </div>
-                </div>
-                <!-- Correlations Section -->
-                <div id="correlationsView" class="space-y-4">
-                    <h2 class="text-xl font-semibold text-indigo-800">Wellbeing Insights</h2>
-                    <div id="correlationsContainer" class="space-y-3">
-                        <p class="text-slate-500 italic text-center">Complete a few more weekly check-ins to unlock wellbeing insights.</p>
-                    </div>
-                </div>
-            </div>
-            <!-- Resources View -->
-            <div id="resourcesView" class="view space-y-4">
-                <div class="flex justify-between items-center">
-                    <h2 class="text-2xl font-bold text-indigo-800">Support Resources</h2>
-                    <div>
-                        <button id="editResourcesBtn" class="px-4 py-2 rounded-lg shadow-md font-semibold transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 bg-white text-slate-700 border border-slate-300 hover:bg-slate-50 focus:ring-indigo-500 btn-sm py-1 px-3">Edit</button>
-                        <button id="saveResourcesBtn" class="px-4 py-2 rounded-lg shadow-md font-semibold transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 bg-indigo-600 text-white hover:bg-indigo-700 focus:ring-indigo-500 btn-sm py-1 px-3 hidden">Save</button>
-                    </div>
-                </div>
-               
-                <div class="bg-slate-50 p-4 rounded-xl shadow-sm border border-slate-200 space-y-3">
-                    <p class="font-medium">General NZ Helplines:</p>
-                    <ul class="list-disc list-inside text-slate-700 space-y-1">
-                        <li><strong>Need to talk?</strong> Free call or text 1737 anytime for support from a trained counsellor.</li>
-                        <li><strong>Lifeline Aotearoa:</strong> 0800 543 354 (0800 LIFELINE) or free text 4357 (HELP).</li>
-                        <li><strong>Samaritans:</strong> 0800 726 666.</li>
-                    </ul>
-                </div>
-               
-                <div class="bg-slate-50 p-4 rounded-xl shadow-sm border border-slate-200 space-y-3">
-                    <p class="font-medium mt-3">Your Personal Contacts:</p>
-                    <p class="text-sm text-slate-600">Add your important contacts here. This data is saved privately on your device.</p>
-                    <div id="userResourcesContainer" class="space-y-3 mt-2">
-                        <!-- Read-only view -->
-                        <div id="resourcesReadView" class="space-y-1">
-                            <p><strong>Supervisor:</strong> <span id="readSupervisor" class="resource-text placeholder">Not set</span></p>
-                            <p><strong>Mentor:</strong> <span id="readMentor" class="resource-text placeholder">Not set</span></p>
-                            <p><strong>Spiritual Director:</strong> <span id="readSpiritualDirector" class="resource-text placeholder">Not set</span></p>
-                            <p><strong>Doctor/GP:</strong> <span id="readDoctor" class="resource-text placeholder">Not set</span></p>
-                            <p><strong>Counsellor:</strong> <span id="readCounsellor" class="resource-text placeholder">Not set</span></p>
-                            <p><strong>Other:</strong> <span id="readOther" class="resource-text placeholder">Not set</span></p>
-                        </div>
-                        <!-- Edit view -->
-                        <div id="resourcesEditView" class="space-y-2 hidden">
-                            <div>
-                                <label for="editSupervisor" class="block text-sm font-medium text-slate-700">Supervisor:</label>
-                                <input type="text" id="editSupervisor" class="w-full p-2 border border-slate-300 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500">
-                            </div>
-                            <div>
-                                <label for="editMentor" class="block text-sm font-medium text-slate-700">Mentor:</label>
-                                <input type="text" id="editMentor" class="w-full p-2 border border-slate-300 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500">
-                            </div>
-                            <div>
-                                <label for="editSpiritualDirector" class="block text-sm font-medium text-slate-700">Spiritual Director:</label>
-                                <input type="text" id="editSpiritualDirector" class="w-full p-2 border border-slate-300 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500">
-                            </div>
-                            <div>
-                                <label for="editDoctor" class="block text-sm font-medium text-slate-700">Doctor/GP:</label>
-                                <input type="text" id="editDoctor" class="w-full p-2 border border-slate-300 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500">
-                            </div>
-                            <div>
-                                <label for="editCounsellor" class="block text-sm font-medium text-slate-700">Counsellor:</label>
-                                <input type="text" id="editCounsellor" class="w-full p-2 border border-slate-300 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500">
-                            </div>
-                            <div>
-                                <label for="editOther" class="block text-sm font-medium text-slate-700">Other:</label>
-                                <input type="text" id="editOther" class="w-full p-2 border border-slate-300 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500" placeholder="e.g., Diocesan contact, friend...">
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <!-- Privacy View -->
-            <div id="privacyView" class="view space-y-4">
-                <h2 class="text-2xl font-bold text-indigo-800">Privacy & Security</h2>
-                <div class="bg-slate-50 p-4 rounded-xl shadow-sm border border-slate-200 space-y-3 text-slate-700">
-                    <p><strong>Your Privacy is Paramount.</strong></p>
-                    <p>This "Tōku Hauora" app is designed with your privacy as its core principle.</p>
-                    <ul class="list-disc list-inside space-y-1 mt-2">
-                        <li><strong>Client-Side Encryption:</strong> All data you enter (check-ins, notes, trends) is <strong>encrypted</strong> using your PIN *before* it is saved.</li>
-                        <li><strong>Local-First Storage:</strong> Your encrypted data is stored *exclusively* on your device within this web browser's private database (`IndexedDB`).</li>
-                        <li><strong>Zero Knowledge:</strong> Your unencrypted data is never sent to any server, and no one (not even the app's creator) can read it without your PIN. Your PIN is never stored directly.</li>
-                        <li><strong>Optional Cloud Sync:</strong> If you choose to sign in, your *already encrypted* data is synced to a private cloud database. No one, not even Google, can read this data.</li>
-                        <li><strong>You Control Your Data:</strong> You can export a decrypted backup or clear your encrypted data at any time using the options in the "Settings" section.</li>
-                    </ul>
-                    <p class="mt-2">This app is a tool for personal reflection and awareness. It is not a diagnostic tool and does not replace professional medical or psychological advice.</p>
-                </div>
-            </div>
-            <!-- Settings View -->
-            <div id="settingsView" class="view space-y-4">
-                <h2 class="text-2xl font-bold text-indigo-800">Settings & Data</h2>
-                <!-- Cloud Sync Status -->
-                <div class="bg-slate-50 p-4 rounded-xl shadow-sm border border-slate-200 space-y-3">
-                    <p class="font-medium">Cloud Sync</p>
-                    <div id="syncStatusLoading" class="text-slate-500">
-                        <div class="flex items-center space-x-2">
-                            <svg class="animate-spin h-5 w-5 text-slate-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                            <span>Checking status...</span>
-                        </div>
-                    </div>
-                    <div id="syncStatusOut" class="hidden">
-                        <p class="text-sm text-slate-600 mb-2">You are currently working locally. Your data is encrypted and saved only on this device.</p>
-                        <button id="signInToSyncBtn" class="px-4 py-2 rounded-lg shadow-md font-semibold transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 bg-indigo-600 text-white hover:bg-indigo-700 focus:ring-indigo-500 w-full">Sign In to Enable Cloud Sync</button>
-                    </div>
-                    <div id="syncStatusIn" class="hidden">
-                        <p class="text-sm text-slate-600 mb-2">You are signed in as: <strong id="userEmailDisplay" class="text-slate-800"></strong></p>
-                        <p class="text-sm text-green-700 font-medium mb-3">Your encrypted data is syncing to the cloud.</p>
-                        <button id="signOutBtn" class="px-4 py-2 rounded-lg shadow-md font-semibold transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 bg-white text-slate-700 border border-slate-300 hover:bg-slate-50 focus:ring-indigo-500 w-full">Sign Out</button>
-                    </div>
-                </div>
-               
-                <!-- PIN Management -->
-                <div class="bg-slate-50 p-4 rounded-xl shadow-sm border border-slate-200 space-y-3">
-                    <p class="font-medium">PIN Management</p>
-                    <p class="text-sm text-slate-600">Your 4-digit PIN is mandatory and is used to encrypt all your data.</p>
-                    <button id="changePinBtn" class="px-4 py-2 rounded-lg shadow-md font-semibold transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 bg-white text-slate-700 border border-slate-300 hover:bg-slate-50 focus:ring-indigo-500 w-full">Change PIN</button>
-                </div>
-               
-                 <div class="bg-slate-50 p-4 rounded-xl shadow-sm border border-slate-200 space-y-3">
-                    <p class="font-medium">Reminders:</p>
-                    <p class="text-sm text-slate-600">This web app cannot set system reminders. Please use your phone or computer's calendar app to set a weekly reminder for your Tōku Hauora Check.</p>
-                    <p class="font-medium mt-4">Manage Your Data:</p>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                        <button id="exportDataBtn" class="px-4 py-2 rounded-lg shadow-md font-semibold transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 bg-white text-slate-700 border border-slate-300 hover:bg-slate-50 focus:ring-indigo-500 w-full">Export My Data</button>
-                        <label for="importDataInput" class="px-4 py-2 rounded-lg shadow-md font-semibold transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 bg-white text-slate-700 border border-slate-300 hover:bg-slate-50 focus:ring-indigo-500 w-full text-center cursor-pointer">
-                            Import My Data
-                        </label>
-                        <input type="file" id="importDataInput" class="hidden" accept=".json,application/json">
-                    </div>
-                    <button id="viewDataBtn" class="px-4 py-2 rounded-lg shadow-md font-semibold transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 bg-white text-slate-700 border border-slate-300 hover:bg-slate-50 focus:ring-indigo-500 w-full mt-2">View My Raw Data (JSON)</button>
-                    <button id="clearDataBtn" class="px-4 py-2 rounded-lg shadow-md font-semibold transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 bg-red-600 text-white hover:bg-red-700 focus:ring-red-500 w-full mt-2">Clear All My Data</button>
-                    <p class="text-xs text-slate-500 mt-1">Warning: Clearing data is permanent and cannot be undone.</p>
-                    <div id="rawDataDisplay" class="mt-3 p-2 bg-slate-100 rounded border border-slate-300 text-xs overflow-auto max-h-60 hidden"></div>
-                 </div>
-            </div>
-        </main>
-        <!-- Bottom Navigation Bar -->
-        <nav class="bg-indigo-600 flex sticky bottom-0 shadow-inner border-t border-indigo-700">
-            <button id="navHomeBtn" class="nav-tab-btn active" data-view="welcomeView">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 mx-auto"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" /></svg>
-                <span class="text-xs mt-1">Home</span>
+    <!-- Dashboard View -->
+    <div id="dashboardView" class="view w-full p-6 overflow-y-auto">
+        <h1 class="text-3xl font-bold text-slate-800 mb-6">Tōku Hauora</h1>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <button id="startWarningBtn" class="dashboard-btn bg-indigo-600 hover:bg-indigo-700">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Warning Signs Check-in
             </button>
-            <button id="navSummaryBtn" class="nav-tab-btn" data-view="summaryView">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 mx-auto"><path stroke-linecap="round" stroke-linejoin="round" d="M11.39 6.22l.015.015.015-.015a.75.75 0 011.06 0l1.06 1.06c.3.3.3.785 0 1.076l-4.5 4.5a.75.75 0 01-1.06 0l-1.06-1.06a.75.75 0 010-1.076l4.5-4.5zM11.25 12.75l-4.5 4.5a.75.75 0 01-1.06 0l-1.06-1.06a.75.75 0 010-1.076l4.5-4.5a.75.75 0 011.06 0l1.06 1.06a.75.75 0 010 1.076zM18.75 2.25c.398 0 .779.158 1.06.44l2.25 2.25a1.5 1.5 0 01.44 1.06v12a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 18V6a2.25 2.25 0 012.25-2.25h13.5zM18 4.5H5.25A.75.75 0 004.5 5.25v12.75c0 .414.336.75.75.75h13.5a.75.75 0 00.75-.75V5.25a.75.75 0 00-.75-.75z" /></svg>
-                <span class="text-xs mt-1">Summary</span>
+            <button id="startPositiveBtn" class="dashboard-btn bg-emerald-600 hover:bg-emerald-700">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                </svg>
+                Positive Signs Check-in
             </button>
-            <button id="navTrendsBtn" class="nav-tab-btn" data-view="trendsView">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 mx-auto"><path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25C3.504 21 3 20.496 3 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25c-.621 0-1.125-.504-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25c-.621 0-1.125-.504-1.125-1.125V4.125z" /></svg>
-                <span class="text-xs mt-1">Trends</span>
+            <button id="startSabbathBtn" class="dashboard-btn bg-violet-600 hover:bg-violet-700">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Sabbath Check-in
             </button>
-            <button id="navResourcesBtn" class="nav-tab-btn" data-view="resourcesView">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 mx-auto"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18c-2.305 0-4.408.867-6 2.292m0-14.25v14.25" /></svg>
-                <span class="text-xs mt-1">Resources</span>
+            <button id="startRuleBtn" class="dashboard-btn bg-amber-600 hover:bg-amber-700">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                </svg>
+                Rule of Life
             </button>
-            <button id="navSettingsBtn" class="nav-tab-btn" data-view="settingsView">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 mx-auto"><path stroke-linecap="round" stroke-linejoin="round" d="M10.343 3.94c.09-.542.56-1.007 1.11-1.226l.487-.202a.75.75 0 01.93.93l-.202.487c-.219.55-.684 1.02-1.226 1.11a4.5 4.5 0 00-2.032 5.225l.042.11a.75.75 0 01-1.214.866l-.11-.042a4.5 4.5 0 00-5.225-2.032c-.542.09-1.007.56-1.226 1.11l-.202.487a.75.75 0 01-.93-.93l.487-.202c.55-.219 1.02-.684 1.11-1.226a4.5 4.5 0 00-2.032-5.225l-.042-.11a.75.75 0 01.866-1.214l.11.042a4.5 4.5 0 005.225-2.032zM12 8.25a3.75 3.75 0 100 7.5 3.75 3.75 0 000-7.5z" /></svg>
-                <span class="text-xs mt-1">Settings</span>
+            <button id="startGratitudeBtn" class="dashboard-btn bg-rose-600 hover:bg-rose-700">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                </svg>
+                Gratitude Journal
             </button>
-        </nav>
-        <!-- Onboarding Modal -->
-        <div id="onboardingModal" class="modal-overlay">
-            <div class="modal-content space-y-4">
-                <h3 class="text-2xl font-semibold text-indigo-800">Welcome to Tōku Hauora!</h3>
-               
-                <!-- Onboarding Content (Multiple Steps) -->
-                <div id="onboardingStep1" class="onboarding-step space-y-3">
-                    <p class="text-slate-700">This is your <strong>100% private</strong> wellbeing hub. All your data is encrypted with a PIN and saved only on this device.</p>
-                    <p class="text-sm text-slate-600">This app is a tool for reflection, not a replacement for professional advice.</p>
-                </div>
-                <div id="onboardingStep2" class="onboarding-step space-y-3 hidden">
-                    <h4 class="font-semibold text-lg text-slate-800">Optional Cloud Sync</h4>
-                    <p class="text-slate-700">You can **optionally** sign in to sync your *encrypted* data to the cloud. This lets you use multiple devices.</p>
-                    <p class="text-sm text-slate-600">Your privacy is protected. No one but you can read your data. Find this in **Settings**.</p>
-                </div>
-                 <div id="onboardingStep3" class="onboarding-step space-y-3 hidden">
-                    <h4 class="font-semibold text-lg text-slate-800">See Your Progress</h4>
-                    <p class="text-slate-700">The <strong>"Trends"</strong> tab (bottom of screen) is where your data comes alive. You'll see:
-                    </p>
-                    <ul class="list-disc list-inside space-y-2 text-sm text-slate-600">
-                        <li><strong>Visual charts</strong> of your check-in and "Rule of Life" history.</li>
-                        <li><strong>Wellbeing Insights</strong> that automatically find patterns in your data over time.</li>
-                    </ul>
-                     <p class="text-slate-700 mt-2">The more you use the app, the more useful these insights will become.</p>
-                </div>
-                 <div id="onboardingStep4" class="onboarding-step space-y-3 hidden">
-                    <h4 class="font-semibold text-lg text-slate-800">Your Data, Your Control</h4>
-                    <p class="text-slate-700">Visit the <strong>"Settings"</strong> tab (bottom of screen) at any time to:</p>
-                    <ul class="list-disc list-inside space-y-2 text-sm text-slate-600">
-                        <li><strong>Change</strong> your PIN.</li>
-                        <li><strong>Export</strong> a full backup of all your data.</li>
-                        <li><strong>Import</strong> a backup file (e.g., on a new device).</li>
-                        <li><strong>Clear All Data</strong> permanently from this browser.</li>
-                    </ul>
-                </div>
-                <!-- Onboarding Navigation -->
-                <div class="flex justify-between items-center mt-6">
-                    <span id="onboardingStepIndicator" class="text-sm text-slate-500">Step 1 of 4</span>
-                    <div>
-                        <button id="onboardingPrevBtn" class="px-4 py-2 rounded-lg shadow-md font-semibold transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 bg-white text-slate-700 border border-slate-300 hover:bg-slate-50 focus:ring-indigo-500 hidden">Previous</button>
-                        <button id="onboardingNextBtn" class="px-4 py-2 rounded-lg shadow-md font-semibold transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 bg-indigo-600 text-white hover:bg-indigo-700 focus:ring-indigo-500">Next</button>
-                        <button id="onboardingFinishBtn" class="px-4 py-2 rounded-lg shadow-md font-semibold transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 bg-indigo-600 text-white hover:bg-indigo-700 focus:ring-indigo-500 hidden">Get Started</button>
-                    </div>
-                </div>
+            <button id="navToPrivacyBtn" class="dashboard-btn bg-slate-600 hover:bg-slate-700">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016zM12 9v2m0 4h.01" />
+                </svg>
+                Privacy & Data
+            </button>
+        </div>
+    </div>
+    <!-- Warning Check-in View -->
+    <div id="checkinView" class="view w-full p-6 overflow-y-auto">
+        <h2 class="text-2xl font-bold text-slate-800 mb-4">Warning Signs Check-in</h2>
+        <div id="warnCategoryContainer" class="space-y-4"></div>
+        <div class="mt-6 flex justify-between">
+            <button id="warnPrevBtn" class="px-4 py-2 rounded-lg bg-slate-200 text-slate-700 hover:bg-slate-300">Previous</button>
+            <button id="warnNextBtn" class="px-4 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700">Next</button>
+            <button id="warnFinishBtn" class="px-4 py-2 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 hidden">Finish</button>
+        </div>
+    </div>
+    <!-- Positive Check-in View -->
+    <div id="positiveCheckinView" class="view w-full p-6 overflow-y-auto">
+        <h2 class="text-2xl font-bold text-slate-800 mb-4">Positive Signs Check-in</h2>
+        <div id="posCategoryContainer" class="space-y-4"></div>
+        <div class="mt-6 flex justify-between">
+            <button id="positivePrevBtn" class="px-4 py-2 rounded-lg bg-slate-200 text-slate-700 hover:bg-slate-300">Previous</button>
+            <button id="positiveNextBtn" class="px-4 py-2 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700">Next</button>
+            <button id="positiveFinishBtn" class="px-4 py-2 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 hidden">Finish</button>
+        </div>
+    </div>
+    <!-- Sabbath Check-in View -->
+    <div id="sabbathCheckinView" class="view w-full p-6 overflow-y-auto">
+        <h2 class="text-2xl font-bold text-slate-800 mb-4">Sabbath Check-in</h2>
+        <input id="sabbathDateInput" type="date" class="w-full px-4 py-2 mb-4 rounded-lg border border-slate-300">
+        <div id="sabbathCategoryContainer" class="space-y-4"></div>
+        <div class="mt-6 flex justify-between">
+            <button id="sabbathPrevBtn" class="px-4 py-2 rounded-lg bg-slate-200 text-slate-700 hover:bg-slate-300">Previous</button>
+            <button id="sabbathNextBtn" class="px-4 py-2 rounded-lg bg-violet-600 text-white hover:bg-violet-700">Next</button>
+            <button id="sabbathFinishBtn" class="px-4 py-2 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 hidden">Finish</button>
+        </div>
+        <button id="sabbathViewPastBtn" class="mt-4 w-full px-4 py-2 rounded-lg bg-slate-200 text-slate-700 hover:bg-slate-300">View Past Sabbaths</button>
+    </div>
+    <!-- Past Sabbath View -->
+    <div id="pastSabbathView" class="view w-full p-6 overflow-y-auto">
+        <h2 class="text-2xl font-bold text-slate-800 mb-4">Past Sabbaths</h2>
+        <div id="pastSabbathList" class="space-y-4"></div>
+        <button id="backToSabbathCheckinBtn" class="mt-4 w-full px-4 py-2 rounded-lg bg-slate-200 text-slate-700 hover:bg-slate-300">Back</button>
+    </div>
+    <!-- Gratitude View -->
+    <div id="gratitudeView" class="view w-full p-6 overflow-y-auto">
+        <h2 class="text-2xl font-bold text-slate-800 mb-4">Gratitude Journal</h2>
+        <textarea id="gratitudeEntry" class="w-full h-40 p-3 rounded-lg border border-slate-300" placeholder="What are you grateful for today?"></textarea>
+        <button id="gratitudeSaveBtn" class="mt-4 w-full px-4 py-2 rounded-lg bg-rose-600 text-white hover:bg-rose-700">Save</button>
+        <button id="gratitudeViewPastBtn" class="mt-4 w-full px-4 py-2 rounded-lg bg-slate-200 text-slate-700 hover:bg-slate-300">View Past Entries</button>
+    </div>
+    <!-- Past Gratitude View -->
+    <div id="pastGratitudeView" class="view w-full p-6 overflow-y-auto">
+        <h2 class="text-2xl font-bold text-slate-800 mb-4">Past Gratitude Entries</h2>
+        <div id="pastGratitudeList" class="space-y-4"></div>
+        <button id="backToGratitudeBtn" class="mt-4 w-full px-4 py-2 rounded-lg bg-slate-200 text-slate-700 hover:bg-slate-300">Back</button>
+    </div>
+    <!-- Rule of Life View -->
+    <div id="ruleOfLifeView" class="view w-full p-6 overflow-y-auto">
+        <h2 class="text-2xl font-bold text-slate-800 mb-4">Rule of Life</h2>
+        <div id="ruleReadView">
+            <p id="ruleReadText" class="resource-text"></p>
+        </div>
+        <div id="ruleEditView" class="hidden">
+            <textarea id="ruleEditInput" class="w-full h-40 p-3 rounded-lg border border-slate-300"></textarea>
+        </div>
+        <button id="ruleEditBtn" class="mt-4 px-4 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700">Edit</button>
+        <button id="ruleSaveBtn" class="mt-4 px-4 py-2 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 hidden">Save</button>
+        <button id="ruleStartCheckinBtn" class="mt-4 w-full px-4 py-2 rounded-lg bg-amber-600 text-white hover:bg-amber-700">Start Check-in</button>
+        <button id="ruleViewPastBtn" class="mt-4 w-full px-4 py-2 rounded-lg bg-slate-200 text-slate-700 hover:bg-slate-300">View Past Check-ins</button>
+    </div>
+    <!-- Rule of Life Check-in View -->
+    <div id="ruleOfLifeCheckinView" class="view w-full p-6 overflow-y-auto">
+        <h2 class="text-2xl font-bold text-slate-800 mb-4">Rule of Life Check-in</h2>
+        <div id="ruleChecklistContainer" class="space-y-4"></div>
+        <button id="ruleSaveCheckinBtn" class="mt-4 w-full px-4 py-2 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700">Save Check-in</button>
+        <button id="backToRuleOfLifeBtn" class="mt-4 w-full px-4 py-2 rounded-lg bg-slate-200 text-slate-700 hover:bg-slate-300">Back</button>
+    </div>
+    <!-- Past Rule of Life View -->
+    <div id="pastRuleOfLifeView" class="view w-full p-6 overflow-y-auto">
+        <h2 class="text-2xl font-bold text-slate-800 mb-4">Past Rule of Life Check-ins</h2>
+        <div id="pastRuleList" class="space-y-4"></div>
+        <div class="h-48 relative">
+            <canvas id="ruleChart"></canvas>
+            <p id="ruleChartEmpty" class="absolute inset-0 flex items-center justify-center text-slate-500 italic hidden">No data yet</p>
+        </div>
+        <button id="backToRuleOfLifeBtn2" class="mt-4 w-full px-4 py-2 rounded-lg bg-slate-200 text-slate-700 hover:bg-slate-300">Back</button>
+    </div>
+    <!-- Trends View -->
+    <div id="trendsView" class="view w-full p-6 overflow-y-auto">
+        <h2 class="text-2xl font-bold text-slate-800 mb-4">Trends</h2>
+        <div class="bg-slate-100 p-4 rounded-lg mb-4">
+            <div class="flex space-x-2">
+                <button id="trendsToggleRecentBtn" class="trends-toggle-btn active">Recent (12 weeks)</button>
+                <button id="trendsToggleAllBtn" class="trends-toggle-btn">All Time</button>
+            </div>
+            <div class="h-64 relative mt-4">
+                <canvas id="trendsChart"></canvas>
+                <p id="trendsChartEmpty" class="absolute inset-0 flex items-center justify-center text-slate-500 italic hidden">No check-ins yet</p>
             </div>
         </div>
-        <!-- Generic Modal -->
-        <div id="promptModal" class="modal-overlay">
-            <div class="modal-content space-y-4">
-                <h3 id="promptModalTitle" class="text-2xl font-semibold text-indigo-800">Wellbeing Reflection</h3>
-                <p id="promptModalMessage" class="text-slate-700"></p>
-                <div id="promptModalButtons" class="flex justify-end space-x-3">
-                    <!-- FIX: Removed invalid 'class_commented_out' and added valid 'class' -->
-                    <button id="closePromptModalBtn" class="px-4 py-2 rounded-lg shadow-md font-semibold transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 bg-indigo-600 text-white hover:bg-indigo-700 focus:ring-indigo-500">Okay, I Understand</button>
-                </div>
-            </div>
+        <h3 class="text-xl font-semibold text-slate-800 mb-2">Insights</h3>
+        <div id="trendsCorrelationsContainer" class="bg-slate-100 p-4 rounded-lg"></div>
+    </div>
+    <!-- Summary View -->
+    <div id="summaryView" class="view w-full p-6 overflow-y-auto">
+        <h2 class="text-2xl font-bold text-slate-800 mb-4">Check-in Summary</h2>
+        <div id="summaryContent" class="space-y-4"></div>
+        <button id="summaryBackToTrendsBtn" class="mt-4 px-4 py-2 rounded-lg bg-slate-200 text-slate-700 hover:bg-slate-300">Back to Trends</button>
+        <button id="summaryAddNotesBtn" class="mt-4 px-4 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700">Add Notes</button>
+    </div>
+    <!-- Notes View -->
+    <div id="notesView" class="view w-full p-6 overflow-y-auto">
+        <h2 class="text-2xl font-bold text-slate-800 mb-4">Notes</h2>
+        <textarea id="notesEntry" class="w-full h-40 p-3 rounded-lg border border-slate-300" placeholder="Add your notes here..."></textarea>
+        <button id="notesSaveBtn" class="mt-4 w-full px-4 py-2 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700">Save Notes</button>
+    </div>
+    <!-- Resources View -->
+    <div id="resourcesView" class="view w-full p-6 overflow-y-auto">
+        <h2 class="text-2xl font-bold text-slate-800 mb-4">Resources</h2>
+        <div id="resourcesReadView">
+            <!-- Read-only resources -->
+            <p id="resource-phone" class="resource-text"></p>
+            <p id="resource-email" class="resource-text"></p>
+            <!-- Add more as needed -->
         </div>
-        <!-- Custom Alert/Toast Box -->
-        <div id="alert-box">
-             <div id="alert-content" class="p-4 rounded-lg shadow-xl text-white font-medium flex items-center space-x-3">
-                <svg id="alert-icon" class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm-1-9a1 1 0 112 0v4a1 1 0 11-2 0V9zm1-4a1 1 0 100 2 1 1 0 000-2z" clip-rule="evenodd"></path></svg>
-                <span id="alert-message">This is an alert</span>
-             </div>
+        <div id="resourcesEditView" class="hidden">
+            <!-- Editable inputs -->
+            <input id="resource-phone-input" type="text" placeholder="Phone" class="w-full px-4 py-2 mb-4 rounded-lg border border-slate-300">
+            <input id="resource-email-input" type="email" placeholder="Email" class="w-full px-4 py-2 mb-4 rounded-lg border border-slate-300">
+            <!-- Add more as needed -->
         </div>
-    </div> <!-- End #app -->
-    <!--
-    ================================================================
-    APP JAVASCRIPT
-    ================================================================
-    -->
-    <script type="module">
-        // Import Firebase modules from the SDKs loaded in <head>
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import {
-            getAuth,
-            signInAnonymously,
-            signInWithCustomToken,
-            onAuthStateChanged,
-            GoogleAuthProvider,
-            signInWithRedirect,
-            getRedirectResult,
-            createUserWithEmailAndPassword,
-            signInWithEmailAndPassword,
-            signOut,
-            setPersistence, // <-- Added for persistence
-            browserLocalPersistence // <-- Added for persistence
-        } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import {
-            getFirestore,
-            doc,
-            getDoc,
-            setDoc,
-            updateDoc,
-            deleteDoc,
-            onSnapshot,
-            collection,
-            query,
-            writeBatch,
-            setLogLevel,
-            enableNetwork,
-            disableNetwork,
-            getDocs
-        } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-        // --- Main App Namespace ---
+        <button id="resourcesEditBtn" class="mt-4 px-4 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700">Edit</button>
+        <button id="resourcesSaveBtn" class="mt-4 px-4 py-2 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 hidden">Save</button>
+    </div>
+    <!-- Privacy View -->
+    <div id="privacyView" class="view w-full p-6 overflow-y-auto">
+        <h2 class="text-2xl font-bold text-slate-800 mb-4">Privacy & Data</h2>
+        <p class="text-slate-600">Your data is stored locally and encrypted. For cloud sync, it's encrypted before upload.</p>
+        <!-- Additional privacy info -->
+    </div>
+    <!-- Alert Box -->
+    <div id="alert-box" class="bg-white px-4 py-2 rounded-lg shadow-lg text-center hidden">
+        <span id="alert-message"></span>
+    </div>
+    <!-- Bottom Navigation -->
+    <nav class="fixed bottom-0 left-0 right-0 bg-indigo-600 shadow-lg">
+        <div class="flex justify-around">
+            <button id="navDashboardBtn" class="nav-tab-btn active">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="w-6 h-6">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-4 0h-4" />
+                </svg>
+                Home
+            </button>
+            <button id="navTrendsBtn" class="nav-tab-btn">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="w-6 h-6">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M5 10l3-3 3 3 4-4" />
+                </svg>
+                Trends
+            </button>
+            <button id="navResourcesBtn" class="nav-tab-btn">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="w-6 h-6">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Resources
+            </button>
+        </div>
+    </nav>
+
+    <script>
+        // App Initialization and Logic
         const App = {
-            // --- State ---
-            state: {
-                db: null, // IndexedDB instance
-                fb: { // Firebase services
-                    app: null,
-                    auth: null,
-                    db: null,
-                    googleProvider: null
-                },
-                appId: 'default-app-id',
-                userId: null, // Firebase Auth User ID
-                pin: {
-                    hash: null,
-                    salt: null,
-                    encryptionKey: null, // CryptoKey
-                    input: "",
-                    setupStep: 0, // 0=login, 1=new, 2=confirm
-                    confirmPin: "",
-                    attempt: "",
-                    actionCallback: null
-                },
-                storageDriver: 'local', // 'local' or 'firestore'
-                data: {
-                    checkinHistory: [],
-                    gratitudeHistory: [],
-                    sabbathHistory: [],
-                    ruleOfLifeHistory: [],
-                    userResources: {},
-                    ruleOfLife: {}
-                },
-                ui: {
-                    currentView: 'welcomeView',
-                    currentWarningCategory: 0,
-                    currentPositiveCategory: 0,
-                    currentSabbathCategory: 0,
-                    currentSummaryIndex: -1,
-                    currentNotesIndex: -1,
-                    currentTrendView: 'recent',
-                    currentOnboardingStep: 1,
-                    charts: {
-                        trends: null,
-                        rule: null
-                    },
-                    alertTimeout: null
+            init: function() {
+                // Register service worker
+                if ('serviceWorker' in navigator) {
+                    navigator.serviceWorker.register('sw.js').then(reg => {
+                        console.log('Service Worker registered', reg);
+                    }).catch(err => {
+                        console.error('Service Worker registration failed', err);
+                    });
+                }
+                // Firebase initialization using window.firebaseConfig
+                const app = firebase.initializeApp(window.firebaseConfig);
+                App.state.fb.db = firebase.firestore();
+                firebase.auth().onAuthStateChanged((user) => {
+                    if (user) {
+                        App.state.userId = user.uid;
+                        App.state.storageDriver = 'firestore';
+                        // Load data from Firestore
+                        App.loadData();
+                    }
+                });
+                // Check if stay local
+                if (localStorage.getItem('stayLocal')) {
+                    App.state.storageDriver = 'local';
+                    App.navigation.navigateTo('dashboardView');
+                    App.loadData();
+                } else {
+                    App.navigation.navigateTo('loginView');
+                }
+                this.handlers.init();
+                // Show lock screen if PIN is set
+                if (localStorage.getItem('pin')) {
+                    document.getElementById('lockScreen').style.display = 'flex';
+                    this.pin.correctPin = localStorage.getItem('pin');
                 }
             },
-            // --- Config (Static Data) ---
-            config: {
-                warningSigns: {
-                    emotional: ["Loss of joy or satisfaction in ministry", "Increased irritability, impatience, or anger", "Cynicism, negativity, or disillusionment about ministry or the Church", "Feeling emotionally exhausted, overwhelmed, or \"numb\"", "Increased anxiety or feelings of dread related to work", "Heightened sensitivity to criticism", "Feelings of failure, inadequacy, or guilt"],
-                    // FIX: Corrected typo "sennse" to "sense"
-                    mentalCognitive: ["Difficulty concentrating or making decisions", "Forgetfulness", "Constant rumination about work problems, even during time off", "Loss of creativity or motivation", "A sense that you are never \"not working\" mentally"],
-                    physical: ["Persistent fatigue, exhaustion, or low energy", "Changes in sleep patterns (insomnia, oversleeping)", "Headaches, muscle tension, or other physical ailments", "Changes in appetite or weight", "Increased susceptibility to illness"],
-                    spiritual: ["Feeling disconnected from God or your faith", "Finding prayer or spiritual practices a burden rather than a source of strength", "Loss of meaning or purpose in your ministry", "Questioning your calling"],
-                    behaviouralRelational: ["Withdrawal from colleagues, friends, or family", "Increased conflict in relationships", "Neglecting personal needs or hobbies", "Increased use of alcohol, medication, or other coping mechanisms (e.g., overeating, excessive screen time, escapist behaviours)", "Procrastination or avoidance of tasks", "Working longer hours but feeling less effective", "Reduced empathy or compassion for others (depersonalisation)"]
-                },
-                categoryDisplayNames: {
-                    emotional: "Emotional Signs", mentalCognitive: "Mental/Cognitive Signs", physical: "Physical Signs", spiritual: "Spiritual Signs", behaviouralRelational: "Behavioural/Relational Signs"
-                },
-                categoryOrder: ["emotional", "mentalCognitive", "physical", "spiritual", "behaviouralRelational"],
-               
-                positiveSigns: {
-                    connection: ["Felt a sense of connection with others", "Had a positive interaction with a colleague", "Spent quality time with family or friends", "Felt connected to my community"],
-                    purpose: ["Felt a sense of meaning or purpose in my work", "Felt I made a positive difference", "Engaged in an activity I find truly meaningful"],
-                    engagement: ["Felt engaged and interested in a task (flow)", "Enjoyed a hobby or leisure activity", "Felt creative or generative"],
-                    selfCare: ["Had a restful Sabbath or day off", "Got enough sleep", "Ate well", "Was physically active", "Took time for quiet reflection"],
-                    spiritual: ["Felt a sense of connection to God", "Found prayer or spiritual practice life-giving", "Felt gratitude", "Experienced a moment of awe or wonder"]
-                },
-                positiveCategoryDisplayNames: {
-                    connection: "Connection & Relationships",
-                    purpose: "Purpose & Meaning",
-                    engagement: "Engagement & Joy",
-                    selfCare: "Rest & Self-Care",
-                    spiritual: "Spiritual Life"
-                },
-                positiveCategoryOrder: ["connection", "purpose", "engagement", "selfCare", "spiritual"],
-                sabbathSigns: {
-                    disengagement: ["I was able to mentally disengage from work (e.g., not ruminating on problems)", "I successfully avoided or limited work-related emails and calls", "I felt 'off-duty' and not on call"],
-                    rest: ["I experienced physical rest and renewal", "I engaged in activities I find genuinely restful (which might be active or passive)", "I felt my energy levels were restored"],
-                    connection: ["I spent quality time with family or friends", "I connected meaningfully with my community (outside of a work context)", "I took time for myself"],
-                    spiritual: ["I engaged in spiritual practices that were life-giving (e.g., worship, prayer, nature)", "I felt connected to God", "I felt a sense of joy or peace"]
-                },
-                sabbathCategoryDisplayNames: {
-                    disengagement: "Disengagement from Work",
-                    rest: "Physical & Mental Rest",
-                    connection: "Connection (Self, Others, Community)",
-                    spiritual: "Spiritual Refreshment"
-                },
-                sabbathCategoryOrder: ["disengagement", "rest", "connection", "spiritual"],
-               
-                DB_NAME: 'TokuHauoraDB_v2', // New DB name for encrypted store
-                DB_VERSION: 1,
-                STORES: {
-                    APP_STATE: 'appState', // For PIN, rule, resources
-                    CHECKIN: 'checkinHistory',
-                    GRATITUDE: 'gratitudeHistory',
-                    SABBATH: 'sabbathHistory',
-                    RULE_HISTORY: 'ruleOfLifeHistory'
+            loadData: function() {
+                if (App.state.storageDriver === 'local') {
+                    // Load from localStorage
+                    App.state.data.checkinHistory = JSON.parse(localStorage.getItem('checkinHistory') || '[]');
+                    App.state.data.userResources = JSON.parse(localStorage.getItem('userResources') || '{}');
+                    // Load other data
+                } else {
+                    // Load from Firestore
+                    const userDataRef = App.state.fb.db.collection(`artifacts/${App.state.appId}/users/${App.state.userId}/data`);
+                    // Fetch documents
                 }
             },
-            // --- DOM Element Cache ---
-            dom: {},
-           
-            // --- Caches all common DOM elements ---
-            cacheDom: function() {
-                this.dom.app = document.getElementById('app');
-                this.dom.main = document.querySelector('main');
-                this.dom.views = document.querySelectorAll('.view');
-                this.dom.navButtons = document.querySelectorAll('.nav-tab-btn');
-               
-                // Lock Screen
-                this.dom.lock = {
-                    screen: document.getElementById('lockScreen'),
-                    title: document.getElementById('lockTitle'),
-                    subtitle: document.getElementById('lockSubtitle'),
-                    error: document.getElementById('lockError'),
-                    dots: document.querySelectorAll('.pin-dot'),
-                    keypad: document.querySelector('#lockScreen .grid')
-                };
-               
-                // Login View
-                this.dom.login = {
-                    view: document.getElementById('loginView'),
+            dom: {
+                lock: {
+                    keypad: document.querySelector('#lockScreen .grid'),
+                    error: document.getElementById('lockError')
+                },
+                login: {
                     signInGoogleBtn: document.getElementById('signInGoogleBtn'),
                     showEmailLoginBtn: document.getElementById('showEmailLoginBtn'),
                     stayLocalBtn: document.getElementById('stayLocalBtn'),
-                    emailLoginView: document.getElementById('emailLoginView'),
-                    emailInput: document.getElementById('emailInput'),
-                    passwordInput: document.getElementById('passwordInput'),
                     emailLoginBtn: document.getElementById('emailLoginBtn'),
                     emailSignUpBtn: document.getElementById('emailSignUpBtn'),
                     backToLoginOptionsBtn: document.getElementById('backToLoginOptionsBtn'),
-                    authError: document.getElementById('authError')
-                };
-                // Modals
-                this.dom.onboarding = {
-                    modal: document.getElementById('onboardingModal'),
-                    stepIndicator: document.getElementById('onboardingStepIndicator'),
-                    prevBtn: document.getElementById('onboardingPrevBtn'),
-                    nextBtn: document.getElementById('onboardingNextBtn'),
-                    finishBtn: document.getElementById('onboardingFinishBtn'),
-                    steps: document.querySelectorAll('.onboarding-step')
-                };
-                this.dom.prompt = {
-                    modal: document.getElementById('promptModal'),
-                    title: document.getElementById('promptModalTitle'),
-                    message: document.getElementById('promptModalMessage'),
-                    buttons: document.getElementById('promptModalButtons'),
-                    closeBtn: document.getElementById('closePromptModalBtn')
-                };
-                this.dom.alert = {
-                    box: document.getElementById('alert-box'),
-                    content: document.getElementById('alert-content'),
-                    icon: document.getElementById('alert-icon'),
-                    message: document.getElementById('alert-message')
-                };
-               
-                // Dashboard
-                this.dom.dashboard = {
-                    preview: document.getElementById('dashboardPreview'),
-                    rulePreview: document.getElementById('dashboardRulePreview'),
-                    startWarningBtn: document.getElementById('startWarningCheckinBtn'),
-                    startPositiveBtn: document.getElementById('startPositiveCheckinBtn'),
-                    startSabbathBtn: document.getElementById('startSabbathCheckinBtn'),
-                    startRuleBtn: document.getElementById('startRuleOfLifeBtn'),
+                    emailInput: document.getElementById('emailInput'),
+                    passwordInput: document.getElementById('passwordInput')
+                },
+                dashboard: {
+                    startWarningBtn: document.getElementById('startWarningBtn'),
+                    startPositiveBtn: document.getElementById('startPositiveBtn'),
+                    startSabbathBtn: document.getElementById('startSabbathBtn'),
+                    startRuleBtn: document.getElementById('startRuleBtn'),
                     startGratitudeBtn: document.getElementById('startGratitudeBtn'),
                     navToPrivacyBtn: document.getElementById('navToPrivacyBtn')
-                };
-               
-                // Check-in (Warning)
-                this.dom.warn = {
-                    title: document.getElementById('categoryTitle'),
-                    container: document.getElementById('questionsContainer'),
-                    prevBtn: document.getElementById('prevCategoryBtn'),
-                    nextBtn: document.getElementById('nextCategoryBtn'),
-                    finishBtn: document.getElementById('finishCheckinBtn'),
-                    progress: document.getElementById('checkinProgress'),
-                    progressText: document.getElementById('progressText'),
-                    btnContainer: document.getElementById('checkinButtonContainer')
-                };
-               
-                // Check-in (Positive)
-                this.dom.positive = {
-                    title: document.getElementById('positiveCategoryTitle'),
-                    container: document.getElementById('positiveQuestionsContainer'),
-                    prevBtn: document.getElementById('positivePrevCategoryBtn'),
-                    nextBtn: document.getElementById('positiveNextCategoryBtn'),
-                    finishBtn: document.getElementById('positiveFinishCheckinBtn'),
-                    progress: document.getElementById('positiveCheckinProgress'),
-                    progressText: document.getElementById('positiveProgressText'),
-                    btnContainer: document.getElementById('positiveCheckinButtonContainer')
-                };
-               
-                // Sabbath
-                this.dom.sabbath = {
-                    title: document.getElementById('sabbathCategoryTitle'),
-                    container: document.getElementById('sabbathQuestionsContainer'),
-                    prevBtn: document.getElementById('sabbathPrevCategoryBtn'),
-                    nextBtn: document.getElementById('sabbathNextCategoryBtn'),
-                    finishBtn: document.getElementById('sabbathFinishCheckinBtn'),
-                    progress: document.getElementById('sabbathCheckinProgress'),
-                    progressText: document.getElementById('sabbathProgressText'),
-                    btnContainer: document.getElementById('sabbathCheckinButtonContainer'),
-                    dateInput: document.getElementById('sabbathCheckinDate'),
-                    notes: document.getElementById('sabbathNotesArea'),
-                    viewPastBtn: document.getElementById('viewPastSabbathBtn'),
-                    pastContainer: document.getElementById('pastSabbathContainer'),
-                    backToSabbathCheckinBtn: document.getElementById('backToSabbathCheckinBtn')
-                };
-               
-                // Gratitude
-                this.dom.gratitude = {
-                    notes: document.getElementById('gratitudeEntryArea'),
-                    saveBtn: document.getElementById('saveGratitudeBtn'),
-                    viewPastBtn: document.getElementById('viewPastGratitudeBtn'),
-                    pastContainer: document.getElementById('pastGratitudeContainer'),
-                    backToGratitudeBtn: document.getElementById('backToGratitudeBtn')
-                };
-               
-                // Rule of Life
-                this.dom.rule = {
-                    editBtn: document.getElementById('editRuleBtn'),
-                    saveBtn: document.getElementById('saveRuleBtn'),
-                    readView: document.getElementById('ruleOfLifeReadView'),
-                    editView: document.getElementById('ruleOfLifeEditView'),
-                    readList: document.getElementById('ruleOfLifeReadList'),
-                    inputs: [ // Get inputs by ID
-                        document.getElementById('ruleIntention1'),
-                        document.getElementById('ruleIntention2'),
-                        document.getElementById('ruleIntention3'),
-                        document.getElementById('ruleIntention4'),
-                        document.getElementById('ruleIntention5')
-                    ],
-                    startCheckinBtn: document.getElementById('startRuleOfLifeCheckinBtn'),
-                    viewPastBtn: document.getElementById('viewPastRuleOfLifeBtn'),
-                    checkinDate: document.getElementById('ruleOfLifeCheckinDate'),
-                    checklistContainer: document.getElementById('ruleOfLifeChecklistContainer'),
-                    checkinNotes: document.getElementById('ruleOfLifeNotesArea'),
-                    saveCheckinBtn: document.getElementById('saveRuleOfLifeCheckinBtn'),
-                    pastContainer: document.getElementById('pastRuleOfLifeContainer'),
-                    chart: document.getElementById('ruleOfLifeChart'),
-                    chartEmpty: document.getElementById('ruleOfLifeChartEmpty'),
+                },
+                warn: {
+                    prevBtn: document.getElementById('warnPrevBtn'),
+                    nextBtn: document.getElementById('warnNextBtn'),
+                    finishBtn: document.getElementById('warnFinishBtn'),
+                    categoryContainer: document.getElementById('warnCategoryContainer')
+                },
+                positive: {
+                    prevBtn: document.getElementById('positivePrevBtn'),
+                    nextBtn: document.getElementById('positiveNextBtn'),
+                    finishBtn: document.getElementById('positiveFinishBtn'),
+                    categoryContainer: document.getElementById('posCategoryContainer')
+                },
+                sabbath: {
+                    dateInput: document.getElementById('sabbathDateInput'),
+                    prevBtn: document.getElementById('sabbathPrevBtn'),
+                    nextBtn: document.getElementById('sabbathNextBtn'),
+                    finishBtn: document.getElementById('sabbathFinishBtn'),
+                    viewPastBtn: document.getElementById('sabbathViewPastBtn'),
+                    backToSabbathCheckinBtn: document.getElementById('backToSabbathCheckinBtn'),
+                    categoryContainer: document.getElementById('sabbathCategoryContainer'),
+                    pastList: document.getElementById('pastSabbathList')
+                },
+                gratitude: {
+                    entry: document.getElementById('gratitudeEntry'),
+                    saveBtn: document.getElementById('gratitudeSaveBtn'),
+                    viewPastBtn: document.getElementById('gratitudeViewPastBtn'),
+                    backToGratitudeBtn: document.getElementById('backToGratitudeBtn'),
+                    pastList: document.getElementById('pastGratitudeList')
+                },
+                rule: {
+                    readView: document.getElementById('ruleReadView'),
+                    editView: document.getElementById('ruleEditView'),
+                    readText: document.getElementById('ruleReadText'),
+                    editInput: document.getElementById('ruleEditInput'),
+                    editBtn: document.getElementById('ruleEditBtn'),
+                    saveBtn: document.getElementById('ruleSaveBtn'),
+                    startCheckinBtn: document.getElementById('ruleStartCheckinBtn'),
+                    viewPastBtn: document.getElementById('ruleViewPastBtn'),
+                    checklistContainer: document.getElementById('ruleChecklistContainer'),
+                    saveCheckinBtn: document.getElementById('ruleSaveCheckinBtn'),
                     backToRuleOfLifeBtn: document.getElementById('backToRuleOfLifeBtn'),
-                    backToRuleOfLifeBtn2: document.getElementById('backToRuleOfLifeBtn2')
-                };
-                // Summary & Notes
-                this.dom.summary = {
+                    backToRuleOfLifeBtn2: document.getElementById('backToRuleOfLifeBtn2'),
+                    pastList: document.getElementById('pastRuleList'),
+                    chart: document.getElementById('ruleChart'),
+                    chartEmpty: document.getElementById('ruleChartEmpty')
+                },
+                summary: {
                     content: document.getElementById('summaryContent'),
-                    prompt: document.getElementById('summaryPrompt'),
-                    backToTrendsBtn: document.getElementById('backToTrendsBtn'),
-                    addNotesBtn: document.getElementById('notesForSummaryBtn')
-                };
-                this.dom.notes = {
-                    notes: document.getElementById('personalNotesArea'),
-                    saveBtn: document.getElementById('saveNotesBtn'),
-                    dateText: document.getElementById('notesForDateText'),
-                    backBtn: document.getElementById('backToSummaryFromNotesBtn')
-                };
-               
-                // Trends
-                this.dom.trends = {
-                    chart: document.getElementById('wellbeingChart'),
+                    backToTrendsBtn: document.getElementById('summaryBackToTrendsBtn'),
+                    addNotesBtn: document.getElementById('summaryAddNotesBtn')
+                },
+                notes: {
+                    entry: document.getElementById('notesEntry'),
+                    saveBtn: document.getElementById('notesSaveBtn')
+                },
+                trends: {
+                    toggleRecentBtn: document.getElementById('trendsToggleRecentBtn'),
+                    toggleAllBtn: document.getElementById('trendsToggleAllBtn'),
+                    chart: document.getElementById('trendsChart'),
                     chartEmpty: document.getElementById('trendsChartEmpty'),
-                    toggleRecentBtn: document.getElementById('trendsToggleRecent'),
-                    toggleAllBtn: document.getElementById('trendsToggleAll'),
-                    correlationsContainer: document.getElementById('correlationsContainer')
-                };
-               
-                // Resources
-                this.dom.resources = {
-                    editBtn: document.getElementById('editResourcesBtn'),
-                    saveBtn: document.getElementById('saveResourcesBtn'),
+                    correlationsContainer: document.getElementById('trendsCorrelationsContainer')
+                },
+                resources: {
                     readView: document.getElementById('resourcesReadView'),
                     editView: document.getElementById('resourcesEditView'),
+                    editBtn: document.getElementById('resourcesEditBtn'),
+                    saveBtn: document.getElementById('resourcesSaveBtn'),
                     readSpans: {
-                        supervisor: document.getElementById('readSupervisor'),
-                        mentor: document.getElementById('readMentor'),
-                        spiritualDirector: document.getElementById('readSpiritualDirector'),
-                        doctor: document.getElementById('readDoctor'),
-                        counsellor: document.getElementById('readCounsellor'),
-                        other: document.getElementById('readOther')
+                        phone: document.getElementById('resource-phone'),
+                        email: document.getElementById('resource-email')
+                        // Add more
                     },
                     editInputs: {
-                        supervisor: document.getElementById('editSupervisor'),
-                        mentor: document.getElementById('editMentor'),
-                        spiritualDirector: document.getElementById('editSpiritualDirector'),
-                        doctor: document.getElementById('editDoctor'),
-                        counsellor: document.getElementById('editCounsellor'),
-                        other: document.getElementById('editOther')
-                    }
-                };
-                // Settings
-                this.dom.settings = {
-                    syncLoading: document.getElementById('syncStatusLoading'),
-                    syncOut: document.getElementById('syncStatusOut'),
-                    syncIn: document.getElementById('syncStatusIn'),
-                    userEmail: document.getElementById('userEmailDisplay'),
-                    signInToSyncBtn: document.getElementById('signInToSyncBtn'),
-                    signOutBtn: document.getElementById('signOutBtn'),
-                    changePinBtn: document.getElementById('changePinBtn'),
-                    exportBtn: document.getElementById('exportDataBtn'),
-                    importInput: document.getElementById('importDataInput'),
-                    viewDataBtn: document.getElementById('viewDataBtn'),
-                    clearDataBtn: document.getElementById('clearDataBtn'),
-                    rawDataDisplay: document.getElementById('rawDataDisplay')
-                };
-               
-                // FIX: Add null checks for all cached elements
-                Object.values(this.dom).forEach(group => {
-                    if (typeof group === 'object') {
-                        Object.entries(group).forEach(([key, el]) => {
-                            if (!el && key !== 'charts') { // Charts are null initially
-                                console.error(`Missing DOM element: ${key}`);
-                            }
-                        });
-                    }
-                });
-            },
-           
-            // --- UI Module (MERGED & FIXED) ---
-            ui: {
-                init: function() {
-                    // This function is for listeners *inside* modals
-                    const { onboarding, prompt } = App.dom;
-                   
-                    // Onboarding
-                    onboarding.nextBtn.addEventListener('click', () => this.updateOnboardingStep(1));
-                    onboarding.prevBtn.addEventListener('click', () => this.updateOnboardingStep(-1));
-                    onboarding.finishBtn.addEventListener('click', () => this.finishOnboarding());
-                    // General Prompt Modal
-                    prompt.modal.addEventListener('click', (e) => {
-                        if (e.target === prompt.modal) this.hideModal();
-                    });
-                    prompt.closeBtn.addEventListener('click', () => this.hideModal());
-                },
-               
-                updateOnboardingStep: function(direction) {
-                    const { onboarding } = App.dom;
-                    const totalSteps = onboarding.steps.length;
-                    let currentStep = App.state.ui.currentOnboardingStep;
-                   
-                    currentStep += direction;
-                    if (currentStep < 1) currentStep = 1;
-                    if (currentStep > totalSteps) currentStep = totalSteps;
-                    App.state.ui.currentOnboardingStep = currentStep;
-                    onboarding.steps.forEach((step, index) => {
-                        step.style.display = (index + 1 === currentStep) ? 'block' : 'none';
-                    });
-                   
-                    onboarding.stepIndicator.textContent = `Step ${currentStep} of ${totalSteps}`;
-                    onboarding.prevBtn.style.display = (currentStep > 1) ? 'inline-block' : 'none';
-                    onboarding.nextBtn.style.display = (currentStep < totalSteps) ? 'inline-block' : 'none';
-                    onboarding.finishBtn.style.display = (currentStep === totalSteps) ? 'inline-block' : 'none';
-                },
-               
-                finishOnboarding: function() {
-                    localStorage.setItem('hauoraOnboardComplete', 'true');
-                    App.dom.onboarding.modal.classList.remove('visible');
-                    setTimeout(() => App.dom.onboarding.modal.style.display = 'none', 300);
-                },
-                showAlert: function(message, type = 'info', duration = 3000) {
-                    const { alert } = App.dom;
-                    if (!alert || !alert.box || !alert.content || !alert.message) {
-                        console.error("Alert DOM elements not found! Message:", message);
-                        return;
-                    }
-                    if (App.state.ui.alertTimeout) {
-                        clearTimeout(App.state.ui.alertTimeout);
-                    }
-                   
-                    alert.message.textContent = message;
-                   
-                    alert.content.classList.remove('bg-green-600', 'bg-red-600', 'bg-indigo-600');
-                    if (type === 'success') {
-                        alert.content.classList.add('bg-green-600');
-                        alert.icon.innerHTML = `<svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>`;
-                    } else if (type === 'error') {
-                        alert.content.classList.add('bg-red-600');
-                        alert.icon.innerHTML = `<svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path></svg>`;
-                    } else { // info
-                        alert.content.classList.add('bg-indigo-600');
-                        alert.icon.innerHTML = `<svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm-1-9a1 1 0 112 0v4a1 1 0 11-2 0V9zm1-4a1 1 0 100 2 1 1 0 000-2z" clip-rule="evenodd"></path></svg>`;
-                    }
-                   
-                    alert.box.classList.add('show');
-                    App.state.ui.alertTimeout = setTimeout(() => {
-                        alert.box.classList.remove('show');
-                        App.state.ui.alertTimeout = null;
-                    }, duration);
-                },
-                showModal: function(title, message) {
-                    const { prompt } = App.dom;
-                    prompt.title.textContent = title;
-                    prompt.message.innerHTML = message.replace(/\n/g, '<br>');
-                    prompt.modal.style.display = 'flex';
-                   
-                    setTimeout(() => {
-                        prompt.modal.classList.add('visible');
-                    }, 10);
-                    // Reset buttons to default
-                    prompt.buttons.innerHTML = '';
-                    const closeBtn = document.createElement('button');
-                    closeBtn.id = 'closePromptModalBtn';
-                    closeBtn.className = 'px-4 py-2 rounded-lg shadow-md font-semibold transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 bg-indigo-600 text-white hover:bg-indigo-700 focus:ring-indigo-500';
-                    closeBtn.textContent = "Okay, I Understand";
-                    closeBtn.onclick = () => this.hideModal();
-                    prompt.buttons.appendChild(closeBtn);
-                },
-               
-                hideModal: function() {
-                    const { prompt } = App.dom;
-                    prompt.modal.classList.remove('visible');
-                    setTimeout(() => {
-                        prompt.modal.style.display = 'none';
-                    }, 200);
-                },
-               
-                addModalButton: function(text, type, onClick) {
-                    const { prompt } = App.dom;
-                    const btn = document.createElement('button');
-                    btn.textContent = text;
-                    const typeClass = type === 'danger'
-                        ? 'bg-red-600 text-white hover:bg-red-700 focus:ring-red-500'
-                        : 'bg-white text-slate-700 border border-slate-300 hover:bg-slate-50 focus:ring-indigo-500';
-                    btn.className = `px-4 py-2 rounded-lg shadow-md font-semibold transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 ${typeClass}`;
-                    btn.onclick = () => {
-                        onClick();
-                        this.hideModal();
-                    };
-                   
-                    const defaultBtn = document.getElementById('closePromptModalBtn');
-                    if (defaultBtn) {
-                        defaultBtn.textContent = "Cancel";
-                        defaultBtn.className = 'px-4 py-2 rounded-lg shadow-md font-semibold transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 bg-white text-slate-700 border border-slate-300 hover:bg-slate-50 focus:ring-indigo-500';
-                    }
-                   
-                    prompt.buttons.prepend(btn);
-                },
-                // --- Functions moved from the smaller (Part 2) UI module ---
-                renderDashboardPreview: function() {
-                    const { dashboard } = App.dom;
-                    const { checkinHistory, ruleOfLife } = App.state.data;
-                    if (checkinHistory.length > 0) {
-                        const lastEntry = checkinHistory[checkinHistory.length - 1];
-                        // FIX: Call the calculateTotals function from the now-existing moduleCheckin
-                        const totals = App.moduleCheckin.calculateTotals(lastEntry);
-                       
-                        const totalSigns = totals.warning + totals.positive;
-                        const warningPercent = totalSigns === 0 ? 0 : (totals.warning / totalSigns) * 100;
-                        const positivePercent = totalSigns === 0 ? 0 : (totals.positive / totalSigns) * 100;
-                       
-                        const d = App.util.parseDateString(lastEntry.date);
-                        const dateStr = d ? d.toLocaleDateString('en-NZ', { day: 'numeric', month: 'short' }) : 'Last Entry';
-                       
-                        dashboard.preview.innerHTML = `
-                            <p class="text-sm text-slate-600 mb-2">Your last check-in (${dateStr}):</p>
-                            <div class="flex w-full h-6 rounded-full overflow-hidden bg-gray-200">
-                                <div class="bg-indigo-600" style="width: ${warningPercent}%" title="Warning Signs"></div>
-                                <div class="bg-emerald-600" style="width: ${positivePercent}%" title="Positive Signs"></div>
-                            </div>
-                            <div class="flex justify-between text-sm mt-1">
-                                <span class="font-semibold text-indigo-700">${totals.warning} Warning</span>
-                                <span class="font-semibold text-emerald-700">${totals.positive} Positive</span>
-                            </div>
-                            <button id="dashboardViewSummaryBtn" class="text-indigo-600 hover:text-indigo-700 hover:underline cursor-pointer text-sm font-medium mt-3">View Full Summary</button>
-                        `;
-                        // Re-add listener as innerHTML was replaced
-                        document.getElementById('dashboardViewSummaryBtn').onclick = () => App.navigation.navigateTo('summaryViewLast');
-                    } else {
-                        dashboard.preview.innerHTML = '<p class="text-slate-500 italic">You haven\'t completed a check-in yet. Start one below!</p>';
-                    }
-                    const intentions = (ruleOfLife && ruleOfLife.intentions) ? ruleOfLife.intentions.filter(i => i) : [];
-                    if (intentions.length > 0) {
-                        dashboard.rulePreview.innerHTML = `
-                            <ul class="list-disc list-inside text-teal-700 font-medium space-y-1">
-                                ${intentions.map(i => `<li>${this.escapeHTML(i)}</li>`).join('')}
-                            </ul>`;
-                    } else {
-                        dashboard.rulePreview.innerHTML = '<p class="text-slate-500 italic">You haven\'t set your intentions yet. Tap "My Rule of Life" to begin.</p>';
+                        phone: document.getElementById('resource-phone-input'),
+                        email: document.getElementById('resource-email-input')
+                        // Add more
                     }
                 },
-                // Helper to prevent XSS
-                escapeHTML: function(str) {
-                    if (typeof str !== 'string') return '';
-                    return str.replace(/[&<>"']/g, function(m) {
-                        return {
-                            '&': '&amp;',
-                            '<': '&lt;',
-                            '>': '&gt;',
-                            '"': '&quot;',
-                            "'": '&#039;'
-                        }[m];
-                    });
+                nav: {
+                    dashboardBtn: document.getElementById('navDashboardBtn'),
+                    trendsBtn: document.getElementById('navTrendsBtn'),
+                    resourcesBtn: document.getElementById('navResourcesBtn')
                 }
-            }, // End of App.ui
-            // --- Navigation Module (MERGED) ---
-            navigation: {
-                init: function() {
-                    // --- Bottom Nav Bar ---
-                    App.dom.navButtons.forEach(link => {
-                        link.addEventListener('click', (e) => {
-                            e.preventDefault();
-                            const targetView = link.dataset.view;
-                            this.navigateTo(targetView);
-                        });
-                    });
+            },
+            state: {
+                ui: {
+                    currentWarningCategory: 0,
+                    currentPositiveCategory: 0,
+                    currentSabbathCategory: 0,
+                    currentTrendView: 'recent',
+                    currentEntryIndex: null
                 },
-               
+                data: {
+                    checkinHistory: [],
+                    sabbathHistory: [],
+                    gratitudeHistory: [],
+                    ruleOfLife: '',
+                    ruleHistory: [],
+                    userResources: {},
+                    notes: {}
+                },
+                storageDriver: 'local',
+                appId: 'toku-hauora-app',
+                userId: null,
+                fb: {
+                    db: null
+                },
+                warningCategories: [
+                    { name: 'Emotional', items: ['Stress', 'Anxiety', 'Irritability'] },
+                    { name: 'Physical', items: ['Fatigue', 'Headaches', 'Insomnia'] }
+                    // Add more categories as needed
+                ],
+                positiveCategories: [
+                    { name: 'Emotional', items: ['Joy', 'Calm', 'Gratitude'] },
+                    { name: 'Physical', items: ['Energy', 'Good sleep', 'Exercise'] }
+                    // Add more
+                ],
+                sabbathCategories: [
+                    { name: 'Rest', items: ['Sleep', 'Relaxation'] },
+                    { name: 'Reflection', items: ['Prayer', 'Journaling'] }
+                    // Add more
+                ],
+                ruleItems: [] // Populated from ruleOfLife text, perhaps split by lines
+            },
+            ui: {
+                charts: {
+                    trends: null,
+                    rule: null
+                },
+                showAlert: function(message, type = 'success') {
+                    const alertBox = document.getElementById('alert-box');
+                    const alertMessage = document.getElementById('alert-message');
+                    alertMessage.textContent = message;
+                    alertBox.classList.add(type === 'success' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700');
+                    alertBox.classList.add('show');
+                    setTimeout(() => {
+                        alertBox.classList.remove('show');
+                        alertBox.classList.remove('bg-green-100', 'text-green-700', 'bg-red-100', 'text-red-700');
+                    }, 3000);
+                }
+            },
+            navigation: {
+                viewBtnMap: {
+                    'dashboardView': 'navDashboardBtn',
+                    'trendsView': 'navTrendsBtn',
+                    'resourcesView': 'navResourcesBtn'
+                },
                 navigateTo: function(viewId, params = {}) {
-                    const { dom, state } = App;
-                    dom.views.forEach(view => view.classList.remove('active-view'));
-                   
-                    let targetViewId = viewId;
-                    state.ui.currentSummaryIndex = -1; // Reset summary index by default
-                    dom.summary.backToTrendsBtn.style.display = 'none';
-                    if (viewId === 'summaryViewLast') {
-                        const history = state.data.checkinHistory;
-                        if (history.length > 0) {
-                            state.ui.currentSummaryIndex = history.length - 1;
-                            App.moduleCheckin.renderSummary(history[state.ui.currentSummaryIndex]);
-                            targetViewId = 'summaryView';
-                        } else {
-                            targetViewId = 'welcomeView';
-                            App.ui.renderDashboardPreview(); // Re-render dashboard
-                            App.ui.showAlert("No Summary Yet. Please complete a check-in.", "info");
-                        }
-                    } else if (viewId === 'summaryView' && typeof params.entryIndex !== 'undefined') {
-                        const history = state.data.checkinHistory;
-                        state.ui.currentSummaryIndex = params.entryIndex;
-                        if (history[state.ui.currentSummaryIndex]) {
-                            App.moduleCheckin.renderSummary(history[state.ui.currentSummaryIndex]);
-                            dom.summary.backToTrendsBtn.style.display = 'block';
-                        } else {
-                            console.error("Historical entry not found for index:", params.entryIndex);
-                            targetViewId = 'trendsView';
-                        }
-                    } else if (viewId === 'notesView') {
-                        const history = state.data.checkinHistory;
-                        // Use currentNotesIndex, which should be set by renderSummary
-                        if (state.ui.currentNotesIndex !== -1 && history[state.ui.currentNotesIndex]) {
-                            const entry = history[state.ui.currentNotesIndex];
-                            dom.notes.notes.value = entry.notes || '';
-                            const d = App.util.parseDateString(entry.date);
-                            dom.notes.dateText.textContent = d ? `Notes for: ${d.toLocaleDateString('en-NZ', { day: '2-digit', month: 'short', year: 'numeric' })}` : "Notes";
-                        }
-                    } else if (viewId === 'gratitudeView') {
-                        App.moduleGratitude.loadForToday();
-                    } else if (viewId === 'pastGratitudeView') {
-                        App.moduleGratitude.renderPast();
-                    } else if (viewId === 'sabbathCheckinView') {
-                        App.moduleSabbath.loadForDate(); // Loads today by default
-                    } else if (viewId === 'pastSabbathView') {
-                        App.moduleSabbath.renderPast();
+                    document.querySelectorAll('.view').forEach(v => v.classList.remove('active-view'));
+                    const view = document.getElementById(viewId);
+                    view.classList.add('active-view');
+                    // Update nav active
+                    document.querySelectorAll('.nav-tab-btn').forEach(btn => btn.classList.remove('active'));
+                    const btnId = this.viewBtnMap[viewId];
+                    if (btnId) {
+                        document.getElementById(btnId).classList.add('active');
+                    }
+                    // Handle params
+                    if (params.entryIndex !== undefined) {
+                        App.state.ui.currentEntryIndex = params.entryIndex;
+                        // Render summary or whatever
+                    }
+                    // Refresh view if needed
+                    if (viewId === 'trendsView') {
+                        App.moduleTrends.renderTrends();
+                        App.moduleTrends.renderCorrelations();
                     } else if (viewId === 'resourcesView') {
                         App.moduleResources.render('read');
                     } else if (viewId === 'ruleOfLifeView') {
                         App.moduleRule.renderRule('read');
-                    } else if (viewId === 'ruleOfLifeCheckinView') {
-                        App.moduleRule.loadChecklist();
                     } else if (viewId === 'pastRuleOfLifeView') {
                         App.moduleRule.renderPast();
-                        App.moduleRule.renderTrends();
-                    } else if (viewId === 'welcomeView') {
-                        App.ui.renderDashboardPreview();
-                    } else if (viewId === 'settingsView') {
-                        App.auth.updateSyncStatusUI();
-                    }
-                   
-                    const targetViewEl = document.getElementById(targetViewId);
-                    if (targetViewEl) {
-                        targetViewEl.classList.add('active-view');
-                        state.ui.currentView = targetViewId;
-                    } else {
-                        console.error("Target view not found:", targetViewId);
-                        document.getElementById('welcomeView').classList.add('active-view');
-                        state.ui.currentView = 'welcomeView';
-                    }
-                   
-                    dom.navButtons.forEach(btn => {
-                        const btnView = btn.dataset.view;
-                        if (btnView === state.ui.currentView || (viewId === 'summaryViewLast' && btnView === 'summaryView')) {
-                            btn.classList.add('active');
-                        } else {
-                            btn.classList.remove('active');
-                        }
-                    });
-                    dom.main.scrollTop = 0;
-                    if (targetViewId === 'trendsView') {
-                        App.moduleTrends.renderTrends();
-                        App.moduleTrends.renderCorrelations();
-                    }
-                }
-            }, // End of App.navigation
-            // --- Utility Module ---
-            util: {
-                getTodayDate: function() {
-                    // Returns YYYY-MM-DD
-                    const d = new Date();
-                    const year = d.getFullYear();
-                    const month = (d.getMonth() + 1).toString().padStart(2, '0');
-                    const day = d.getDate().toString().padStart(2, '0');
-                    return `${year}-${month}-${day}`;
-                },
-                parseDateString: function(dateString) {
-                    if (!dateString || !/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
-                        console.warn("Invalid date string format for parsing:", dateString);
-                        return null;
-                    }
-                    // Fix for Safari/iOS date parsing: replace '-' with '/'
-                    const safeDateString = dateString.replace(/-/g, '/');
-                    const d = new Date(safeDateString);
-                   
-                    // Check if the date is valid
-                    if (isNaN(d.getTime())) {
-                         console.warn("Invalid date constructed:", safeDateString);
-                         return null;
-                    }
-                   
-                    return d;
-                },
-                bufferToHex: function(buffer) {
-                    return Array.from(new Uint8Array(buffer))
-                        .map(b => b.toString(16).padStart(2, '0'))
-                        .join('');
-                },
-                hexToBuffer: function(hex) {
-                    const bytes = new Uint8Array(hex.length / 2);
-                    for (let i = 0; i < hex.length; i += 2) {
-                        bytes[i / 2] = parseInt(hex.substr(i, 2), 16);
-                    }
-                    return bytes.buffer;
-                },
-                generateSalt: function() {
-                    const array = new Uint8Array(16);
-                    window.crypto.getRandomValues(array);
-                    return this.bufferToHex(array);
+                    } // Add more
                 }
             },
-           
-            // ---
-            // START OF NEW/RECREATED MODULES
-            // ---
-            // --- Check-in Module (NEW) ---
+            storage: {
+                saveAppState: async function(key, data) {
+                    const serialized = JSON.stringify(data);
+                    localStorage.setItem(key, serialized);
+                    return serialized;
+                },
+                encrypt: async function(data) {
+                    // Placeholder for encryption, e.g., using CryptoJS or similar
+                    // For now, just stringify
+                    return JSON.stringify(data);
+                },
+                decrypt: async function(encrypted) {
+                    // Placeholder
+                    return JSON.parse(encrypted);
+                }
+            },
+            Firebase: {
+                setDoc: async function(ref, data) {
+                    await ref.set(data);
+                },
+                getDoc: async function(ref) {
+                    const snap = await ref.get();
+                    return snap.data();
+                }
+            },
+            util: {
+                parseDateString: function(dateStr) {
+                    return new Date(dateStr);
+                },
+                getCurrentDate: function() {
+                    return new Date().toISOString().split('T')[0];
+                }
+            },
+            pin: {
+                currentPin: '',
+                correctPin: '',
+                onKeyPress: function(key) {
+                    if (key === 'del') {
+                        this.currentPin = this.currentPin.slice(0, -1);
+                    } else if (this.currentPin.length < 4) {
+                        this.currentPin += key;
+                    }
+                    // Update dots
+                    for (let i = 1; i <= 4; i++) {
+                        const dot = document.getElementById(`pin-dot-${i}`);
+                        dot.classList.toggle('filled', this.currentPin.length >= i);
+                    }
+                    if (this.currentPin.length === 4) {
+                        if (this.currentPin === this.correctPin) {
+                            document.getElementById('lockScreen').style.display = 'none';
+                            // Proceed to app
+                        } else {
+                            App.dom.lock.error.textContent = 'Incorrect PIN';
+                            document.getElementById('lockScreen').classList.add('shake');
+                            setTimeout(() => {
+                                document.getElementById('lockScreen').classList.remove('shake');
+                                App.dom.lock.error.textContent = '';
+                            }, 500);
+                            this.currentPin = '';
+                            // Reset dots
+                            for (let i = 1; i <= 4; i++) {
+                                document.getElementById(`pin-dot-${i}`).classList.remove('filled');
+                            }
+                        }
+                    }
+                }
+            },
+            auth: {
+                signInWithGoogle: function() {
+                    const provider = new firebase.auth.GoogleAuthProvider();
+                    firebase.auth().signInWithPopup(provider).then((result) => {
+                        App.state.userId = result.user.uid;
+                        App.state.storageDriver = 'firestore';
+                        localStorage.removeItem('stayLocal');
+                        App.navigation.navigateTo('dashboardView');
+                        App.loadData();
+                    }).catch((error) => {
+                        App.ui.showAlert('Google sign-in failed: ' + error.message, 'error');
+                    });
+                },
+                showEmailLogin: function(show) {
+                    document.getElementById('emailLoginForm').classList.toggle('hidden', !show);
+                },
+                stayLocal: function() {
+                    localStorage.setItem('stayLocal', 'true');
+                    App.state.storageDriver = 'local';
+                    App.navigation.navigateTo('dashboardView');
+                    App.loadData();
+                },
+                signInWithEmail: function() {
+                    const email = App.dom.login.emailInput.value;
+                    const password = App.dom.login.passwordInput.value;
+                    firebase.auth().signInWithEmailAndPassword(email, password).then((userCredential) => {
+                        App.state.userId = userCredential.user.uid;
+                        App.state.storageDriver = 'firestore';
+                        localStorage.removeItem('stayLocal');
+                        App.navigation.navigateTo('dashboardView');
+                        App.loadData();
+                    }).catch((error) => {
+                        App.ui.showAlert('Email sign-in failed: ' + error.message, 'error');
+                    });
+                },
+                signUpWithEmail: function() {
+                    const email = App.dom.login.emailInput.value;
+                    const password = App.dom.login.passwordInput.value;
+                    firebase.auth().createUserWithEmailAndPassword(email, password).then((userCredential) => {
+                        App.state.userId = userCredential.user.uid;
+                        App.state.storageDriver = 'firestore';
+                        localStorage.removeItem('stayLocal');
+                        App.navigation.navigateTo('dashboardView');
+                        App.loadData();
+                    }).catch((error) => {
+                        App.ui.showAlert('Email sign-up failed: ' + error.message, 'error');
+                    });
+                }
+            },
             moduleCheckin: {
-                // Called by Dashboard
-                calculateTotals: function(entry) {
-                    const totals = { warning: 0, positive: 0, sabbath: 0 };
-                    if (entry) {
-                        // FIX: Added guards for missing properties
-                        if (entry.warn && typeof entry.warn === 'object') totals.warning = Object.values(entry.warn).reduce((acc, val) => acc + (Array.isArray(val) ? val.length : 0), 0);
-                        if (entry.pos && typeof entry.pos === 'object') totals.positive = Object.values(entry.pos).reduce((acc, val) => acc + (Array.isArray(val) ? val.length : 0), 0);
-                        if (entry.sab && typeof entry.sab === 'object') totals.sabbath = Object.values(entry.sab).reduce((acc, val) => acc + (Array.isArray(val) ? val.length : 0), 0);
-                    }
-                    return totals;
-                },
-               
-                // --- Warning Signs ---
-                renderCategory: function(type, categoryIndex) {
-                    const { config, dom, state } = App;
-                    const { warn, positive } = dom;
-                   
-                    let data, container, titleEl, progress, progressText, btnContainer, finishBtn, prevBtn, nextBtn;
-                    let categoryOrder, categoryNames, stateKey, cssClass;
-                    if (type === 'warn') {
-                        data = config.warningSigns;
-                        categoryOrder = config.categoryOrder;
-                        categoryNames = config.categoryDisplayNames;
-                        stateKey = 'currentWarningCategory';
-                        container = warn.container;
-                        titleEl = warn.title;
-                        progress = warn.progress;
-                        progressText = warn.progressText;
-                        btnContainer = warn.btnContainer;
-                        finishBtn = warn.finishBtn;
-                        prevBtn = warn.prevBtn;
-                        nextBtn = warn.nextBtn;
-                        cssClass = 'warn';
-                    } else { // 'pos'
-                        data = config.positiveSigns;
-                        categoryOrder = config.positiveCategoryOrder;
-                        categoryNames = config.positiveCategoryDisplayNames;
-                        stateKey = 'currentPositiveCategory';
-                        container = positive.container;
-                        titleEl = positive.title;
-                        progress = positive.progress;
-                        progressText = positive.progressText;
-                        btnContainer = positive.btnContainer;
-                        finishBtn = positive.finishBtn;
-                        prevBtn = positive.prevBtn;
-                        nextBtn = positive.nextBtn;
-                        cssClass = 'pos';
-                    }
-                    const categoryKey = categoryOrder[categoryIndex];
-                    const questions = data[categoryKey];
-                    const categoryName = categoryNames[categoryKey];
-                    titleEl.textContent = categoryName;
+                currentData: {},
+                renderCategory: function(type, index) {
+                    const categories = type === 'warn' ? App.state.warningCategories : App.state.positiveCategories;
+                    const container = App.dom[type].categoryContainer;
                     container.innerHTML = '';
-                   
-                    const today = App.util.getTodayDate();
-                    const todayEntry = App.state.data.checkinHistory.find(e => e.date === today) || {};
-                    const selected = (todayEntry[type] && todayEntry[type][categoryKey]) ? todayEntry[type][categoryKey] : [];
-                    questions.forEach((q, index) => {
-                        const qId = `${type}-${categoryKey}-${index}`;
-                        const isSelected = selected.includes(q);
-                        container.innerHTML += `
-                            <button id="${qId}" data-question="${App.ui.escapeHTML(q)}" data-category="${categoryKey}" class="btn-choice checkin-btn-${cssClass} ${isSelected ? 'active' : ''}">
-                                ${App.ui.escapeHTML(q)}
-                            </button>
-                        `;
+                    const category = categories[index];
+                    const h3 = document.createElement('h3');
+                    h3.textContent = category.name;
+                    container.appendChild(h3);
+                    category.items.forEach(item => {
+                        const btn = document.createElement('button');
+                        btn.textContent = item;
+                        btn.classList.add('btn-choice', `checkin-btn-${type}`);
+                        btn.addEventListener('click', () => {
+                            btn.classList.toggle('active');
+                            App.moduleCheckin.currentData[item] = btn.classList.contains('active');
+                        });
+                        container.appendChild(btn);
                     });
-                   
-                    // Add listeners to new buttons
-                    container.querySelectorAll('.btn-choice').forEach(btn => {
-                        btn.addEventListener('click', (e) => {
-                            e.currentTarget.classList.toggle('active');
-                        });
+                    // Update buttons visibility
+                    App.dom[type].prevBtn.style.display = index > 0 ? 'block' : 'none';
+                    if (index === categories.length - 1) {
+                        App.dom[type].nextBtn.style.display = 'none';
+                        App.dom[type].finishBtn.style.display = 'block';
+                    } else {
+                        App.dom[type].nextBtn.style.display = 'block';
+                        App.dom[type].finishBtn.style.display = 'none';
+                    }
+                },
+                navigateCategory: function(type, dir) {
+                    const current = type === 'warn' ? 'currentWarningCategory' : 'currentPositiveCategory';
+                    App.state.ui[current] = Math.max(0, App.state.ui[current] + dir);
+                    this.renderCategory(type, App.state.ui[current]);
+                },
+                finishCheckin: function(type) {
+                    const entry = {
+                        date: App.util.getCurrentDate(),
+                        type: type,
+                        data: this.currentData
+                    };
+                    App.state.data.checkinHistory.push(entry);
+                    // Save
+                    App.storage.saveAppState('checkinHistory', App.state.data.checkinHistory);
+                    if (App.state.storageDriver === 'firestore') {
+                        const docRef = App.state.fb.db.doc(`artifacts/${App.state.appId}/users/${App.state.userId}/data/checkinHistory`);
+                        App.Firebase.setDoc(docRef, { data: await App.storage.encrypt(App.state.data.checkinHistory) });
+                    }
+                    this.currentData = {};
+                    App.navigation.navigateTo('summaryView', { entryIndex: App.state.data.checkinHistory.length - 1 });
+                },
+                calculateTotals: function(entry) {
+                    let warning = 0, positive = 0;
+                    Object.values(entry.data || {}).forEach(val => {
+                        if (val) {
+                            if (entry.type === 'warn') warning++;
+                            else positive++;
+                        }
                     });
-                    // Update progress
-                    const totalCategories = categoryOrder.length;
-                    progress.value = ((categoryIndex + 1) / totalCategories) * 100;
-                    progressText.textContent = `Category ${categoryIndex + 1} of ${totalCategories}`;
-                   
-                    // Update buttons
-                    prevBtn.style.display = (categoryIndex > 0) ? 'inline-block' : 'none';
-                    nextBtn.style.display = (categoryIndex < totalCategories - 1) ? 'inline-block' : 'none';
-                    finishBtn.style.display = (categoryIndex === totalCategories - 1) ? 'inline-block' : 'none';
-                },
-                navigateCategory: function(type, direction) {
-                    const stateKey = (type === 'warn') ? 'currentWarningCategory' : 'currentPositiveCategory';
-                    const categoryOrder = (type === 'warn') ? App.config.categoryOrder : App.config.positiveCategoryOrder;
-                   
-                    this.saveCategory(type); // Save current answers before moving
-                   
-                    let newIndex = App.state.ui[stateKey] + direction;
-                    if (newIndex >= 0 && newIndex < categoryOrder.length) {
-                        App.state.ui[stateKey] = newIndex;
-                        this.renderCategory(type, newIndex);
-                    }
-                },
-               
-                saveCategory: function(type) {
-                    const stateKey = (type === 'warn') ? 'currentWarningCategory' : 'currentPositiveCategory';
-                    const categoryKey = (type === 'warn') ? App.config.categoryOrder[App.state.ui[stateKey]] : App.config.positiveCategoryOrder[App.state.ui[stateKey]];
-                    const container = (type === 'warn') ? App.dom.warn.container : App.dom.positive.container;
-                   
-                    const today = App.util.getTodayDate();
-                    let todayEntry = App.state.data.checkinHistory.find(e => e.date === today);
-                    if (!todayEntry) {
-                        todayEntry = { date: today, warn: {}, pos: {}, sab: {}, notes: '' };
-                        App.state.data.checkinHistory.push(todayEntry);
-                    }
-                   
-                    if (!todayEntry[type]) todayEntry[type] = {};
-                   
-                    const selected = Array.from(container.querySelectorAll('.btn-choice.active'))
-                                          .map(btn => btn.dataset.question);
-                    todayEntry[type][categoryKey] = selected;
-                },
-               
-                finishCheckin: async function(type) {
-                    this.saveCategory(type); // Save the last category
-                   
-                    const today = App.util.getTodayDate();
-                    const todayEntry = App.state.data.checkinHistory.find(e => e.date === today);
-                   
-                    if (todayEntry) {
-                        await App.storage.saveEntry(App.config.STORES.CHECKIN, todayEntry);
-                    }
-                   
-                    App.ui.showAlert("Check-in saved!", "success");
-                    App.navigation.navigateTo('summaryViewLast');
-                },
-               
-                renderSummary: function(entry) {
-                    if (!entry) {
-                        console.error("No entry provided to renderSummary");
-                        return;
-                    }
-                    const { dom, config, ui } = App;
-                    const { summary, notes } = dom;
-                    const d = App.util.parseDateString(entry.date);
-                    const dateStr = d ? d.toLocaleDateString('en-NZ', { day: '2-digit', month: 'short', year: 'numeric' }) : "Summary";
-                   
-                    App.state.ui.currentNotesIndex = App.state.data.checkinHistory.findIndex(e => e.date === entry.date);
-                   
-                    let content = `<h3 class="text-xl font-semibold text-indigo-800">${dateStr}</h3>`;
-                   
-                    // Warning Signs
-                    content += `<h4 class="text-lg font-semibold text-slate-700 mt-4">Warning Signs</h4>`;
-                    let warnHtml = '';
-                    if (entry.warn) {
-                        config.categoryOrder.forEach(key => {
-                            if (entry.warn[key] && entry.warn[key].length > 0) {
-                                warnHtml += `<strong class="text-sm text-indigo-700">${config.categoryDisplayNames[key]}</strong>
-                                    <ul class="list-disc list-inside text-sm text-slate-600 mb-2">
-                                        ${entry.warn[key].map(q => `<li>${ui.escapeHTML(q)}</li>`).join('')}
-                                    </ul>`;
-                            }
-                        });
-                    }
-                    content += warnHtml || `<p class="text-sm text-slate-500 italic">No warning signs selected.</p>`;
-                   
-                    // Positive Signs
-                    content += `<h4 class="text-lg font-semibold text-slate-700 mt-4">Positive Signs</h4>`;
-                    let posHtml = '';
-                    if (entry.pos) {
-                        config.positiveCategoryOrder.forEach(key => {
-                            if (entry.pos[key] && entry.pos[key].length > 0) {
-                                posHtml += `<strong class="text-sm text-emerald-700">${config.positiveCategoryDisplayNames[key]}</strong>
-                                    <ul class="list-disc list-inside text-sm text-slate-600 mb-2">
-                                        ${entry.pos[key].map(q => `<li>${ui.escapeHTML(q)}</li>`).join('')}
-                                    </ul>`;
-                            }
-                        });
-                    }
-                    content += posHtml || `<p class="text-sm text-slate-500 italic">No positive signs selected.</p>`;
-                   
-                    // Sabbath
-                    const sabbathEntry = App.state.data.sabbathHistory.find(e => e.date === entry.date);
-                    if (sabbathEntry) {
-                        content += `<h4 class="text-lg font-semibold text-slate-700 mt-4">Sabbath Reflection</h4>`;
-                        let sabHtml = '';
-                        if (sabbathEntry.sab) {
-                             config.sabbathCategoryOrder.forEach(key => {
-                                if (sabbathEntry.sab[key] && sabbathEntry.sab[key].length > 0) {
-                                    sabHtml += `<strong class="text-sm text-violet-700">${config.sabbathCategoryDisplayNames[key]}</strong>
-                                        <ul class="list-disc list-inside text-sm text-slate-600 mb-2">
-                                            ${sabbathEntry.sab[key].map(q => `<li>${ui.escapeHTML(q)}</li>`).join('')}
-                                        </ul>`;
-                                }
-                            });
-                        }
-                        content += sabHtml || `<p class="text-sm text-slate-500 italic">No sabbath signs selected.</p>`;
-                        if (sabbathEntry.notes) {
-                            content += `<strong class="text-sm text-violet-700">Sabbath Notes:</strong><div class="notes-display !bg-violet-50 !border-violet-200">${ui.escapeHTML(sabbathEntry.notes)}</div>`;
-                        }
-                    }
-                   
-                    // Gratitude
-                    const gratitudeEntry = App.state.data.gratitudeHistory.find(e => e.date === entry.date);
-                    if (gratitudeEntry) {
-                        content += `<h4 class="text-lg font-semibold text-slate-700 mt-4">Gratitude</h4>
-                                    <div class="entry-display">${ui.escapeHTML(gratitudeEntry.notes)}</div>`;
-                    }
-                   
-                    // Personal Notes
-                    content += `<h4 class="text-lg font-semibold text-slate-700 mt-4">Personal Notes</h4>`;
-                    if (entry.notes) {
-                        content += `<div class="notes-display">${ui.escapeHTML(entry.notes)}</div>`;
-                    } else {
-                        content += `<p class="text-sm text-slate-500 italic">No personal notes for this day.</p>`;
-                    }
-                   
-                    summary.content.innerHTML = content;
-                   
-                    // FIX: Added basic prompt logic
-                    const totals = this.calculateTotals(entry);
-                    if (totals.warning > 5) {
-                        summary.prompt.innerHTML = 'You have a high number of warning signs. Consider reaching out to support resources.';
-                        summary.prompt.style.display = 'block';
-                    } else {
-                        summary.prompt.style.display = 'none';
-                    }
-                },
-               
-                saveNotes: async function() {
-                    const { dom, state } = App;
-                    const entry = state.data.checkinHistory[state.ui.currentNotesIndex];
-                    if (entry) {
-                        entry.notes = dom.notes.notes.value;
-                        await App.storage.saveEntry(App.config.STORES.CHECKIN, entry);
-                        App.ui.showAlert("Notes saved!", "success");
-                        App.navigation.navigateTo('summaryView', { entryIndex: state.ui.currentNotesIndex });
-                    }
+                    return { warning, positive };
                 }
-            }, // End moduleCheckin
-           
-            // --- Gratitude Module (NEW) ---
-            moduleGratitude: {
-                loadForToday: function() {
-                    const today = App.util.getTodayDate();
-                    const entry = App.state.data.gratitudeHistory.find(e => e.date === today);
-                    App.dom.gratitude.notes.value = entry ? entry.notes : '';
-                },
-               
-                save: async function() {
-                    const { dom, state } = App;
-                    const today = App.util.getTodayDate();
-                    let entry = state.data.gratitudeHistory.find(e => e.date === today);
-                   
-                    if (!entry) {
-                        entry = { date: today };
-                        state.data.gratitudeHistory.push(entry);
-                    }
-                   
-                    entry.notes = dom.gratitude.notes.value;
-                   
-                    if (!entry.notes.trim()) {
-                        App.ui.showAlert("Please write something you're grateful for.", "info");
-                        return;
-                    }
-                   
-                    await App.storage.saveEntry(App.config.STORES.GRATITUDE, entry);
-                    App.ui.showAlert("Gratitude entry saved!", "success");
-                    App.navigation.navigateTo('welcomeView');
-                },
-               
-                renderPast: function() {
-                    const { dom, state, ui } = App;
-                    const history = [...state.data.gratitudeHistory].sort((a, b) => b.date.localeCompare(a.date));
-                   
-                    if (history.length === 0) {
-                        dom.gratitude.pastContainer.innerHTML = '<p class="text-slate-500 italic">No past gratitude entries found.</p>';
-                        return;
-                    }
-                   
-                    dom.gratitude.pastContainer.innerHTML = history.map(entry => {
-                        const d = App.util.parseDateString(entry.date);
-                        const dateStr = d ? d.toLocaleDateString('en-NZ', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) : entry.date;
-                        return `
-                            <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
-                                <h3 class="font-semibold text-amber-800">${dateStr}</h3>
-                                <div class="entry-display mt-2">${ui.escapeHTML(entry.notes)}</div>
-                            </div>
-                        `;
-                    }).join('');
-                }
-            }, // End moduleGratitude
-           
-            // --- Sabbath Module (NEW) ---
+            },
             moduleSabbath: {
-                renderCategory: function(categoryIndex) {
-                    const { config, dom, state, ui } = App;
-                    const { sabbath } = dom;
-                    const categoryOrder = config.sabbathCategoryOrder;
-                    const categoryNames = config.sabbathCategoryDisplayNames;
-                    const data = config.sabbathSigns;
-                   
-                    const categoryKey = categoryOrder[categoryIndex];
-                    const questions = data[categoryKey];
-                    const categoryName = categoryNames[categoryKey];
-                    sabbath.title.textContent = categoryName;
-                    sabbath.container.innerHTML = '';
-                   
-                    const date = sabbath.dateInput.value || App.util.getTodayDate();
-                    const entry = App.state.data.sabbathHistory.find(e => e.date === date) || {};
-                    const selected = (entry.sab && entry.sab[categoryKey]) ? entry.sab[categoryKey] : [];
-                    questions.forEach((q, index) => {
-                        const qId = `sab-${categoryKey}-${index}`;
-                        const isSelected = selected.includes(q);
-                        sabbath.container.innerHTML += `
-                            <button id="${qId}" data-question="${ui.escapeHTML(q)}" data-category="${categoryKey}" class="btn-choice checkin-btn-sab ${isSelected ? 'active' : ''}">
-                                ${ui.escapeHTML(q)}
-                            </button>
-                        `;
+                currentData: {},
+                loadForDate: function(date) {
+                    // Find existing or init new
+                    this.currentData = App.state.data.sabbathHistory.find(e => e.date === date) || { date, data: {} };
+                },
+                renderCategory: function(index) {
+                    const container = App.dom.sabbath.categoryContainer;
+                    container.innerHTML = '';
+                    const category = App.state.sabbathCategories[index];
+                    const h3 = document.createElement('h3');
+                    h3.textContent = category.name;
+                    container.appendChild(h3);
+                    category.items.forEach(item => {
+                        const btn = document.createElement('button');
+                        btn.textContent = item;
+                        btn.classList.add('btn-choice', 'checkin-btn-sab');
+                        if (this.currentData.data[item]) btn.classList.add('active');
+                        btn.addEventListener('click', () => {
+                            btn.classList.toggle('active');
+                            this.currentData.data[item] = btn.classList.contains('active');
+                        });
+                        container.appendChild(btn);
                     });
-                   
-                    sabbath.container.querySelectorAll('.btn-choice').forEach(btn => {
-                        btn.addEventListener('click', (e) => e.currentTarget.classList.toggle('active'));
-                    });
-                    const totalCategories = categoryOrder.length;
-                    sabbath.progress.value = ((categoryIndex + 1) / totalCategories) * 100;
-                    sabbath.progressText.textContent = `Category ${categoryIndex + 1} of ${totalCategories}`;
-                   
-                    sabbath.prevBtn.style.display = (categoryIndex > 0) ? 'inline-block' : 'none';
-                    sabbath.nextBtn.style.display = (categoryIndex < totalCategories - 1) ? 'inline-block' : 'none';
-                    sabbath.finishBtn.style.display = (categoryIndex === totalCategories - 1) ? 'inline-block' : 'none';
-                },
-               
-                navigateCategory: function(direction) {
-                    this.saveCategory(); // Save current
-                    let newIndex = App.state.ui.currentSabbathCategory + direction;
-                    if (newIndex >= 0 && newIndex < App.config.sabbathCategoryOrder.length) {
-                        App.state.ui.currentSabbathCategory = newIndex;
-                        this.renderCategory(newIndex);
-                    }
-                },
-                saveCategory: function() {
-                    const { dom, state, config } = App;
-                    const { sabbath } = dom;
-                    const categoryKey = config.sabbathCategoryOrder[state.ui.currentSabbathCategory];
-                   
-                    const date = sabbath.dateInput.value || App.util.getTodayDate();
-                    let entry = state.data.sabbathHistory.find(e => e.date === date);
-                    if (!entry) {
-                        entry = { date: date, sab: {}, notes: '' };
-                        state.data.sabbathHistory.push(entry);
-                    }
-                   
-                    if (!entry.sab) entry.sab = {};
-                   
-                    const selected = Array.from(sabbath.container.querySelectorAll('.btn-choice.active'))
-                                          .map(btn => btn.dataset.question);
-                    entry.sab[categoryKey] = selected;
-                    entry.notes = sabbath.notes.value; // Also save notes
-                },
-               
-                finish: async function() {
-                    this.saveCategory(); // Save last category
-                   
-                    const { dom, state, config } = App;
-                    const date = dom.sabbath.dateInput.value;
-                    const entry = state.data.sabbathHistory.find(e => e.date === date);
-                   
-                    if (entry) {
-                        await App.storage.saveEntry(config.STORES.SABBATH, entry);
-                        App.ui.showAlert("Sabbath reflection saved!", "success");
-                        App.navigation.navigateTo('welcomeView');
+                    App.dom.sabbath.prevBtn.style.display = index > 0 ? 'block' : 'none';
+                    if (index === App.state.sabbathCategories.length - 1) {
+                        App.dom.sabbath.nextBtn.style.display = 'none';
+                        App.dom.sabbath.finishBtn.style.display = 'block';
                     } else {
-                        App.ui.showAlert("Error: Could not find entry to save.", "error");
+                        App.dom.sabbath.nextBtn.style.display = 'block';
+                        App.dom.sabbath.finishBtn.style.display = 'none';
                     }
                 },
-               
-                loadForDate: function(dateStr = null) {
-                    const { dom, state } = App;
-                    const date = dateStr || App.util.getTodayDate();
-                    dom.sabbath.dateInput.value = date;
-                   
-                    const entry = state.data.sabbathHistory.find(e => e.date === date);
-                    dom.sabbath.notes.value = entry ? entry.notes : '';
-                   
-                    state.ui.currentSabbathCategory = 0;
-                    this.renderCategory(0);
+                navigateCategory: function(dir) {
+                    App.state.ui.currentSabbathCategory = Math.max(0, App.state.ui.currentSabbathCategory + dir);
+                    this.renderCategory(App.state.ui.currentSabbathCategory);
                 },
-                renderPast: function() {
-                    const { dom, state, ui } = App;
-                    const history = [...state.data.sabbathHistory].sort((a, b) => b.date.localeCompare(a.date));
-                   
-                    if (history.length === 0) {
-                        dom.sabbath.pastContainer.innerHTML = '<p class="text-slate-500 italic">No past Sabbath reflections found.</p>';
-                        return;
+                finish: function() {
+                    const index = App.state.data.sabbathHistory.findIndex(e => e.date === this.currentData.date);
+                    if (index > -1) {
+                        App.state.data.sabbathHistory[index] = this.currentData;
+                    } else {
+                        App.state.data.sabbathHistory.push(this.currentData);
                     }
-                   
-                    dom.sabbath.pastContainer.innerHTML = history.map(entry => {
-                        const d = App.util.parseDateString(entry.date);
-                        const dateStr = d ? d.toLocaleDateString('en-NZ', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) : entry.date;
-                       
-                        let sabHtml = '';
-                        if (entry.sab) {
-                             App.config.sabbathCategoryOrder.forEach(key => {
-                                if (entry.sab[key] && entry.sab[key].length > 0) {
-                                    sabHtml += `<strong class="text-sm text-violet-700">${App.config.sabbathCategoryDisplayNames[key]}</strong>
-                                        <ul class="list-disc list-inside text-sm text-slate-600 mb-2">
-                                            ${entry.sab[key].map(q => `<li>${ui.escapeHTML(q)}</li>`).join('')}
-                                        </ul>`;
-                                }
-                            });
-                        }
-                       
-                        return `
-                            <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
-                                <h3 class="font-semibold text-violet-800">${dateStr}</h3>
-                                <div class="mt-2">${sabHtml || ''}</div>
-                                ${entry.notes ? `<strong class="text-sm text-violet-700">Notes:</strong><div class="notes-display !bg-violet-50 !border-violet-200">${ui.escapeHTML(entry.notes)}</div>` : ''}
-                            </div>
-                        `;
-                    }).join('');
+                    // Save
+                    App.storage.saveAppState('sabbathHistory', App.state.data.sabbathHistory);
+                    if (App.state.storageDriver === 'firestore') {
+                        const docRef = App.state.fb.db.doc(`artifacts/${App.state.appId}/users/${App.state.userId}/data/sabbathHistory`);
+                        App.Firebase.setDoc(docRef, { data: await App.storage.encrypt(App.state.data.sabbathHistory) });
+                    }
+                    this.currentData = {};
+                    App.navigation.navigateTo('dashboardView');
                 }
-            }, // End moduleSabbath
-           
-            // --- Rule of Life Module (NEW) ---
+            },
+            moduleGratitude: {
+                save: function() {
+                    const entry = {
+                        date: App.util.getCurrentDate(),
+                        text: App.dom.gratitude.entry.value
+                    };
+                    App.state.data.gratitudeHistory.push(entry);
+                    // Save
+                    App.storage.saveAppState('gratitudeHistory', App.state.data.gratitudeHistory);
+                    if (App.state.storageDriver === 'firestore') {
+                        const docRef = App.state.fb.db.doc(`artifacts/${App.state.appId}/users/${App.state.userId}/data/gratitudeHistory`);
+                        App.Firebase.setDoc(docRef, { data: await App.storage.encrypt(App.state.data.gratitudeHistory) });
+                    }
+                    App.dom.gratitude.entry.value = '';
+                    App.ui.showAlert('Gratitude saved!');
+                    App.navigation.navigateTo('dashboardView');
+                }
+            },
             moduleRule: {
                 renderRule: function(mode) {
-                    const { dom, state, ui } = App;
-                    const { rule } = dom;
-                    const intentions = state.data.ruleOfLife.intentions || [];
-                    if (mode === 'read') {
-                        rule.readView.style.display = 'block';
-                        rule.editView.style.display = 'none';
-                        rule.editBtn.style.display = 'inline-block';
-                        rule.saveBtn.style.display = 'none';
-                       
-                        const filledIntentions = intentions.filter(i => i && i.trim() !== '');
-                        if (filledIntentions.length > 0) {
-                            rule.readList.innerHTML = filledIntentions.map(i => `<li>${ui.escapeHTML(i)}</li>`).join('');
-                        } else {
-                            rule.readList.innerHTML = '<p class="text-slate-500 italic">No intentions set yet. Click "Edit" to add some.</p>';
-                        }
-                    } else { // 'edit'
-                        rule.readView.style.display = 'none';
-                        rule.editView.style.display = 'block';
-                        rule.editBtn.style.display = 'none';
-                        rule.saveBtn.style.display = 'inline-block';
-                       
-                        rule.inputs.forEach((input, index) => {
-                            input.value = intentions[index] || '';
-                        });
+                    if (mode === 'edit') {
+                        App.dom.rule.readView.style.display = 'none';
+                        App.dom.rule.editView.style.display = 'block';
+                        App.dom.rule.editBtn.style.display = 'none';
+                        App.dom.rule.saveBtn.style.display = 'inline-block';
+                        App.dom.rule.editInput.value = App.state.data.ruleOfLife || '';
+                    } else {
+                        App.dom.rule.readView.style.display = 'block';
+                        App.dom.rule.editView.style.display = 'none';
+                        App.dom.rule.editBtn.style.display = 'inline-block';
+                        App.dom.rule.saveBtn.style.display = 'none';
+                        App.dom.rule.readText.textContent = App.state.data.ruleOfLife || 'Not set';
+                        App.dom.rule.readText.classList.toggle('placeholder', !App.state.data.ruleOfLife);
                     }
                 },
-               
-                saveRule: async function() {
-                    const { dom, state, config } = App;
-                    const intentions = dom.rule.inputs.map(input => input.value.trim());
-                    state.data.ruleOfLife.intentions = intentions;
-                   
-                    await App.storage.saveAppState('ruleOfLife', state.data.ruleOfLife);
-                    if (state.storageDriver === 'firestore') {
-                        const docRef = doc(state.fb.db, `artifacts/${state.appId}/users/${state.userId}/data`, 'ruleOfLife');
-                        await App.Firebase.setDoc(docRef, { data: await App.storage.encrypt(state.data.ruleOfLife) });
+                saveRule: function() {
+                    App.state.data.ruleOfLife = App.dom.rule.editInput.value.trim();
+                    App.state.ruleItems = App.state.data.ruleOfLife.split('\n').filter(line => line.trim());
+                    // Save
+                    App.storage.saveAppState('ruleOfLife', App.state.data.ruleOfLife);
+                    if (App.state.storageDriver === 'firestore') {
+                        const docRef = App.state.fb.db.doc(`artifacts/${App.state.appId}/users/${App.state.userId}/data/ruleOfLife`);
+                        App.Firebase.setDoc(docRef, { data: await App.storage.encrypt(App.state.data.ruleOfLife) });
                     }
-                   
-                    App.ui.showAlert("Rule of Life saved!", "success");
+                    App.ui.showAlert('Rule of Life saved!');
                     this.renderRule('read');
-                    App.ui.renderDashboardPreview(); // Update dashboard
                 },
-               
-                loadChecklist: function() {
-                    const { dom, state, ui } = App;
-                    const { rule } = dom;
-                    const intentions = state.data.ruleOfLife.intentions || [];
-                    const filledIntentions = intentions.filter(i => i && i.trim() !== '');
-                    rule.checkinDate.value = App.util.getTodayDate();
-                   
-                    if (filledIntentions.length === 0) {
-                        rule.checklistContainer.innerHTML = '<p class="text-slate-500 italic">Please set your "Rule of Life" intentions first.</p>';
-                        return;
-                    }
-                   
-                    rule.checklistContainer.innerHTML = filledIntentions.map((intention, index) => `
-                        <label for="rule-check-${index}" class="flex items-center p-3 bg-white rounded-lg shadow-sm border border-slate-200">
-                            <input type="checkbox" id="rule-check-${index}" data-intention="${ui.escapeHTML(intention)}" class="h-5 w-5 rounded border-gray-300 text-teal-600 focus:ring-teal-500">
-                            <span class="ml-3 text-slate-700">${ui.escapeHTML(intention)}</span>
-                        </label>
-                    `).join('');
-                   
-                    rule.checkinNotes.value = '';
-                },
-               
-                saveChecklist: async function() {
-                    const { dom, state, config, ui } = App;
-                    const { rule } = dom;
-                   
-                    const date = rule.checkinDate.value;
-                    if (!date) {
-                        ui.showAlert("Please select a date.", "info");
-                        return;
-                    }
-                   
-                    const checkedIntentions = Array.from(rule.checklistContainer.querySelectorAll('input[type="checkbox"]:checked'))
-                                                   .map(cb => cb.dataset.intention);
-                   
-                    const allIntentions = Array.from(rule.checklistContainer.querySelectorAll('input[type="checkbox"]'))
-                                               .map(cb => cb.dataset.intention);
-                                              
-                    const notes = rule.checkinNotes.value;
-                   
-                    let entry = state.data.ruleOfLifeHistory.find(e => e.date === date);
-                    if (!entry) {
-                        entry = { date };
-                        state.data.ruleOfLifeHistory.push(entry);
-                    }
-                   
-                    entry.checked = checkedIntentions;
-                    entry.total = allIntentions.length;
-                    entry.notes = notes;
-                   
-                    await App.storage.saveEntry(config.STORES.RULE_HISTORY, entry);
-                    ui.showAlert("Reflection saved!", "success");
-                    App.navigation.navigateTo('pastRuleOfLifeView');
-                },
-               
-                renderPast: function() {
-                    const { dom, state, ui } = App;
-                    const history = [...state.data.ruleOfLifeHistory].sort((a, b) => b.date.localeCompare(a.date));
-                   
-                    if (history.length === 0) {
-                        dom.rule.pastContainer.innerHTML = '<p class="text-slate-500 italic">No past reflections found.</p>';
-                        return;
-                    }
-                   
-                    dom.rule.pastContainer.innerHTML = history.map(entry => {
-                        const d = App.util.parseDateString(entry.date);
-                        const dateStr = d ? d.toLocaleDateString('en-NZ', { day: 'numeric', month: 'long', year: 'numeric' }) : entry.date;
-                        const score = entry.total > 0 ? `${entry.checked.length} / ${entry.total}` : `N/A`;
-                       
-                        return `
-                            <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
-                                <h3 class="font-semibold text-teal-800">${dateStr}</h3>
-                                <p class="text-sm font-medium text-slate-600 mt-1">Score: ${score}</p>
-                                ${entry.notes ? `<div class="notes-display !bg-teal-50 !border-teal-200 mt-2">${ui.escapeHTML(entry.notes)}</div>` : ''}
-                            </div>
-                        `;
-                    }).join('');
-                },
-               
-                renderTrends: function() {
-                    const { dom, state, ui } = App;
-                    const history = [...state.data.ruleOfLifeHistory].sort((a, b) => a.date.localeCompare(b.date));
-                   
-                    if (ui.charts.rule) {
-                        ui.charts.rule.destroy();
-                    }
-                   
-                    if (history.length === 0) {
-                        dom.rule.chartEmpty.style.display = 'block';
-                        return;
-                    }
-                   
-                    dom.rule.chartEmpty.style.display = 'none';
-                   
-                    const labels = history.map(e => {
-                        const d = App.util.parseDateString(e.date);
-                        return d ? d.toLocaleDateString('en-NZ', { day: 'numeric', month: 'short' }) : e.date;
+                renderChecklist: function() {
+                    const container = App.dom.rule.checklistContainer;
+                    container.innerHTML = '';
+                    App.state.ruleItems.forEach(item => {
+                        const label = document.createElement('label');
+                        const checkbox = document.createElement('input');
+                        checkbox.type = 'checkbox';
+                        label.appendChild(checkbox);
+                        label.appendChild(document.createTextNode(item));
+                        container.appendChild(label);
                     });
-                    const data = history.map(e => e.total > 0 ? (e.checked.length / e.total) * 100 : 0);
-                   
-                    ui.charts.rule = new Chart(dom.rule.chart.getContext('2d'), {
+                },
+                saveChecklist: function() {
+                    const checks = Array.from(App.dom.rule.checklistContainer.querySelectorAll('input[type="checkbox"]')).map(cb => cb.checked);
+                    const adherence = checks.reduce((sum, checked) => sum + (checked ? 1 : 0), 0) / checks.length * 100;
+                    const entry = {
+                        date: App.util.getCurrentDate(),
+                        adherence
+                    };
+                    App.state.data.ruleHistory.push(entry);
+                    // Save
+                    App.storage.saveAppState('ruleHistory', App.state.data.ruleHistory);
+                    if (App.state.storageDriver === 'firestore') {
+                        const docRef = App.state.fb.db.doc(`artifacts/${App.state.appId}/users/${App.state.userId}/data/ruleHistory`);
+                        App.Firebase.setDoc(docRef, { data: await App.storage.encrypt(App.state.data.ruleHistory) });
+                    }
+                    App.ui.showAlert('Check-in saved!');
+                    App.navigation.navigateTo('ruleOfLifeView');
+                },
+                renderPast: function() {
+                    const list = App.dom.rule.pastList;
+                    list.innerHTML = '';
+                    App.state.data.ruleHistory.forEach(entry => {
+                        const p = document.createElement('p');
+                        p.textContent = `${entry.date}: ${entry.adherence}% adherence`;
+                        list.appendChild(p);
+                    });
+                    if (App.ui.charts.rule) App.ui.charts.rule.destroy();
+                    if (App.state.data.ruleHistory.length === 0) {
+                        App.dom.rule.chartEmpty.style.display = 'block';
+                        return;
+                    }
+                    App.dom.rule.chartEmpty.style.display = 'none';
+                    const labels = App.state.data.ruleHistory.map(e => e.date);
+                    const data = App.state.data.ruleHistory.map(e => e.adherence);
+                    App.ui.charts.rule = new Chart(App.dom.rule.chart.getContext('2d'), {
                         type: 'line',
                         data: {
                             labels: labels,
                             datasets: [{
-                                label: 'Intention Adherence (%)',
+                                label: 'Adherence (%)',
                                 data: data,
-                                backgroundColor: 'rgba(13, 148, 136, 0.1)',
-                                borderColor: 'rgb(13, 148, 136)',
-                                borderWidth: 2,
-                                fill: true,
-                                tension: 0.1
+                                borderColor: 'rgb(245, 158, 11)',
+                                backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                                fill: true
                             }]
                         },
                         options: {
                             responsive: true,
-                            maintainAspectRatio: false,
                             scales: {
-                                y: {
-                                    beginAtZero: true,
-                                    max: 100
-                                }
+                                y: { beginAtZero: true, max: 100 }
                             }
                         }
                     });
                 }
-            }, // End moduleRule
-           
-            // --- Trends Module (NEW) ---
+            },
             moduleTrends: {
                 renderTrends: function() {
                     const { dom, state, ui } = App;
@@ -2087,7 +1127,7 @@
                                 if (elements.length > 0) {
                                     const index = elements[0].index;
                                     const entryIndex = state.data.checkinHistory.findIndex(entry => entry.date === history[index].date);
-                                    if(entryIndex > -1) {
+                                    if (entryIndex > -1) {
                                         App.navigation.navigateTo('summaryView', { entryIndex });
                                     }
                                 }
@@ -2095,21 +1135,17 @@
                         }
                     });
                 },
-               
                 renderCorrelations: function() {
-                    // This is a placeholder for a more complex analysis
+                    // Placeholder for analysis
                     App.dom.trends.correlationsContainer.innerHTML = '<p class="text-slate-500 italic text-center">Complete a few more weekly check-ins to unlock wellbeing insights.</p>';
                 },
-               
                 toggleTrendView: function(view) {
                     App.state.ui.currentTrendView = view;
                     App.dom.trends.toggleRecentBtn.classList.toggle('active', view === 'recent');
                     App.dom.trends.toggleAllBtn.classList.toggle('active', view === 'all');
                     this.renderTrends();
                 }
-            }, // End moduleTrends
-           
-            // --- Resources Module (NEW) ---
+            },
             moduleResources: {
                 render: function(mode) {
                     const { dom, state } = App;
@@ -2144,9 +1180,8 @@
                         });
                     }
                 },
-               
                 save: async function() {
-                    const { dom, state, config } = App;
+                    const { dom, state } = App;
                     const { resources } = dom;
                    
                     Object.keys(resources.editInputs).forEach(key => {
@@ -2155,16 +1190,31 @@
                    
                     await App.storage.saveAppState('userResources', state.data.userResources);
                     if (state.storageDriver === 'firestore') {
-                        const docRef = doc(state.fb.db, `artifacts/${state.appId}/users/${state.userId}/data`, 'userResources');
+                        const docRef = App.state.fb.db.doc(`artifacts/${state.appId}/users/${state.userId}/data/userResources`);
                         await App.Firebase.setDoc(docRef, { data: await App.storage.encrypt(state.data.userResources) });
                     }
                    
                     App.ui.showAlert("Resources saved!", "success");
                     this.render('read');
                 }
-            }, // End moduleResources
-           
-            // --- Handlers Module (NEW) ---
+            },
+            moduleNotes: {
+                save: function() {
+                    const notes = App.dom.notes.entry.value.trim();
+                    const entryIndex = App.state.ui.currentEntryIndex;
+                    if (entryIndex !== null) {
+                        App.state.data.checkinHistory[entryIndex].notes = notes;
+                        // Save
+                        App.storage.saveAppState('checkinHistory', App.state.data.checkinHistory);
+                        if (App.state.storageDriver === 'firestore') {
+                            const docRef = App.state.fb.db.doc(`artifacts/${App.state.appId}/users/${App.state.userId}/data/checkinHistory`);
+                            App.Firebase.setDoc(docRef, { data: await App.storage.encrypt(App.state.data.checkinHistory) });
+                        }
+                        App.ui.showAlert('Notes saved!');
+                        App.navigation.navigateTo('summaryView');
+                    }
+                }
+            },
             handlers: {
                 init: function() {
                     console.log("Initializing handlers...");
@@ -2192,10 +1242,15 @@
                     });
                     dom.dashboard.startPositiveBtn.addEventListener('click', () => {
                         App.state.ui.currentPositiveCategory = 0;
-                        App.moduleCheckin.renderCategory('pos', 0);
+                        App.moduleCheckin.renderCategory('positive', 0);
                         App.navigation.navigateTo('positiveCheckinView');
                     });
-                    dom.dashboard.startSabbathBtn.addEventListener('click', () => App.navigation.navigateTo('sabbathCheckinView'));
+                    dom.dashboard.startSabbathBtn.addEventListener('click', () => {
+                        App.moduleSabbath.loadForDate(App.util.getCurrentDate());
+                        App.state.ui.currentSabbathCategory = 0;
+                        App.moduleSabbath.renderCategory(0);
+                        App.navigation.navigateTo('sabbathCheckinView');
+                    });
                     dom.dashboard.startRuleBtn.addEventListener('click', () => App.navigation.navigateTo('ruleOfLifeView'));
                     dom.dashboard.startGratitudeBtn.addEventListener('click', () => App.navigation.navigateTo('gratitudeView'));
                     dom.dashboard.navToPrivacyBtn.addEventListener('click', () => App.navigation.navigateTo('privacyView'));
@@ -2204,9 +1259,9 @@
                     dom.warn.nextBtn.addEventListener('click', () => App.moduleCheckin.navigateCategory('warn', 1));
                     dom.warn.finishBtn.addEventListener('click', () => App.moduleCheckin.finishCheckin('warn'));
                     // --- Positive Check-in ---
-                    dom.positive.prevBtn.addEventListener('click', () => App.moduleCheckin.navigateCategory('pos', -1));
-                    dom.positive.nextBtn.addEventListener('click', () => App.moduleCheckin.navigateCategory('pos', 1));
-                    dom.positive.finishBtn.addEventListener('click', () => App.moduleCheckin.finishCheckin('pos'));
+                    dom.positive.prevBtn.addEventListener('click', () => App.moduleCheckin.navigateCategory('positive', -1));
+                    dom.positive.nextBtn.addEventListener('click', () => App.moduleCheckin.navigateCategory('positive', 1));
+                    dom.positive.finishBtn.addEventListener('click', () => App.moduleCheckin.finishCheckin('positive'));
                    
                     // --- Sabbath ---
                     dom.sabbath.dateInput.addEventListener('change', () => App.moduleSabbath.loadForDate(dom.sabbath.dateInput.value));
@@ -2224,12 +1279,35 @@
                     // --- Rule of Life ---
                     dom.rule.editBtn.addEventListener('click', () => App.moduleRule.renderRule('edit'));
                     dom.rule.saveBtn.addEventListener('click', () => App.moduleRule.saveRule());
-                    dom.rule.startCheckinBtn.addEventListener('click', () => App.navigation.navigateTo('ruleOfLifeCheckinView'));
-                    dom.rule.viewPastBtn.addEventListener('click', () => App.navigation.navigateTo('pastRuleOfLifeView'));
+                    dom.rule.startCheckinBtn.addEventListener('click', () => {
+                        App.moduleRule.renderChecklist();
+                        App.navigation.navigateTo('ruleOfLifeCheckinView');
+                    });
+                    dom.rule.viewPastBtn.addEventListener('click', () => {
+                        App.moduleRule.renderPast();
+                        App.navigation.navigateTo('pastRuleOfLifeView');
+                    });
                     dom.rule.saveCheckinBtn.addEventListener('click', () => App.moduleRule.saveChecklist());
                     dom.rule.backToRuleOfLifeBtn.addEventListener('click', () => App.navigation.navigateTo('ruleOfLifeView'));
                     dom.rule.backToRuleOfLifeBtn2.addEventListener('click', () => App.navigation.navigateTo('ruleOfLifeView'));
                     // --- Summary & Notes ---
                     dom.summary.backToTrendsBtn.addEventListener('click', () => App.navigation.navigateTo('trendsView'));
                     dom.summary.addNotesBtn.addEventListener('click', () => App.navigation.navigateTo('notesView'));
-                    dom.notes.saveBtn.addEventListener('click', ()
+                    dom.notes.saveBtn.addEventListener('click', () => App.moduleNotes.save());
+                    // --- Trends ---
+                    dom.trends.toggleRecentBtn.addEventListener('click', () => App.moduleTrends.toggleTrendView('recent'));
+                    dom.trends.toggleAllBtn.addEventListener('click', () => App.moduleTrends.toggleTrendView('all'));
+                    // --- Resources ---
+                    dom.resources.editBtn.addEventListener('click', () => App.moduleResources.render('edit'));
+                    dom.resources.saveBtn.addEventListener('click', () => App.moduleResources.save());
+                    // --- Nav Tabs ---
+                    dom.nav.dashboardBtn.addEventListener('click', () => App.navigation.navigateTo('dashboardView'));
+                    dom.nav.trendsBtn.addEventListener('click', () => App.navigation.navigateTo('trendsView'));
+                    dom.nav.resourcesBtn.addEventListener('click', () => App.navigation.navigateTo('resourcesView'));
+                }
+            }
+        };
+        App.init();
+    </script>
+</body>
+</html>
