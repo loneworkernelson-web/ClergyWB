@@ -1620,16 +1620,16 @@
 // --- Storage & Crypto Module ---
             storage: {
                 initDB: async function() {
-                    const { DB_NAME, DB_VERSION } = App.config;
+                    const { DB_NAME, DB_VERSION, STORES } = App.config;
                     // Updated Schema to use separate object stores
                     return await idb.openDB(DB_NAME, DB_VERSION, {
                         upgrade(db, oldVersion) {
                             if (oldVersion < 1) {
-                                db.createObjectStore('appState', { keyPath: 'id' });
-                                db.createObjectStore('checkinHistory', { keyPath: 'date' });
-                                db.createObjectStore('gratitudeHistory', { keyPath: 'date' });
-                                db.createObjectStore('sabbathHistory', { keyPath: 'date' });
-                                db.createObjectStore('ruleOfLifeHistory', { keyPath: 'date' });
+                                db.createObjectStore(STORES.APP_STATE, { keyPath: 'id' });
+                                db.createObjectStore(STORES.CHECKIN, { keyPath: 'date' });
+                                db.createObjectStore(STORES.GRATITUDE, { keyPath: 'date' });
+                                db.createObjectStore(STORES.SABBATH, { keyPath: 'date' });
+                                db.createObjectStore(STORES.RULE_HISTORY, { keyPath: 'date' });
                             }
                         },
                     });
@@ -1708,7 +1708,7 @@
                      try {
                         const db = App.state.db;
                         const encryptedData = await this.encrypt(data);
-                        await db.put('appState', { id: id, data: encryptedData });
+                        await db.put(App.config.STORES.APP_STATE, { id: id, data: encryptedData });
                         console.log(`AppState item saved: ${id}`);
                      } catch (error) {
                         console.error(`Error saving app state ${id}:`, error);
@@ -1745,17 +1745,18 @@
                 
                 localLoadAll: async function() {
                     const db = App.state.db;
+                    const { STORES } = App.config;
                     const data = {};
                     
                     try {
-                        data.checkinHistory = (await Promise.all((await db.getAll('checkinHistory')).map(e => this.decrypt(e.data)))).filter(Boolean);
-                        data.gratitudeHistory = (await Promise.all((await db.getAll('gratitudeHistory')).map(e => this.decrypt(e.data)))).filter(Boolean);
-                        data.sabbathHistory = (await Promise.all((await db.getAll('sabbathHistory')).map(e => this.decrypt(e.data)))).filter(Boolean);
-                        data.ruleOfLifeHistory = (await Promise.all((await db.getAll('ruleOfLifeHistory')).map(e => this.decrypt(e.data)))).filter(Boolean);
+                        data.checkinHistory = (await Promise.all((await db.getAll(STORES.CHECKIN)).map(e => this.decrypt(e.data)))).filter(Boolean);
+                        data.gratitudeHistory = (await Promise.all((await db.getAll(STORES.GRATITUDE)).map(e => this.decrypt(e.data)))).filter(Boolean);
+                        data.sabbathHistory = (await Promise.all((await db.getAll(STORES.SABBATH)).map(e => this.decrypt(e.data)))).filter(Boolean);
+                        data.ruleOfLifeHistory = (await Promise.all((await db.getAll(STORES.RULE_HISTORY)).map(e => this.decrypt(e.data)))).filter(Boolean);
                         
-                        const res = await db.get('appState', 'userResources');
+                        const res = await db.get(STORES.APP_STATE, 'userResources');
                         data.userResources = res ? (await this.decrypt(res.data) || {}) : {};
-                        const rule = await db.get('appState', 'ruleOfLife');
+                        const rule = await db.get(STORES.APP_STATE, 'ruleOfLife');
                         data.ruleOfLife = rule ? (await this.decrypt(rule.data) || {}) : {};
 
                     } catch (e) {
@@ -1809,7 +1810,7 @@
                     const basePath = `artifacts/${App.state.appId}/users/${App.state.userId}/data`;
 
                     try {
-                        const storesToMigrate = ['checkinHistory', 'gratitudeHistory', 'sabbathHistory', 'ruleOfLifeHistory'];
+                        const storesToMigrate = [App.config.STORES.CHECKIN, App.config.STORES.GRATITUDE, App.config.STORES.SABBATH, App.config.STORES.RULE_HISTORY];
                         for (const storeName of storesToMigrate) {
                             const allItems = await db.getAll(storeName);
                             for (const item of allItems) {
@@ -1821,7 +1822,7 @@
                         
                         const appStateItems = ['userResources', 'ruleOfLife'];
                         for (const id of appStateItems) {
-                            const item = await db.get('appState', id);
+                            const item = await db.get(App.config.STORES.APP_STATE, id);
                             if (item) {
                                  const docRef = doc(App.state.fb.db, basePath, id);
                                 batch.set(docRef, { data: item.data });
@@ -1836,8 +1837,8 @@
                         for (const storeName of storesToMigrate) {
                             await clearTx.objectStore(storeName).clear();
                         }
-                        await clearTx.objectStore('appState').delete('userResources');
-                        await clearTx.objectStore('appState').delete('ruleOfLife');
+                        await clearTx.objectStore(App.config.STORES.APP_STATE).delete('userResources');
+                        await clearTx.objectStore(App.config.STORES.APP_STATE).delete('ruleOfLife');
                         await clearTx.done;
                         
                         console.log("Local data (except PIN) cleared after migration.");
@@ -1910,27 +1911,27 @@
                                 const { checkinHistory, gratitudeHistory, sabbathHistory, ruleOfLifeHistory, userResources, ruleOfLife } = importedData;
                                 
                                 const db = App.state.db;
-                                const stores = ['checkinHistory', 'gratitudeHistory', 'sabbathHistory', 'ruleOfLifeHistory', 'appState'];
+                                const stores = [App.config.STORES.CHECKIN, App.config.STORES.GRATITUDE, App.config.STORES.SABBATH, App.config.STORES.RULE_HISTORY, App.config.STORES.APP_STATE];
                                 const tx = db.transaction(stores, 'readwrite');
                                 
                                 // Clear old data
                                 await Promise.all([
-                                    tx.objectStore('checkinHistory').clear(),
-                                    tx.objectStore('gratitudeHistory').clear(),
-                                    tx.objectStore('sabbathHistory').clear(),
-                                    tx.objectStore('ruleOfLifeHistory').clear(),
-                                    tx.objectStore('appState').delete('userResources'),
-                                    tx.objectStore('appState').delete('ruleOfLife')
+                                    tx.objectStore(App.config.STORES.CHECKIN).clear(),
+                                    tx.objectStore(App.config.STORES.GRATITUDE).clear(),
+                                    tx.objectStore(App.config.STORES.SABBATH).clear(),
+                                    tx.objectStore(App.config.STORES.RULE_HISTORY).clear(),
+                                    tx.objectStore(App.config.STORES.APP_STATE).delete('userResources'),
+                                    tx.objectStore(App.config.STORES.APP_STATE).delete('ruleOfLife')
                                 ]);
                                 
                                 // Add new data
                                 const promises = [];
-                                checkinHistory.forEach(e => promises.push(this.encrypt(e).then(d => tx.objectStore('checkinHistory').put({date: e.date, data: d}))));
-                                gratitudeHistory.forEach(e => promises.push(this.encrypt(e).then(d => tx.objectStore('gratitudeHistory').put({date: e.date, data: d}))));
-                                sabbathHistory.forEach(e => promises.push(this.encrypt(e).then(d => tx.objectStore('sabbathHistory').put({date: e.date, data: d}))));
-                                ruleOfLifeHistory.forEach(e => promises.push(this.encrypt(e).then(d => tx.objectStore('ruleOfLifeHistory').put({date: e.date, data: d}))));
-                                promises.push(this.encrypt(userResources).then(d => tx.objectStore('appState').put({id: 'userResources', data: d})));
-                                promises.push(this.encrypt(ruleOfLife).then(d => tx.objectStore('appState').put({id: 'ruleOfLife', data: d})));
+                                checkinHistory.forEach(e => promises.push(this.encrypt(e).then(d => tx.objectStore(App.config.STORES.CHECKIN).put({date: e.date, data: d}))));
+                                gratitudeHistory.forEach(e => promises.push(this.encrypt(e).then(d => tx.objectStore(App.config.STORES.GRATITUDE).put({date: e.date, data: d}))));
+                                sabbathHistory.forEach(e => promises.push(this.encrypt(e).then(d => tx.objectStore(App.config.STORES.SABBATH).put({date: e.date, data: d}))));
+                                ruleOfLifeHistory.forEach(e => promises.push(this.encrypt(e).then(d => tx.objectStore(App.config.STORES.RULE_HISTORY).put({date: e.date, data: d}))));
+                                promises.push(this.encrypt(userResources).then(d => tx.objectStore(App.config.STORES.APP_STATE).put({id: 'userResources', data: d})));
+                                promises.push(this.encrypt(ruleOfLife).then(d => tx.objectStore(App.config.STORES.APP_STATE).put({id: 'ruleOfLife', data: d})));
 
                                 await Promise.all(promises);
                                 await tx.done;
@@ -1972,14 +1973,14 @@
                 clearAllData: async function(showModal = true) {
                     try {
                         const db = App.state.db;
-                        const stores = ['checkinHistory', 'gratitudeHistory', 'sabbathHistory', 'ruleOfLifeHistory', 'appState'];
+                        const stores = [App.config.STORES.CHECKIN, App.config.STORES.GRATITUDE, App.config.STORES.SABBATH, App.config.STORES.RULE_HISTORY, App.config.STORES.APP_STATE];
                         const tx = db.transaction(stores, 'readwrite');
                         await Promise.all([
-                            tx.objectStore('checkinHistory').clear(),
-                            tx.objectStore('gratitudeHistory').clear(),
-                            tx.objectStore('sabbathHistory').clear(),
-                            tx.objectStore('ruleOfLifeHistory').clear(),
-                            tx.objectStore('appState').clear() // Clears PIN too
+                            tx.objectStore(App.config.STORES.CHECKIN).clear(),
+                            tx.objectStore(App.config.STORES.GRATITUDE).clear(),
+                            tx.objectStore(App.config.STORES.SABBATH).clear(),
+                            tx.objectStore(App.config.STORES.RULE_HISTORY).clear(),
+                            tx.objectStore(App.config.STORES.APP_STATE).clear() // Clears PIN too
                         ]);
                         await tx.done;
                         
@@ -2038,84 +2039,24 @@
                 checkPinAndAuthState: async function() {
                     const { db } = App.state;
                     // FIX: Get PIN data from 'appState' store
-                    const saltEntry = await db.get('appState', 'securitySalt');
-                    const hashEntry = await db.get('appState', 'securityHash');
+                    // And check for 'value' property
+                    const saltEntry = await db.get(App.config.STORES.APP_STATE, 'securitySalt');
+                    const hashEntry = await db.get(App.config.STORES.APP_STATE, 'securityHash');
 
-                    if (saltEntry && hashEntry) {
+                    if (saltEntry && hashEntry && saltEntry.value && hashEntry.value) {
                         // PIN is set.
-                        App.state.pin.salt = saltEntry.data; // data is the encrypted blob
-                        App.state.pin.hash = hashEntry.data; // data is the encrypted blob
+                        App.state.pin.salt = saltEntry.value;
+                        App.state.pin.hash = hashEntry.value;
                         
-                        // NOTE: We can't decrypt the hash/salt. This logic is flawed.
-                        // The hash/salt should NOT be encrypted.
-                        
-                        // --- HOTFIX ---
-                        // Let's assume hash/salt are NOT encrypted, as they shouldn't be.
-                        // This logic seems to be from an older version.
-                        // Let's re-read the initDB...
-                        
-                        // OK, looking at `initDB` and the old `setPIN`, the `value` was stored directly.
-                        // The new `saveAppState` encrypts. This is the bug.
-                        
-                        // We need a way to store PIN info unencrypted.
-                        // Let's create a *new* unencrypted store for PIN.
-                        
-                        // --- NEW PLAN ---
-                        // 1. We must re-init DB with a new version.
-                        // 2. We'll read from the OLD store 'appState'
-                        // 3. We'll decrypt with a temporary key (this is broken)
-
-                        // --- LET'S RE-WRITE THE PIN LOGIC ---
-                        // The PIN salt/hash should NOT be encrypted. They are the lock.
-                        // The encryptionKey is derived from them.
-                        
-                        // Let's assume the data in `appState` store with id 'securitySalt' and 'securityHash'
-                        // is *NOT* encrypted.
-                        
-                        const saltVal = await db.get('appState', 'securitySalt');
-                        const hashVal = await db.get('appState', 'securityHash');
-
-                        if (saltVal && hashVal) {
-                            // Let's assume 'data' field was a mistake and it's 'value'
-                            // Or let's assume it's just stored as { id: 'securitySalt', value: 'the-salt' }
-                            // The old code used `db.put('appState', { id: 'securitySalt', value: pinSalt });`
-                            
-                            // Ah, the `loadAndDecryptAllData` is trying to decrypt EVERYTHING.
-                            // This is the problem.
-                            
-                            // Let's check `setPIN` again...
-                            // `await db.put('appState', { id: 'securitySalt', value: pinSalt });`
-                            // `await db.put('appState', { id: 'securityHash', value: pinHash });`
-                            
-                            // This is the bug. The init logic is WRONG.
-                            // `saltEntry` will be { id: 'securitySalt', value: 'the-salt' }
-                            
-                            const realSaltEntry = await db.get('appState', 'securitySalt');
-                            const realHashEntry = await db.get('appState', 'securityHash');
-                            
-                            if (realSaltEntry && realHashEntry) {
-                                App.state.pin.salt = realSaltEntry.value;
-                                App.state.pin.hash = realHashEntry.value;
-                                
-                                console.log("PIN info found in local DB.");
-                                if (App.state.fb.auth) {
-                                    this.setupAuthListener();
-                                } else {
-                                    App.pin.showLockScreen('login');
-                                }
-                            } else {
-                                console.log("No PIN info found. Forcing setup.");
-                                App.pin.showLockScreen('setup'); // No PIN is set. Force setup.
-                            }
+                        console.log("PIN info found in local DB.");
+                        if (App.state.fb.auth) {
+                            this.setupAuthListener();
                         } else {
-                             console.log("No PIN info found. Forcing setup.");
-                             App.pin.showLockScreen('setup'); // No PIN is set. Force setup.
+                            App.pin.showLockScreen('login');
                         }
-
-
                     } else {
-                         console.log("No PIN info found. Forcing setup.");
-                         App.pin.showLockScreen('setup'); // No PIN is set. Force setup.
+                        console.log("No PIN info found. Forcing setup.");
+                        App.pin.showLockScreen('setup'); // No PIN is set. Force setup.
                     }
                 },
                 
@@ -2139,9 +2080,8 @@
                                 App.state.pin.hash = cloudPin.hash;
                                 
                                 // Overwrite local PIN info to sync
-                                // FIX: Use the 'value' key, not 'data'
-                                await App.state.db.put('appState', {id: 'securitySalt', value: cloudPin.salt});
-                                await App.state.db.put('appState', {id: 'securityHash', value: cloudPin.hash});
+                                await App.state.db.put(App.config.STORES.APP_STATE, {id: 'securitySalt', value: cloudPin.salt});
+                                await App.state.db.put(App.config.STORES.APP_STATE, {id: 'securityHash', value: cloudPin.hash});
                                 
                                 App.pin.showLockScreen('login');
                             } else {
@@ -2299,7 +2239,9 @@
                 
                 resetInput: function(errorMsg = '') {
                     App.state.pin.input = "";
-                    App.state.pin.actionCallback = null;
+                    if(App.state.pin.setupStep !== 0) { // Don't clear callback if mid-change
+                        App.state.pin.actionCallback = null;
+                    }
                     App.dom.lock.error.textContent = errorMsg;
                     if (errorMsg) {
                         App.dom.lock.screen.classList.add('shake');
@@ -2377,9 +2319,8 @@
                     const newHash = App.util.bufferToHex(await window.crypto.subtle.digest('SHA-256', new TextEncoder().encode(pin + newSalt)));
                     
                     // Save to local DB (unencrypted)
-                    // FIX: Use 'value' key, not 'data'
-                    await App.state.db.put('appState', {id: 'securitySalt', value: newSalt});
-                    await App.state.db.put('appState', {id: 'securityHash', value: newHash});
+                    await App.state.db.put(App.config.STORES.APP_STATE, {id: 'securitySalt', value: newSalt});
+                    await App.state.db.put(App.config.STORES.APP_STATE, {id: 'securityHash', value: newHash});
                     
                     // Save to Firestore if signed in
                     if (App.state.userId) {
@@ -2428,13 +2369,15 @@
                     App.state.pin.confirmPin = "";
                     App.dom.lock.title.textContent = "Enter NEW PIN";
                     App.dom.lock.subtitle.textContent = "Create a new 4-digit PIN.";
+                    App.state.pin.input = ""; // Clear input for new PIN
+                    this.updateDots(); // Clear dots
                     
                     const oldKey = App.state.pin.encryptionKey; // Keep the old key for re-encryption
                     
                     // Store original handler and override
-                    const originalSetupHandler = App.pin.handleSetup.bind(App.pin);
+                    const originalSetupHandler = this.handleSetup.bind(this);
                     
-                    App.pin.handleSetup = async function() {
+                    this.handleSetup = async function() {
                         const { setupStep, input, confirmPin } = App.state.pin;
                         
                         if (setupStep === 1) {
@@ -2459,16 +2402,16 @@
                                     const allData = App.state.data;
                                     App.state.pin.encryptionKey = newKey; // Set to new key for saving
                                     
-                                    await App.storage.saveStore('checkinHistory', allData.checkinHistory);
-                                    await App.storage.saveStore('gratitudeHistory', allData.gratitudeHistory);
-                                    await App.storage.saveStore('sabbathHistory', allData.sabbathHistory);
-                                    await App.storage.saveStore('ruleOfLifeHistory', allData.ruleOfLifeHistory);
+                                    await App.storage.saveStore(App.config.STORES.CHECKIN, allData.checkinHistory);
+                                    await App.storage.saveStore(App.config.STORES.GRATITUDE, allData.gratitudeHistory);
+                                    await App.storage.saveStore(App.config.STORES.SABBATH, allData.sabbathHistory);
+                                    await App.storage.saveStore(App.config.STORES.RULE_HISTORY, allData.ruleOfLifeHistory);
                                     await App.storage.saveAppState('userResources', allData.userResources);
                                     await App.storage.saveAppState('ruleOfLife', allData.ruleOfLife);
 
                                     // Save new PIN info (unencrypted)
-                                    await App.state.db.put('appState', {id: 'securitySalt', value: newSalt});
-                                    await App.state.db.put('appState', {id: 'securityHash', value: newHash});
+                                    await App.state.db.put(App.config.STORES.APP_STATE, {id: 'securitySalt', value: newSalt});
+                                    await App.state.db.put(App.config.STORES.APP_STATE, {id: 'securityHash', value: newHash});
                                     
                                     App.state.pin.salt = newSalt;
                                     App.state.pin.hash = newHash;
@@ -2510,9 +2453,9 @@
                                 setTimeout(() => this.resetInput(""), 200);
                             }
                         }
-                    }.bind(App.pin); // Bind the function to App.pin scope
+                    }.bind(this); // Bind the function to App.pin scope
                 }
-            },
+            }, // End of App.pin module
 }
             
             // --- Feature Modules ---
