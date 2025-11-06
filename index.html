@@ -4,47 +4,44 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tōku Hauora</title>
-    
+   
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#4F46E5"> <!-- Indigo 600 -->
     <!-- FIX: Corrected typo from 'Haura' to 'Hauora' -->
     <link rel="apple-touch-icon" href="https://loneworkernelson-web.github.io/ClergyWB/Toku%20Hauora.png">
-
     <!-- Tailwind CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    
+   
     <!-- External JS Libraries -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/idb@7/build/umd.js"></script>
-    
+   
     <!-- Firebase SDKs (as modules) -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js" type="module"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js" type="module"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js" type="module"></script>
-
-    <!-- 
+    <!--
       REMOVED: <script src="config.js"></script>
       This file doesn't exist. The app uses the global __firebase_config variable injected by the environment.
     -->
-
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    
+   
     <style>
         /* Base layout styles */
         html, body {
-            height: 100%; 
-            overflow: hidden; 
+            height: 100%;
+            overflow: hidden;
         }
         body {
             font-family: 'Inter', sans-serif;
             background-color: #f8fafc; /* slate-50 */
         }
-        
+       
         #app {
             height: 100%;
-            display: flex; 
+            display: flex;
         }
-        
+       
         #lockScreen {
             position: fixed;
             top: 0;
@@ -59,14 +56,12 @@
             flex-direction: column;
             padding: 1rem;
         }
-
         .view {
-            display: none; 
+            display: none;
         }
         .active-view {
             display: block;
         }
-
         /* Scrollbar styles */
         ::-webkit-scrollbar {
             width: 8px;
@@ -82,7 +77,7 @@
         ::-webkit-scrollbar-thumb:hover {
             background: #64748b; /* slate-500 */
         }
-        
+       
         /* Modal styles */
         .modal-overlay {
             position: fixed;
@@ -117,7 +112,6 @@
         .modal-overlay.visible .modal-content {
             transform: scale(1);
         }
-
         /* Custom alert box */
         #alert-box {
             position: fixed;
@@ -131,7 +125,7 @@
         #alert-box.show {
             bottom: 20px;
         }
-        
+       
         /* Animation for PIN error */
         .shake {
             animation: shake 0.5s ease-in-out;
@@ -141,7 +135,6 @@
             10%, 30%, 50%, 70%, 90% { transform: translateX(-10px); }
             20%, 40%, 60%, 80% { transform: translateX(10px); }
         }
-
         /* PIN Dot styling */
         .pin-dot {
             @apply w-4 h-4 rounded-full border-2 border-slate-400 mx-2 transition-all;
@@ -149,12 +142,12 @@
         .pin-dot.filled {
             @apply bg-indigo-600 border-indigo-600;
         }
-        
+       
         /* Numpad button styling */
         .numpad-btn {
             @apply rounded-lg bg-white py-3 text-lg font-medium text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 hover:bg-slate-50 w-16 h-16 sm:w-20 sm:h-20 transition-all;
         }
-        
+       
         /* Dashboard button styling */
         .dashboard-btn {
             @apply p-4 rounded-xl shadow-md transition-all duration-150 ease-in-out flex flex-col items-center justify-center text-center text-white font-semibold;
@@ -162,7 +155,7 @@
         .dashboard-btn svg {
             @apply w-8 h-8 mb-2;
         }
-        
+       
         /* Checkin choice button styling */
         .btn-choice {
             @apply w-full sm:w-auto text-sm sm:text-base px-4 py-2 rounded-lg shadow-md transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2;
@@ -175,7 +168,7 @@
         .checkin-btn-sab.active { @apply bg-violet-600 text-white hover:bg-violet-700 focus:ring-violet-500; }
         .checkin-btn-neg { @apply bg-slate-100 text-slate-700 hover:bg-slate-200; }
         .checkin-btn-neg.active { @apply bg-slate-600 text-white hover:bg-slate-700 focus:ring-slate-500; }
-        
+       
         /* Trends toggle */
         .trends-toggle-btn {
             @apply rounded-md px-3 py-1.5 text-sm font-medium text-slate-600;
@@ -183,7 +176,6 @@
         .trends-toggle-btn.active {
             @apply bg-white text-slate-900 shadow-sm;
         }
-
         /* Nav Bar tabs */
         .nav-tab-btn {
             @apply flex-1 flex flex-col items-center justify-center p-3 text-indigo-200 hover:bg-indigo-700 transition-colors;
@@ -191,7 +183,7 @@
         .nav-tab-btn.active {
             @apply text-white bg-indigo-800;
         }
-        
+       
         /* Read-only resource text */
         .resource-text {
             @apply text-slate-700 font-medium;
@@ -199,7 +191,7 @@
         .resource-text.placeholder {
             @apply text-slate-400 italic font-normal;
         }
-        
+       
         /* Notes display */
         .notes-display {
             @apply mt-2 p-3 bg-amber-50 border border-amber-200 rounded-md text-sm text-slate-700 whitespace-pre-wrap;
@@ -211,7 +203,6 @@
     </style>
 </head>
 <body class="text-slate-800">
-
     <!-- PIN Lock Screen (HIDDEN BY DEFAULT) -->
     <div id="lockScreen" class="flex items-center justify-center">
         <div class="text-center max-w-xs w-full">
@@ -221,7 +212,6 @@
             <h2 id="lockTitle" class="text-2xl font-semibold text-slate-800">Enter PIN</h2>
             <p id="lockSubtitle" class="text-slate-600 mt-2">Enter your 4-digit PIN to unlock.</p>
             <p id="lockError" class="text-red-500 text-sm font-medium mt-2 h-5"></p>
-
             <!-- PIN Dots -->
             <div class="flex justify-center my-6">
                 <div id="pin-dot-1" class="pin-dot"></div>
@@ -229,7 +219,6 @@
                 <div id="pin-dot-3" class="pin-dot"></div>
                 <div id="pin-dot-4" class="pin-dot"></div>
             </div>
-
             <!-- PIN Keypad -->
             <div class="grid grid-cols-3 gap-4">
                 <button class="numpad-btn" data-key="1">1</button>
@@ -244,16 +233,15 @@
                 <div class="w-16 h-16 sm:w-20 sm:h-20"></div> <!-- Placeholder -->
                 <button class="numpad-btn" data-key="0">0</button>
                 <button class="numpad-btn flex items-center justify-center" data-key="del">
-                    <!-- FIX: Replaced malformed SVG path with a standard 'backspace' icon -->
+                    <!-- FIX: Replaced with standard backspace icon -->
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 14l-4-4m0 4l4-4M18 6H6a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V8a2 2 0 00-2-2z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9.75 14.25 12m0 0 2.25 2.25M14.25 12l2.25-2.25M14.25 12 12 14.25m-2.58 4.92-6.375-6.375a1.125 1.125 0 0 1 0-1.59L9.42 4.83c.39-.39 1.023-.39 1.414 0l1.414 1.414m2.121 2.121 1.414 1.414m.707.707 1.414-1.414M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-5 0H8" />
                     </svg>
                 </button>
             </div>
         </div>
     </div>
     <!-- End of Lock Screen -->
-
     <!-- Login View (for optional cloud sync) -->
     <!-- FIX: Replaced invalid 'z-1000' with valid Tailwind class 'z-50' -->
     <div id="loginView" class="view fixed inset-0 z-50 bg-slate-50 flex items-center justify-center p-4">
@@ -279,7 +267,7 @@
                 </div>
                 <button id="stayLocalBtn" class="text-indigo-600 hover:text-indigo-700 hover:underline cursor-pointer font-medium">No thanks, stay local-only</button>
             </div>
-            
+           
             <!-- Email Login Form (Hidden) -->
             <div id="emailLoginView" class="hidden space-y-4 mt-6 text-left">
                 <input type="email" id="emailInput" placeholder="Email" class="w-full px-4 py-2 border border-slate-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
@@ -291,28 +279,23 @@
                 <button id="backToLoginOptionsBtn" class="text-indigo-600 hover:text-indigo-700 hover:underline cursor-pointer text-sm">&larr; Back</button>
             </div>
             <p id="authError" class="text-red-500 text-sm mt-4 h-5"></p>
-
         </div>
     </div>
-
     <!-- Main App Container -->
     <div id="app" class="max-w-2xl mx-auto bg-white shadow-xl flex flex-col">
-
         <header class="bg-indigo-700 text-white p-4 text-center sticky top-0 z-50 shadow-md">
             <h1 class="text-2xl font-bold">Tōku Hauora</h1>
             <p class="text-sm opacity-90">My Clergy Wellbeing Hub</p>
         </header>
-
         <!-- Main content area, scrolls independently -->
         <main class="flex-grow p-4 sm:p-6 space-y-6 overflow-y-auto">
-
             <!-- Welcome View (Dashboard) -->
             <div id="welcomeView" class="view active-view space-y-6">
                 <div class="bg-slate-50 p-6 rounded-xl shadow-sm border border-slate-200">
                     <h2 class="text-xl font-semibold text-indigo-800 mb-3">Nau Mai, Haere Mai</h2>
                     <p class="text-slate-600 mb-4">Welcome to your private wellbeing hub. How are you today?</p>
                 </div>
-                
+               
                 <!-- At a Glance Preview -->
                 <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
                     <h3 class="text-lg font-semibold text-slate-800 mb-3">At a Glance</h3>
@@ -320,7 +303,6 @@
                         <p class="text-slate-500 italic">You haven't completed a check-in yet. Start one below!</p>
                     </div>
                 </div>
-
                 <!-- Main Module Grid -->
                 <div class="grid grid-cols-2 gap-4">
                     <button id="startWarningCheckinBtn" class="dashboard-btn bg-indigo-600 hover:bg-indigo-700">
@@ -340,13 +322,12 @@
                         <span>My Rule of Life</span>
                     </button>
                 </div>
-
                 <!-- Quick Add Gratitude -->
                 <button id="startGratitudeBtn" class="w-full py-3 font-semibold flex items-center justify-center px-4 rounded-lg shadow-md transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 bg-amber-500 text-white hover:bg-amber-600 focus:ring-amber-400">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 mr-2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.099 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" /></svg>
                     <span>Add Gratitude Entry</span>
                 </button>
-                
+               
                 <!-- Rule of Life Preview -->
                 <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
                     <h3 class="text-lg font-semibold text-slate-800 mb-3">My Rule of Life Intentions</h3>
@@ -354,12 +335,10 @@
                         <p class="text-slate-500 italic">You haven't set your intentions yet. Tap "My Rule of Life" to begin.</p>
                     </div>
                 </div>
-
                 <div class="text-center">
                     <button id="navToPrivacyBtn" class="text-indigo-600 hover:text-indigo-700 hover:underline cursor-pointer text-sm font-medium">Privacy & Security Information</button>
                 </div>
             </div>
-
             <!-- Warning Signs Check-in View -->
             <div id="checkinView" class="view space-y-6">
                 <h2 id="categoryTitle" class="text-2xl font-bold text-indigo-800">Warning Signs</h2>
@@ -369,14 +348,14 @@
                 <div id="checkinButtonContainer" class="flex flex-col sm:flex-row sm:justify-between space-y-3 sm:space-y-0 sm:space-x-3">
                     <button id="prevCategoryBtn" class="px-4 py-2 rounded-lg shadow-md font-semibold transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 bg-white text-slate-700 border border-slate-300 hover:bg-slate-50 focus:ring-indigo-500 w-full sm:w-auto">Previous</button>
                     <button id="nextCategoryBtn" class="px-4 py-2 rounded-lg shadow-md font-semibold transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 bg-indigo-600 text-white hover:bg-indigo-700 focus:ring-indigo-500 w-full sm:w-auto py-3 font-semibold">Next</button>
-                    <button id="finishCheckinBtn" class="px-4 py-2 rounded-lg shadow-md font-semibold transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 bg-indigo-600 text-white hover:bg-indigo-700 focus:ring-indigo-500 w-full sm:w-auto" style="display:none;">Finish Check-in</button>
+                    <!-- FIX: Replaced inline style with Tailwind 'hidden' class -->
+                    <button id="finishCheckinBtn" class="px-4 py-2 rounded-lg shadow-md font-semibold transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 bg-indigo-600 text-white hover:bg-indigo-700 focus:ring-indigo-500 w-full sm:w-auto hidden">Finish Check-in</button>
                 </div>
                  <div class="mt-4 text-center">
                     <progress id="checkinProgress" value="0" max="100" class="w-full h-2 rounded-full overflow-hidden [&::-webkit-progress-bar]:bg-slate-200 [&::-webkit-progress-value]:bg-indigo-600"></progress>
                     <p id="progressText" class="text-sm text-slate-500 mt-1"></p>
                  </div>
             </div>
-
             <!-- Positive Signs Check-in View -->
             <div id="positiveCheckinView" class="view space-y-6">
                 <h2 id="positiveCategoryTitle" class="text-2xl font-bold text-emerald-800">Positive Signs</h2>
@@ -386,33 +365,33 @@
                 <div id="positiveCheckinButtonContainer" class="flex flex-col sm:flex-row sm:justify-between space-y-3 sm:space-y-0 sm:space-x-3">
                     <button id="positivePrevCategoryBtn" class="px-4 py-2 rounded-lg shadow-md font-semibold transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 bg-white text-slate-700 border border-slate-300 hover:bg-slate-50 focus:ring-indigo-500 w-full sm:w-auto">Previous</button>
                     <button id="positiveNextCategoryBtn" class="px-4 py-2 rounded-lg shadow-md font-semibold transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 bg-emerald-600 text-white hover:bg-emerald-700 focus:ring-emerald-500 w-full sm:w-auto py-3 font-semibold">Next</button>
-                    <button id="positiveFinishCheckinBtn" class="px-4 py-2 rounded-lg shadow-md font-semibold transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 bg-emerald-600 text-white hover:bg-emerald-700 focus:ring-emerald-500 w-full sm:w-auto" style="display:none;">Finish Check-in</button>
+                    <!-- FIX: Replaced inline style with Tailwind 'hidden' class -->
+                    <button id="positiveFinishCheckinBtn" class="px-4 py-2 rounded-lg shadow-md font-semibold transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 bg-emerald-600 text-white hover:bg-emerald-700 focus:ring-emerald-500 w-full sm:w-auto hidden">Finish Check-in</button>
                 </div>
                  <div class="mt-4 text-center">
                     <progress id="positiveCheckinProgress" value="0" max="100" class="w-full h-2 rounded-full overflow-hidden [&::-webkit-progress-bar]:bg-slate-200 [&::-webkit-progress-value]:bg-emerald-600"></progress>
                     <p id="positiveProgressText" class="text-sm text-slate-500 mt-1"></p>
                  </div>
             </div>
-
             <!-- Sabbath Check-in View -->
             <div id="sabbathCheckinView" class="view space-y-6">
                 <h2 id="sabbathCategoryTitle" class="text-2xl font-bold text-violet-800">Sabbath Quality</h2>
                 <p class="text-sm text-slate-600">Reflect on your most recent Sabbath or day off. Select the date for this reflection:</p>
                 <input type="date" id="sabbathCheckinDate" class="w-full p-2 border border-slate-300 rounded-lg shadow-sm focus:ring-2 focus:ring-violet-500">
-                
+               
                 <div id="sabbathQuestionsContainer" class="space-y-4">
                     <!-- Sabbath questions will be injected here -->
                 </div>
-                
+               
                 <div class="mt-4">
                     <label for="sabbathNotesArea" class="block text-sm font-medium text-slate-700 mb-1">Additional Reflections (Private):</label>
                     <textarea id="sabbathNotesArea" rows="4" class="w-full p-3 border border-slate-300 rounded-lg shadow-sm focus:ring-2 focus:ring-violet-500" placeholder="e.g., What was life-giving? What was difficult?"></textarea>
                 </div>
-
                 <div id="sabbathCheckinButtonContainer" class="flex flex-col sm:flex-row sm:justify-between space-y-3 sm:space-y-0 sm:space-x-3">
                     <button id="sabbathPrevCategoryBtn" class="px-4 py-2 rounded-lg shadow-md font-semibold transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 bg-white text-slate-700 border border-slate-300 hover:bg-slate-50 focus:ring-indigo-500 w-full sm:w-auto">Previous</button>
                     <button id="sabbathNextCategoryBtn" class="px-4 py-2 rounded-lg shadow-md font-semibold transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 bg-violet-600 text-white hover:bg-violet-700 focus:ring-violet-500 w-full sm:w-auto py-3 font-semibold">Next</button>
-                    <button id="sabbathFinishCheckinBtn" class="px-4 py-2 rounded-lg shadow-md font-semibold transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 bg-violet-600 text-white hover:bg-violet-700 focus:ring-violet-500 w-full sm:w-auto" style="display:none;">Save Reflection</button>
+                    <!-- FIX: Replaced inline style with Tailwind 'hidden' class -->
+                    <button id="sabbathFinishCheckinBtn" class="px-4 py-2 rounded-lg shadow-md font-semibold transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 bg-violet-600 text-white hover:bg-violet-700 focus:ring-violet-500 w-full sm:w-auto hidden">Save Reflection</button>
                 </div>
                  <div class="mt-4 text-center">
                     <progress id="sabbathCheckinProgress" value="0" max="100" class="w-full h-2 rounded-full overflow-hidden [&::-webkit-progress-bar]:bg-slate-200 [&::-webkit-progress-value]:bg-violet-600"></progress>
@@ -420,7 +399,6 @@
                  </div>
                 <button id="viewPastSabbathBtn" class="px-4 py-2 rounded-lg shadow-md font-semibold transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 bg-white text-slate-700 border border-slate-300 hover:bg-slate-50 focus:ring-indigo-500 w-full mt-4">View Past Sabbath Reflections</button>
             </div>
-
             <!-- Past Sabbath Entries View -->
             <div id="pastSabbathView" class="view space-y-4">
                 <h2 class="text-2xl font-bold text-violet-800">Past Sabbath Reflections</h2>
@@ -429,7 +407,6 @@
                     <p class="text-slate-500 italic">No past Sabbath reflections found. Start by adding one!</p>
                 </div>
             </div>
-
             <!-- Gratitude Journal View -->
             <div id="gratitudeView" class="view space-y-4">
                 <h2 class="text-2xl font-bold text-amber-700">Gratitude Journal</h2>
@@ -438,7 +415,6 @@
                 <button id="saveGratitudeBtn" class="px-4 py-2 rounded-lg shadow-md font-semibold transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 bg-amber-500 text-white hover:bg-amber-600 focus:ring-amber-400 w-full">Save Today's Entry</button>
                 <button id="viewPastGratitudeBtn" class="px-4 py-2 rounded-lg shadow-md font-semibold transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 bg-white text-slate-700 border border-slate-300 hover:bg-slate-50 focus:ring-indigo-500 w-full mt-2">View Past Entries</button>
             </div>
-
             <!-- Past Gratitude Entries View -->
             <div id="pastGratitudeView" class="view space-y-4">
                 <h2 class="text-2xl font-bold text-amber-700">Past Gratitude Entries</h2>
@@ -447,18 +423,17 @@
                     <p class="text-slate-500 italic">No past gratitude entries found. Start by adding one today!</p>
                 </div>
             </div>
-
             <!-- Rule of Life Hub View -->
             <div id="ruleOfLifeView" class="view space-y-4">
                 <div class="flex justify-between items-center">
                     <h2 class="text-2xl font-bold text-teal-800">My Rule of Life</h2>
                     <div>
                         <button id="editRuleBtn" class="px-4 py-2 rounded-lg shadow-md font-semibold transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 bg-white text-slate-700 border border-slate-300 hover:bg-slate-50 focus:ring-indigo-500 btn-sm py-1 px-3">Edit</button>
-                        <button id="saveRuleBtn" class="px-4 py-2 rounded-lg shadow-md font-semibold transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 bg-indigo-600 text-white hover:bg-indigo-700 focus:ring-indigo-500 btn-sm py-1 px-3" style="display: none;">Save</button>
+                        <button id="saveRuleBtn" class="px-4 py-2 rounded-lg shadow-md font-semibold transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 bg-indigo-600 text-white hover:bg-indigo-700 focus:ring-indigo-500 btn-sm py-1 px-3 hidden">Save</button>
                     </div>
                 </div>
                 <p class="text-sm text-slate-600">Define 3-5 key intentions for your wellbeing. These are the things you want to intentionally practice.</p>
-                
+               
                 <div class="bg-teal-50 p-4 rounded-xl shadow-sm border border-teal-200 space-y-3">
                     <!-- Read View -->
                     <div id="ruleOfLifeReadView" class="space-y-2">
@@ -467,7 +442,7 @@
                         </ul>
                     </div>
                     <!-- Edit View -->
-                    <div id="ruleOfLifeEditView" class="space-y-2" style="display: none;">
+                    <div id="ruleOfLifeEditView" class="space-y-2 hidden">
                         <div>
                             <label for="ruleIntention1" class="block text-sm font-medium text-slate-700">Intention 1:</label>
                             <input type="text" id="ruleIntention1" class="w-full p-2 border border-slate-300 rounded-lg shadow-sm focus:ring-2 focus:ring-teal-500" placeholder="e.g., Pray daily">
@@ -493,31 +468,29 @@
                 <button id="startRuleOfLifeCheckinBtn" class="px-4 py-2 rounded-lg shadow-md font-semibold transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 bg-teal-600 text-white hover:bg-teal-700 focus:ring-teal-500 w-full mt-4">Start Weekly Check-in</button>
                 <button id="viewPastRuleOfLifeBtn" class="px-4 py-2 rounded-lg shadow-md font-semibold transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 bg-white text-slate-700 border border-slate-300 hover:bg-slate-50 focus:ring-indigo-500 w-full mt-2">View Trends & History</button>
             </div>
-
             <!-- Rule of Life Check-in View -->
             <div id="ruleOfLifeCheckinView" class="view space-y-4">
                 <h2 class="text-2xl font-bold text-teal-800">Rule of Life Check-in</h2>
                 <p class="text-sm text-slate-600">For the week ending on:</p>
                 <input type="date" id="ruleOfLifeCheckinDate" class="w-full p-2 border border-slate-300 rounded-lg shadow-sm focus:ring-2 focus:ring-teal-500">
-                
+               
                 <div id="ruleOfLifeChecklistContainer" class="space-y-3 bg-white p-4 rounded-xl shadow-sm border border-slate-200">
                     <!-- Checkboxes will be injected here -->
                 </div>
-                
+               
                 <div class="mt-4">
                     <label for="ruleOfLifeNotesArea" class="block text-sm font-medium text-slate-700 mb-1">Reflections for this week (Private):</label>
                     <textarea id="ruleOfLifeNotesArea" rows="4" class="w-full p-3 border border-slate-300 rounded-lg shadow-sm focus:ring-2 focus:ring-teal-500" placeholder="e.g., What went well? What was a challenge?"></textarea>
                 </div>
-
                 <button id="saveRuleOfLifeCheckinBtn" class="px-4 py-2 rounded-lg shadow-md font-semibold transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 bg-teal-600 text-white hover:bg-teal-700 focus:ring-teal-500 w-full">Save Reflection</button>
                 <button id="backToRuleOfLifeBtn" class="px-4 py-2 rounded-lg shadow-md font-semibold transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 bg-white text-slate-700 border border-slate-300 hover:bg-slate-50 focus:ring-indigo-500 w-full mt-2">Back to Rule of Life</button>
             </div>
-            
+           
             <!-- Past Rule of Life Reflections View -->
             <div id="pastRuleOfLifeView" class="view space-y-4">
                 <h2 class="text-2xl font-bold text-teal-800">Rule of Life Trends & History</h2>
                 <button id="backToRuleOfLifeBtn2" class="px-4 py-2 rounded-lg shadow-md font-semibold transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 bg-white text-slate-700 border border-slate-300 hover:bg-slate-50 focus:ring-indigo-500 w-full mb-3">Back to Rule of Life</button>
-                
+               
                 <!-- New Chart Section -->
                 <div class="bg-teal-50 p-4 rounded-xl shadow-sm border border-teal-200 min-h-[250px] sm:min-h-[300px] relative">
                     <canvas id="ruleOfLifeChart"></canvas>
@@ -525,26 +498,23 @@
                         No reflections found. Complete a few check-ins to see your trends.
                     </div>
                 </div>
-                
+               
                 <h3 class="text-lg font-semibold text-teal-800 pt-4">Past Reflections</h3>
                 <div id="pastRuleOfLifeContainer" class="space-y-3">
                     <!-- Past entries will be injected here -->
                 </div>
             </div>
-
-
             <div id="summaryView" class="view space-y-6">
                 <h2 class="text-2xl font-bold text-indigo-800">This Week's Reflection</h2>
-                <button id="backToTrendsBtn" class="px-4 py-2 rounded-lg shadow-md font-semibold transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 bg-white text-slate-700 border border-slate-300 hover:bg-slate-50 focus:ring-indigo-500 w-full mb-3" style="display:none;">Back to Trends</button>
+                <button id="backToTrendsBtn" class="px-4 py-2 rounded-lg shadow-md font-semibold transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 bg-white text-slate-700 border border-slate-300 hover:bg-slate-50 focus:ring-indigo-500 w-full mb-3 hidden">Back to Trends</button>
                 <div id="summaryContent" class="bg-slate-50 p-4 rounded-xl shadow-sm border border-slate-200 space-y-2">
                     <!-- Summary and notes will be injected here -->
                 </div>
-                <div id="summaryPrompt" class="bg-yellow-100 border-l-4 border-yellow-400 p-4 rounded-md shadow-sm text-yellow-800" style="display:none;">
+                <div id="summaryPrompt" class="bg-yellow-100 border-l-4 border-yellow-400 p-4 rounded-md shadow-sm text-yellow-800 hidden">
                     <!-- Prompt will be injected here -->
                 </div>
                 <button id="notesForSummaryBtn" class="px-4 py-2 rounded-lg shadow-md font-semibold transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 bg-indigo-600 text-white hover:bg-indigo-700 focus:ring-indigo-500 w-full">Add/Edit Personal Notes for this Summary</button>
             </div>
-
             <div id="notesView" class="view space-y-4">
                 <h2 class="text-2xl font-bold text-indigo-800">Personal Notes (Private)</h2>
                 <p id="notesForDateText" class="text-sm text-slate-600">Notes for: </p>
@@ -552,24 +522,21 @@
                 <button id="saveNotesBtn" class="px-4 py-2 rounded-lg shadow-md font-semibold transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 bg-indigo-600 text-white hover:bg-indigo-700 focus:ring-indigo-500 w-full">Save Notes</button>
                  <button id="backToSummaryFromNotesBtn" class="px-4 py-2 rounded-lg shadow-md font-semibold transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 bg-white text-slate-700 border border-slate-300 hover:bg-slate-50 focus:ring-indigo-500 w-full mt-2">Back to Summary</button>
             </div>
-
             <!-- Trends View -->
             <div id="trendsView" class="view space-y-4">
                 <h2 class="text-2xl font-bold text-indigo-800">Wellbeing Trends</h2>
                 <p class="text-sm text-slate-600">This chart shows your warning and positive signs over time. Click on a bar to view the summary for that day.</p>
-                
+               
                 <div class="flex justify-center p-1 bg-slate-100 rounded-lg">
                     <button id="trendsToggleRecent" class="trends-toggle-btn active">Recent 12</button>
                     <button id="trendsToggleAll" class="trends-toggle-btn">All Time</button>
                 </div>
-
                 <div class="bg-slate-50 p-4 rounded-xl shadow-sm border border-slate-200 min-h-[300px] sm:min-h-[400px] relative">
                     <canvas id="wellbeingChart"></canvas>
                     <div id="trendsChartEmpty" class="text-slate-500 italic text-center p-8" style="display: none;">
                         No check-in history yet. Complete a few weekly check-ins to see your trends.
                     </div>
                 </div>
-
                 <!-- Correlations Section -->
                 <div id="correlationsView" class="space-y-4">
                     <h2 class="text-xl font-semibold text-indigo-800">Wellbeing Insights</h2>
@@ -578,17 +545,16 @@
                     </div>
                 </div>
             </div>
-
             <!-- Resources View -->
             <div id="resourcesView" class="view space-y-4">
                 <div class="flex justify-between items-center">
                     <h2 class="text-2xl font-bold text-indigo-800">Support Resources</h2>
                     <div>
                         <button id="editResourcesBtn" class="px-4 py-2 rounded-lg shadow-md font-semibold transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 bg-white text-slate-700 border border-slate-300 hover:bg-slate-50 focus:ring-indigo-500 btn-sm py-1 px-3">Edit</button>
-                        <button id="saveResourcesBtn" class="px-4 py-2 rounded-lg shadow-md font-semibold transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 bg-indigo-600 text-white hover:bg-indigo-700 focus:ring-indigo-500 btn-sm py-1 px-3" style="display: none;">Save</button>
+                        <button id="saveResourcesBtn" class="px-4 py-2 rounded-lg shadow-md font-semibold transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 bg-indigo-600 text-white hover:bg-indigo-700 focus:ring-indigo-500 btn-sm py-1 px-3 hidden">Save</button>
                     </div>
                 </div>
-                
+               
                 <div class="bg-slate-50 p-4 rounded-xl shadow-sm border border-slate-200 space-y-3">
                     <p class="font-medium">General NZ Helplines:</p>
                     <ul class="list-disc list-inside text-slate-700 space-y-1">
@@ -597,7 +563,7 @@
                         <li><strong>Samaritans:</strong> 0800 726 666.</li>
                     </ul>
                 </div>
-                
+               
                 <div class="bg-slate-50 p-4 rounded-xl shadow-sm border border-slate-200 space-y-3">
                     <p class="font-medium mt-3">Your Personal Contacts:</p>
                     <p class="text-sm text-slate-600">Add your important contacts here. This data is saved privately on your device.</p>
@@ -612,7 +578,7 @@
                             <p><strong>Other:</strong> <span id="readOther" class="resource-text placeholder">Not set</span></p>
                         </div>
                         <!-- Edit view -->
-                        <div id="resourcesEditView" class="space-y-2" style="display: none;">
+                        <div id="resourcesEditView" class="space-y-2 hidden">
                             <div>
                                 <label for="editSupervisor" class="block text-sm font-medium text-slate-700">Supervisor:</label>
                                 <input type="text" id="editSupervisor" class="w-full p-2 border border-slate-300 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500">
@@ -641,7 +607,6 @@
                     </div>
                 </div>
             </div>
-
             <!-- Privacy View -->
             <div id="privacyView" class="view space-y-4">
                 <h2 class="text-2xl font-bold text-indigo-800">Privacy & Security</h2>
@@ -658,11 +623,9 @@
                     <p class="mt-2">This app is a tool for personal reflection and awareness. It is not a diagnostic tool and does not replace professional medical or psychological advice.</p>
                 </div>
             </div>
-
             <!-- Settings View -->
             <div id="settingsView" class="view space-y-4">
                 <h2 class="text-2xl font-bold text-indigo-800">Settings & Data</h2>
-
                 <!-- Cloud Sync Status -->
                 <div class="bg-slate-50 p-4 rounded-xl shadow-sm border border-slate-200 space-y-3">
                     <p class="font-medium">Cloud Sync</p>
@@ -682,18 +645,17 @@
                         <button id="signOutBtn" class="px-4 py-2 rounded-lg shadow-md font-semibold transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 bg-white text-slate-700 border border-slate-300 hover:bg-slate-50 focus:ring-indigo-500 w-full">Sign Out</button>
                     </div>
                 </div>
-                
+               
                 <!-- PIN Management -->
                 <div class="bg-slate-50 p-4 rounded-xl shadow-sm border border-slate-200 space-y-3">
                     <p class="font-medium">PIN Management</p>
                     <p class="text-sm text-slate-600">Your 4-digit PIN is mandatory and is used to encrypt all your data.</p>
                     <button id="changePinBtn" class="px-4 py-2 rounded-lg shadow-md font-semibold transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 bg-white text-slate-700 border border-slate-300 hover:bg-slate-50 focus:ring-indigo-500 w-full">Change PIN</button>
                 </div>
-                
+               
                  <div class="bg-slate-50 p-4 rounded-xl shadow-sm border border-slate-200 space-y-3">
                     <p class="font-medium">Reminders:</p>
                     <p class="text-sm text-slate-600">This web app cannot set system reminders. Please use your phone or computer's calendar app to set a weekly reminder for your Tōku Hauora Check.</p>
-
                     <p class="font-medium mt-4">Manage Your Data:</p>
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         <button id="exportDataBtn" class="px-4 py-2 rounded-lg shadow-md font-semibold transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 bg-white text-slate-700 border border-slate-300 hover:bg-slate-50 focus:ring-indigo-500 w-full">Export My Data</button>
@@ -705,12 +667,10 @@
                     <button id="viewDataBtn" class="px-4 py-2 rounded-lg shadow-md font-semibold transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 bg-white text-slate-700 border border-slate-300 hover:bg-slate-50 focus:ring-indigo-500 w-full mt-2">View My Raw Data (JSON)</button>
                     <button id="clearDataBtn" class="px-4 py-2 rounded-lg shadow-md font-semibold transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 bg-red-600 text-white hover:bg-red-700 focus:ring-red-500 w-full mt-2">Clear All My Data</button>
                     <p class="text-xs text-slate-500 mt-1">Warning: Clearing data is permanent and cannot be undone.</p>
-                    <div id="rawDataDisplay" class="mt-3 p-2 bg-slate-100 rounded border border-slate-300 text-xs overflow-auto max-h-60" style="display:none;"></div>
+                    <div id="rawDataDisplay" class="mt-3 p-2 bg-slate-100 rounded border border-slate-300 text-xs overflow-auto max-h-60 hidden"></div>
                  </div>
             </div>
-
         </main>
-
         <!-- Bottom Navigation Bar -->
         <nav class="bg-indigo-600 flex sticky bottom-0 shadow-inner border-t border-indigo-700">
             <button id="navHomeBtn" class="nav-tab-btn active" data-view="welcomeView">
@@ -734,23 +694,22 @@
                 <span class="text-xs mt-1">Settings</span>
             </button>
         </nav>
-
         <!-- Onboarding Modal -->
         <div id="onboardingModal" class="modal-overlay">
             <div class="modal-content space-y-4">
                 <h3 class="text-2xl font-semibold text-indigo-800">Welcome to Tōku Hauora!</h3>
-                
+               
                 <!-- Onboarding Content (Multiple Steps) -->
                 <div id="onboardingStep1" class="onboarding-step space-y-3">
                     <p class="text-slate-700">This is your <strong>100% private</strong> wellbeing hub. All your data is encrypted with a PIN and saved only on this device.</p>
                     <p class="text-sm text-slate-600">This app is a tool for reflection, not a replacement for professional advice.</p>
                 </div>
-                <div id="onboardingStep2" class="onboarding-step space-y-3" style="display: none;">
+                <div id="onboardingStep2" class="onboarding-step space-y-3 hidden">
                     <h4 class="font-semibold text-lg text-slate-800">Optional Cloud Sync</h4>
                     <p class="text-slate-700">You can **optionally** sign in to sync your *encrypted* data to the cloud. This lets you use multiple devices.</p>
                     <p class="text-sm text-slate-600">Your privacy is protected. No one but you can read your data. Find this in **Settings**.</p>
                 </div>
-                 <div id="onboardingStep3" class="onboarding-step space-y-3" style="display: none;">
+                 <div id="onboardingStep3" class="onboarding-step space-y-3 hidden">
                     <h4 class="font-semibold text-lg text-slate-800">See Your Progress</h4>
                     <p class="text-slate-700">The <strong>"Trends"</strong> tab (bottom of screen) is where your data comes alive. You'll see:
                     </p>
@@ -760,7 +719,7 @@
                     </ul>
                      <p class="text-slate-700 mt-2">The more you use the app, the more useful these insights will become.</p>
                 </div>
-                 <div id="onboardingStep4" class="onboarding-step space-y-3" style="display: none;">
+                 <div id="onboardingStep4" class="onboarding-step space-y-3 hidden">
                     <h4 class="font-semibold text-lg text-slate-800">Your Data, Your Control</h4>
                     <p class="text-slate-700">Visit the <strong>"Settings"</strong> tab (bottom of screen) at any time to:</p>
                     <ul class="list-disc list-inside space-y-2 text-sm text-slate-600">
@@ -770,19 +729,17 @@
                         <li><strong>Clear All Data</strong> permanently from this browser.</li>
                     </ul>
                 </div>
-
                 <!-- Onboarding Navigation -->
                 <div class="flex justify-between items-center mt-6">
                     <span id="onboardingStepIndicator" class="text-sm text-slate-500">Step 1 of 4</span>
                     <div>
-                        <button id="onboardingPrevBtn" class="px-4 py-2 rounded-lg shadow-md font-semibold transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 bg-white text-slate-700 border border-slate-300 hover:bg-slate-50 focus:ring-indigo-500" style="display: none;">Previous</button>
+                        <button id="onboardingPrevBtn" class="px-4 py-2 rounded-lg shadow-md font-semibold transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 bg-white text-slate-700 border border-slate-300 hover:bg-slate-50 focus:ring-indigo-500 hidden">Previous</button>
                         <button id="onboardingNextBtn" class="px-4 py-2 rounded-lg shadow-md font-semibold transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 bg-indigo-600 text-white hover:bg-indigo-700 focus:ring-indigo-500">Next</button>
-                        <button id="onboardingFinishBtn" class="px-4 py-2 rounded-lg shadow-md font-semibold transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 bg-indigo-600 text-white hover:bg-indigo-700 focus:ring-indigo-500" style="display: none;">Get Started</button>
+                        <button id="onboardingFinishBtn" class="px-4 py-2 rounded-lg shadow-md font-semibold transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 bg-indigo-600 text-white hover:bg-indigo-700 focus:ring-indigo-500 hidden">Get Started</button>
                     </div>
                 </div>
             </div>
         </div>
-
         <!-- Generic Modal -->
         <div id="promptModal" class="modal-overlay">
             <div class="modal-content space-y-4">
@@ -794,7 +751,6 @@
                 </div>
             </div>
         </div>
-
         <!-- Custom Alert/Toast Box -->
         <div id="alert-box">
              <div id="alert-content" class="p-4 rounded-lg shadow-xl text-white font-medium flex items-center space-x-3">
@@ -802,10 +758,8 @@
                 <span id="alert-message">This is an alert</span>
              </div>
         </div>
-
     </div> <!-- End #app -->
-
-    <!-- 
+    <!--
     ================================================================
     APP JAVASCRIPT
     ================================================================
@@ -813,10 +767,10 @@
     <script type="module">
         // Import Firebase modules from the SDKs loaded in <head>
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { 
-            getAuth, 
-            signInAnonymously, 
-            signInWithCustomToken, 
+        import {
+            getAuth,
+            signInAnonymously,
+            signInWithCustomToken,
             onAuthStateChanged,
             GoogleAuthProvider,
             signInWithRedirect,
@@ -827,24 +781,22 @@
             setPersistence, // <-- Added for persistence
             browserLocalPersistence // <-- Added for persistence
         } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { 
-            getFirestore, 
-            doc, 
-            getDoc, 
-            setDoc, 
-            updateDoc, 
-            deleteDoc, 
-            onSnapshot, 
-            collection, 
-            query, 
+        import {
+            getFirestore,
+            doc,
+            getDoc,
+            setDoc,
+            updateDoc,
+            deleteDoc,
+            onSnapshot,
+            collection,
+            query,
             writeBatch,
             setLogLevel,
             enableNetwork,
             disableNetwork,
             getDocs
         } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-
-
         // --- Main App Namespace ---
         const App = {
             // --- State ---
@@ -893,7 +845,6 @@
                     alertTimeout: null
                 }
             },
-
             // --- Config (Static Data) ---
             config: {
                 warningSigns: {
@@ -908,7 +859,7 @@
                     emotional: "Emotional Signs", mentalCognitive: "Mental/Cognitive Signs", physical: "Physical Signs", spiritual: "Spiritual Signs", behaviouralRelational: "Behavioural/Relational Signs"
                 },
                 categoryOrder: ["emotional", "mentalCognitive", "physical", "spiritual", "behaviouralRelational"],
-                
+               
                 positiveSigns: {
                     connection: ["Felt a sense of connection with others", "Had a positive interaction with a colleague", "Spent quality time with family or friends", "Felt connected to my community"],
                     purpose: ["Felt a sense of meaning or purpose in my work", "Felt I made a positive difference", "Engaged in an activity I find truly meaningful"],
@@ -924,7 +875,6 @@
                     spiritual: "Spiritual Life"
                 },
                 positiveCategoryOrder: ["connection", "purpose", "engagement", "selfCare", "spiritual"],
-
                 sabbathSigns: {
                     disengagement: ["I was able to mentally disengage from work (e.g., not ruminating on problems)", "I successfully avoided or limited work-related emails and calls", "I felt 'off-duty' and not on call"],
                     rest: ["I experienced physical rest and renewal", "I engaged in activities I find genuinely restful (which might be active or passive)", "I felt my energy levels were restored"],
@@ -938,7 +888,7 @@
                     spiritual: "Spiritual Refreshment"
                 },
                 sabbathCategoryOrder: ["disengagement", "rest", "connection", "spiritual"],
-                
+               
                 DB_NAME: 'TokuHauoraDB_v2', // New DB name for encrypted store
                 DB_VERSION: 1,
                 STORES: {
@@ -949,17 +899,16 @@
                     RULE_HISTORY: 'ruleOfLifeHistory'
                 }
             },
-
             // --- DOM Element Cache ---
             dom: {},
-            
+           
             // --- Caches all common DOM elements ---
             cacheDom: function() {
                 this.dom.app = document.getElementById('app');
                 this.dom.main = document.querySelector('main');
                 this.dom.views = document.querySelectorAll('.view');
                 this.dom.navButtons = document.querySelectorAll('.nav-tab-btn');
-                
+               
                 // Lock Screen
                 this.dom.lock = {
                     screen: document.getElementById('lockScreen'),
@@ -969,7 +918,7 @@
                     dots: document.querySelectorAll('.pin-dot'),
                     keypad: document.querySelector('#lockScreen .grid')
                 };
-                
+               
                 // Login View
                 this.dom.login = {
                     view: document.getElementById('loginView'),
@@ -984,7 +933,6 @@
                     backToLoginOptionsBtn: document.getElementById('backToLoginOptionsBtn'),
                     authError: document.getElementById('authError')
                 };
-
                 // Modals
                 this.dom.onboarding = {
                     modal: document.getElementById('onboardingModal'),
@@ -1007,7 +955,7 @@
                     icon: document.getElementById('alert-icon'),
                     message: document.getElementById('alert-message')
                 };
-                
+               
                 // Dashboard
                 this.dom.dashboard = {
                     preview: document.getElementById('dashboardPreview'),
@@ -1019,7 +967,7 @@
                     startGratitudeBtn: document.getElementById('startGratitudeBtn'),
                     navToPrivacyBtn: document.getElementById('navToPrivacyBtn')
                 };
-                
+               
                 // Check-in (Warning)
                 this.dom.warn = {
                     title: document.getElementById('categoryTitle'),
@@ -1031,7 +979,7 @@
                     progressText: document.getElementById('progressText'),
                     btnContainer: document.getElementById('checkinButtonContainer')
                 };
-                
+               
                 // Check-in (Positive)
                 this.dom.positive = {
                     title: document.getElementById('positiveCategoryTitle'),
@@ -1043,7 +991,7 @@
                     progressText: document.getElementById('positiveProgressText'),
                     btnContainer: document.getElementById('positiveCheckinButtonContainer')
                 };
-                
+               
                 // Sabbath
                 this.dom.sabbath = {
                     title: document.getElementById('sabbathCategoryTitle'),
@@ -1060,7 +1008,7 @@
                     pastContainer: document.getElementById('pastSabbathContainer'),
                     backToSabbathCheckinBtn: document.getElementById('backToSabbathCheckinBtn')
                 };
-                
+               
                 // Gratitude
                 this.dom.gratitude = {
                     notes: document.getElementById('gratitudeEntryArea'),
@@ -1069,7 +1017,7 @@
                     pastContainer: document.getElementById('pastGratitudeContainer'),
                     backToGratitudeBtn: document.getElementById('backToGratitudeBtn')
                 };
-                
+               
                 // Rule of Life
                 this.dom.rule = {
                     editBtn: document.getElementById('editRuleBtn'),
@@ -1096,7 +1044,6 @@
                     backToRuleOfLifeBtn: document.getElementById('backToRuleOfLifeBtn'),
                     backToRuleOfLifeBtn2: document.getElementById('backToRuleOfLifeBtn2')
                 };
-
                 // Summary & Notes
                 this.dom.summary = {
                     content: document.getElementById('summaryContent'),
@@ -1110,7 +1057,7 @@
                     dateText: document.getElementById('notesForDateText'),
                     backBtn: document.getElementById('backToSummaryFromNotesBtn')
                 };
-                
+               
                 // Trends
                 this.dom.trends = {
                     chart: document.getElementById('wellbeingChart'),
@@ -1119,7 +1066,7 @@
                     toggleAllBtn: document.getElementById('trendsToggleAll'),
                     correlationsContainer: document.getElementById('correlationsContainer')
                 };
-                
+               
                 // Resources
                 this.dom.resources = {
                     editBtn: document.getElementById('editResourcesBtn'),
@@ -1143,7 +1090,6 @@
                         other: document.getElementById('editOther')
                     }
                 };
-
                 // Settings
                 this.dom.settings = {
                     syncLoading: document.getElementById('syncStatusLoading'),
@@ -1159,65 +1105,72 @@
                     clearDataBtn: document.getElementById('clearDataBtn'),
                     rawDataDisplay: document.getElementById('rawDataDisplay')
                 };
+               
+                // FIX: Add null checks for all cached elements
+                Object.values(this.dom).forEach(group => {
+                    if (typeof group === 'object') {
+                        Object.entries(group).forEach(([key, el]) => {
+                            if (!el && key !== 'charts') { // Charts are null initially
+                                console.error(`Missing DOM element: ${key}`);
+                            }
+                        });
+                    }
+                });
             },
-            
+           
             // --- UI Module (MERGED & FIXED) ---
             ui: {
                 init: function() {
                     // This function is for listeners *inside* modals
                     const { onboarding, prompt } = App.dom;
-                    
+                   
                     // Onboarding
                     onboarding.nextBtn.addEventListener('click', () => this.updateOnboardingStep(1));
                     onboarding.prevBtn.addEventListener('click', () => this.updateOnboardingStep(-1));
                     onboarding.finishBtn.addEventListener('click', () => this.finishOnboarding());
-
                     // General Prompt Modal
                     prompt.modal.addEventListener('click', (e) => {
                         if (e.target === prompt.modal) this.hideModal();
                     });
                     prompt.closeBtn.addEventListener('click', () => this.hideModal());
                 },
-                
+               
                 updateOnboardingStep: function(direction) {
                     const { onboarding } = App.dom;
                     const totalSteps = onboarding.steps.length;
                     let currentStep = App.state.ui.currentOnboardingStep;
-                    
+                   
                     currentStep += direction;
                     if (currentStep < 1) currentStep = 1;
                     if (currentStep > totalSteps) currentStep = totalSteps;
                     App.state.ui.currentOnboardingStep = currentStep;
-
                     onboarding.steps.forEach((step, index) => {
                         step.style.display = (index + 1 === currentStep) ? 'block' : 'none';
                     });
-                    
+                   
                     onboarding.stepIndicator.textContent = `Step ${currentStep} of ${totalSteps}`;
                     onboarding.prevBtn.style.display = (currentStep > 1) ? 'inline-block' : 'none';
                     onboarding.nextBtn.style.display = (currentStep < totalSteps) ? 'inline-block' : 'none';
                     onboarding.finishBtn.style.display = (currentStep === totalSteps) ? 'inline-block' : 'none';
                 },
-                
+               
                 finishOnboarding: function() {
                     localStorage.setItem('hauoraOnboardComplete', 'true');
                     App.dom.onboarding.modal.classList.remove('visible');
                     setTimeout(() => App.dom.onboarding.modal.style.display = 'none', 300);
                 },
-
                 showAlert: function(message, type = 'info', duration = 3000) {
                     const { alert } = App.dom;
                     if (!alert || !alert.box || !alert.content || !alert.message) {
                         console.error("Alert DOM elements not found! Message:", message);
                         return;
                     }
-
                     if (App.state.ui.alertTimeout) {
                         clearTimeout(App.state.ui.alertTimeout);
                     }
-                    
+                   
                     alert.message.textContent = message;
-                    
+                   
                     alert.content.classList.remove('bg-green-600', 'bg-red-600', 'bg-indigo-600');
                     if (type === 'success') {
                         alert.content.classList.add('bg-green-600');
@@ -1229,25 +1182,22 @@
                         alert.content.classList.add('bg-indigo-600');
                         alert.icon.innerHTML = `<svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm-1-9a1 1 0 112 0v4a1 1 0 11-2 0V9zm1-4a1 1 0 100 2 1 1 0 000-2z" clip-rule="evenodd"></path></svg>`;
                     }
-                    
+                   
                     alert.box.classList.add('show');
-
                     App.state.ui.alertTimeout = setTimeout(() => {
                         alert.box.classList.remove('show');
                         App.state.ui.alertTimeout = null;
                     }, duration);
                 },
-
                 showModal: function(title, message) {
                     const { prompt } = App.dom;
                     prompt.title.textContent = title;
                     prompt.message.innerHTML = message.replace(/\n/g, '<br>');
                     prompt.modal.style.display = 'flex';
-                    
+                   
                     setTimeout(() => {
                         prompt.modal.classList.add('visible');
                     }, 10);
-
                     // Reset buttons to default
                     prompt.buttons.innerHTML = '';
                     const closeBtn = document.createElement('button');
@@ -1257,7 +1207,7 @@
                     closeBtn.onclick = () => this.hideModal();
                     prompt.buttons.appendChild(closeBtn);
                 },
-                
+               
                 hideModal: function() {
                     const { prompt } = App.dom;
                     prompt.modal.classList.remove('visible');
@@ -1265,46 +1215,44 @@
                         prompt.modal.style.display = 'none';
                     }, 200);
                 },
-                
+               
                 addModalButton: function(text, type, onClick) {
                     const { prompt } = App.dom;
                     const btn = document.createElement('button');
                     btn.textContent = text;
-                    const typeClass = type === 'danger' 
-                        ? 'bg-red-600 text-white hover:bg-red-700 focus:ring-red-500' 
+                    const typeClass = type === 'danger'
+                        ? 'bg-red-600 text-white hover:bg-red-700 focus:ring-red-500'
                         : 'bg-white text-slate-700 border border-slate-300 hover:bg-slate-50 focus:ring-indigo-500';
                     btn.className = `px-4 py-2 rounded-lg shadow-md font-semibold transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 ${typeClass}`;
                     btn.onclick = () => {
                         onClick();
                         this.hideModal();
                     };
-                    
+                   
                     const defaultBtn = document.getElementById('closePromptModalBtn');
                     if (defaultBtn) {
                         defaultBtn.textContent = "Cancel";
                         defaultBtn.className = 'px-4 py-2 rounded-lg shadow-md font-semibold transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 bg-white text-slate-700 border border-slate-300 hover:bg-slate-50 focus:ring-indigo-500';
                     }
-                    
+                   
                     prompt.buttons.prepend(btn);
                 },
-
                 // --- Functions moved from the smaller (Part 2) UI module ---
                 renderDashboardPreview: function() {
                     const { dashboard } = App.dom;
                     const { checkinHistory, ruleOfLife } = App.state.data;
-
                     if (checkinHistory.length > 0) {
                         const lastEntry = checkinHistory[checkinHistory.length - 1];
                         // FIX: Call the calculateTotals function from the now-existing moduleCheckin
-                        const totals = App.moduleCheckin.calculateTotals(lastEntry); 
-                        
+                        const totals = App.moduleCheckin.calculateTotals(lastEntry);
+                       
                         const totalSigns = totals.warning + totals.positive;
                         const warningPercent = totalSigns === 0 ? 0 : (totals.warning / totalSigns) * 100;
                         const positivePercent = totalSigns === 0 ? 0 : (totals.positive / totalSigns) * 100;
-                        
+                       
                         const d = App.util.parseDateString(lastEntry.date);
                         const dateStr = d ? d.toLocaleDateString('en-NZ', { day: 'numeric', month: 'short' }) : 'Last Entry';
-                        
+                       
                         dashboard.preview.innerHTML = `
                             <p class="text-sm text-slate-600 mb-2">Your last check-in (${dateStr}):</p>
                             <div class="flex w-full h-6 rounded-full overflow-hidden bg-gray-200">
@@ -1319,11 +1267,9 @@
                         `;
                         // Re-add listener as innerHTML was replaced
                         document.getElementById('dashboardViewSummaryBtn').onclick = () => App.navigation.navigateTo('summaryViewLast');
-
                     } else {
                         dashboard.preview.innerHTML = '<p class="text-slate-500 italic">You haven\'t completed a check-in yet. Start one below!</p>';
                     }
-
                     const intentions = (ruleOfLife && ruleOfLife.intentions) ? ruleOfLife.intentions.filter(i => i) : [];
                     if (intentions.length > 0) {
                         dashboard.rulePreview.innerHTML = `
@@ -1334,7 +1280,6 @@
                         dashboard.rulePreview.innerHTML = '<p class="text-slate-500 italic">You haven\'t set your intentions yet. Tap "My Rule of Life" to begin.</p>';
                     }
                 },
-
                 // Helper to prevent XSS
                 escapeHTML: function(str) {
                     if (typeof str !== 'string') return '';
@@ -1349,7 +1294,6 @@
                     });
                 }
             }, // End of App.ui
-
             // --- Navigation Module (MERGED) ---
             navigation: {
                 init: function() {
@@ -1362,35 +1306,34 @@
                         });
                     });
                 },
-                
+               
                 navigateTo: function(viewId, params = {}) {
                     const { dom, state } = App;
                     dom.views.forEach(view => view.classList.remove('active-view'));
-                    
+                   
                     let targetViewId = viewId;
                     state.ui.currentSummaryIndex = -1; // Reset summary index by default
-                    dom.summary.backToTrendsBtn.style.display = 'none'; 
-
-                    if (viewId === 'summaryViewLast') { 
+                    dom.summary.backToTrendsBtn.style.display = 'none';
+                    if (viewId === 'summaryViewLast') {
                         const history = state.data.checkinHistory;
                         if (history.length > 0) {
                             state.ui.currentSummaryIndex = history.length - 1;
                             App.moduleCheckin.renderSummary(history[state.ui.currentSummaryIndex]);
                             targetViewId = 'summaryView';
                         } else {
-                            targetViewId = 'welcomeView'; 
+                            targetViewId = 'welcomeView';
                             App.ui.renderDashboardPreview(); // Re-render dashboard
                             App.ui.showAlert("No Summary Yet. Please complete a check-in.", "info");
                         }
-                    } else if (viewId === 'summaryView' && typeof params.entryIndex !== 'undefined') { 
+                    } else if (viewId === 'summaryView' && typeof params.entryIndex !== 'undefined') {
                         const history = state.data.checkinHistory;
                         state.ui.currentSummaryIndex = params.entryIndex;
                         if (history[state.ui.currentSummaryIndex]) {
                             App.moduleCheckin.renderSummary(history[state.ui.currentSummaryIndex]);
-                            dom.summary.backToTrendsBtn.style.display = 'block'; 
+                            dom.summary.backToTrendsBtn.style.display = 'block';
                         } else {
                             console.error("Historical entry not found for index:", params.entryIndex);
-                            targetViewId = 'trendsView'; 
+                            targetViewId = 'trendsView';
                         }
                     } else if (viewId === 'notesView') {
                         const history = state.data.checkinHistory;
@@ -1415,25 +1358,25 @@
                         App.moduleRule.renderRule('read');
                     } else if (viewId === 'ruleOfLifeCheckinView') {
                         App.moduleRule.loadChecklist();
-                    } else if (viewId === 'pastRuleOfLifeView') { 
+                    } else if (viewId === 'pastRuleOfLifeView') {
                         App.moduleRule.renderPast();
                         App.moduleRule.renderTrends();
-                    } else if (viewId === 'welcomeView') { 
+                    } else if (viewId === 'welcomeView') {
                         App.ui.renderDashboardPreview();
                     } else if (viewId === 'settingsView') {
                         App.auth.updateSyncStatusUI();
                     }
-                    
+                   
                     const targetViewEl = document.getElementById(targetViewId);
                     if (targetViewEl) {
                         targetViewEl.classList.add('active-view');
                         state.ui.currentView = targetViewId;
                     } else {
                         console.error("Target view not found:", targetViewId);
-                        document.getElementById('welcomeView').classList.add('active-view'); 
+                        document.getElementById('welcomeView').classList.add('active-view');
                         state.ui.currentView = 'welcomeView';
                     }
-                    
+                   
                     dom.navButtons.forEach(btn => {
                         const btnView = btn.dataset.view;
                         if (btnView === state.ui.currentView || (viewId === 'summaryViewLast' && btnView === 'summaryView')) {
@@ -1442,16 +1385,13 @@
                             btn.classList.remove('active');
                         }
                     });
-
                     dom.main.scrollTop = 0;
-
                     if (targetViewId === 'trendsView') {
                         App.moduleTrends.renderTrends();
-                        App.moduleTrends.renderCorrelations(); 
+                        App.moduleTrends.renderCorrelations();
                     }
                 }
             }, // End of App.navigation
-
             // --- Utility Module ---
             util: {
                 getTodayDate: function() {
@@ -1464,19 +1404,19 @@
                 },
                 parseDateString: function(dateString) {
                     if (!dateString || !/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
-                        console.warn("Invalid date string format for parsing:", dateString); 
-                        return null; 
+                        console.warn("Invalid date string format for parsing:", dateString);
+                        return null;
                     }
                     // Fix for Safari/iOS date parsing: replace '-' with '/'
                     const safeDateString = dateString.replace(/-/g, '/');
                     const d = new Date(safeDateString);
-                    
+                   
                     // Check if the date is valid
                     if (isNaN(d.getTime())) {
-                         console.warn("Invalid date constructed:", safeDateString); 
+                         console.warn("Invalid date constructed:", safeDateString);
                          return null;
                     }
-                    
+                   
                     return d;
                 },
                 bufferToHex: function(buffer) {
@@ -1497,32 +1437,31 @@
                     return this.bufferToHex(array);
                 }
             },
-            
-            // --- 
+           
+            // ---
             // START OF NEW/RECREATED MODULES
             // ---
-
             // --- Check-in Module (NEW) ---
             moduleCheckin: {
                 // Called by Dashboard
                 calculateTotals: function(entry) {
                     const totals = { warning: 0, positive: 0, sabbath: 0 };
                     if (entry) {
-                        if (entry.warn) totals.warning = Object.values(entry.warn).reduce((acc, val) => acc + val.length, 0);
-                        if (entry.pos) totals.positive = Object.values(entry.pos).reduce((acc, val) => acc + val.length, 0);
-                        if (entry.sab) totals.sabbath = Object.values(entry.sab).reduce((acc, val) => acc + val.length, 0);
+                        // FIX: Added guards for missing properties
+                        if (entry.warn && typeof entry.warn === 'object') totals.warning = Object.values(entry.warn).reduce((acc, val) => acc + (Array.isArray(val) ? val.length : 0), 0);
+                        if (entry.pos && typeof entry.pos === 'object') totals.positive = Object.values(entry.pos).reduce((acc, val) => acc + (Array.isArray(val) ? val.length : 0), 0);
+                        if (entry.sab && typeof entry.sab === 'object') totals.sabbath = Object.values(entry.sab).reduce((acc, val) => acc + (Array.isArray(val) ? val.length : 0), 0);
                     }
                     return totals;
                 },
-                
+               
                 // --- Warning Signs ---
                 renderCategory: function(type, categoryIndex) {
                     const { config, dom, state } = App;
                     const { warn, positive } = dom;
-                    
+                   
                     let data, container, titleEl, progress, progressText, btnContainer, finishBtn, prevBtn, nextBtn;
                     let categoryOrder, categoryNames, stateKey, cssClass;
-
                     if (type === 'warn') {
                         data = config.warningSigns;
                         categoryOrder = config.categoryOrder;
@@ -1552,18 +1491,15 @@
                         nextBtn = positive.nextBtn;
                         cssClass = 'pos';
                     }
-
                     const categoryKey = categoryOrder[categoryIndex];
                     const questions = data[categoryKey];
                     const categoryName = categoryNames[categoryKey];
-
                     titleEl.textContent = categoryName;
                     container.innerHTML = '';
-                    
+                   
                     const today = App.util.getTodayDate();
                     const todayEntry = App.state.data.checkinHistory.find(e => e.date === today) || {};
                     const selected = (todayEntry[type] && todayEntry[type][categoryKey]) ? todayEntry[type][categoryKey] : [];
-
                     questions.forEach((q, index) => {
                         const qId = `${type}-${categoryKey}-${index}`;
                         const isSelected = selected.includes(q);
@@ -1573,86 +1509,83 @@
                             </button>
                         `;
                     });
-                    
+                   
                     // Add listeners to new buttons
                     container.querySelectorAll('.btn-choice').forEach(btn => {
                         btn.addEventListener('click', (e) => {
                             e.currentTarget.classList.toggle('active');
                         });
                     });
-
                     // Update progress
                     const totalCategories = categoryOrder.length;
                     progress.value = ((categoryIndex + 1) / totalCategories) * 100;
                     progressText.textContent = `Category ${categoryIndex + 1} of ${totalCategories}`;
-                    
+                   
                     // Update buttons
                     prevBtn.style.display = (categoryIndex > 0) ? 'inline-block' : 'none';
                     nextBtn.style.display = (categoryIndex < totalCategories - 1) ? 'inline-block' : 'none';
                     finishBtn.style.display = (categoryIndex === totalCategories - 1) ? 'inline-block' : 'none';
                 },
-
                 navigateCategory: function(type, direction) {
                     const stateKey = (type === 'warn') ? 'currentWarningCategory' : 'currentPositiveCategory';
                     const categoryOrder = (type === 'warn') ? App.config.categoryOrder : App.config.positiveCategoryOrder;
-                    
+                   
                     this.saveCategory(type); // Save current answers before moving
-                    
+                   
                     let newIndex = App.state.ui[stateKey] + direction;
                     if (newIndex >= 0 && newIndex < categoryOrder.length) {
                         App.state.ui[stateKey] = newIndex;
                         this.renderCategory(type, newIndex);
                     }
                 },
-                
+               
                 saveCategory: function(type) {
                     const stateKey = (type === 'warn') ? 'currentWarningCategory' : 'currentPositiveCategory';
                     const categoryKey = (type === 'warn') ? App.config.categoryOrder[App.state.ui[stateKey]] : App.config.positiveCategoryOrder[App.state.ui[stateKey]];
                     const container = (type === 'warn') ? App.dom.warn.container : App.dom.positive.container;
-                    
+                   
                     const today = App.util.getTodayDate();
                     let todayEntry = App.state.data.checkinHistory.find(e => e.date === today);
                     if (!todayEntry) {
                         todayEntry = { date: today, warn: {}, pos: {}, sab: {}, notes: '' };
                         App.state.data.checkinHistory.push(todayEntry);
                     }
-                    
+                   
                     if (!todayEntry[type]) todayEntry[type] = {};
-                    
+                   
                     const selected = Array.from(container.querySelectorAll('.btn-choice.active'))
                                           .map(btn => btn.dataset.question);
                     todayEntry[type][categoryKey] = selected;
                 },
-                
+               
                 finishCheckin: async function(type) {
                     this.saveCategory(type); // Save the last category
-                    
+                   
                     const today = App.util.getTodayDate();
                     const todayEntry = App.state.data.checkinHistory.find(e => e.date === today);
-                    
+                   
                     if (todayEntry) {
                         await App.storage.saveEntry(App.config.STORES.CHECKIN, todayEntry);
                     }
-                    
+                   
                     App.ui.showAlert("Check-in saved!", "success");
                     App.navigation.navigateTo('summaryViewLast');
                 },
-                
+               
                 renderSummary: function(entry) {
                     if (!entry) {
                         console.error("No entry provided to renderSummary");
                         return;
                     }
-
                     const { dom, config, ui } = App;
                     const { summary, notes } = dom;
                     const d = App.util.parseDateString(entry.date);
                     const dateStr = d ? d.toLocaleDateString('en-NZ', { day: '2-digit', month: 'short', year: 'numeric' }) : "Summary";
-                    
+                   
                     App.state.ui.currentNotesIndex = App.state.data.checkinHistory.findIndex(e => e.date === entry.date);
-                    
+                   
                     let content = `<h3 class="text-xl font-semibold text-indigo-800">${dateStr}</h3>`;
-                    
+                   
                     // Warning Signs
                     content += `<h4 class="text-lg font-semibold text-slate-700 mt-4">Warning Signs</h4>`;
                     let warnHtml = '';
@@ -1667,7 +1600,7 @@
                         });
                     }
                     content += warnHtml || `<p class="text-sm text-slate-500 italic">No warning signs selected.</p>`;
-                    
+                   
                     // Positive Signs
                     content += `<h4 class="text-lg font-semibold text-slate-700 mt-4">Positive Signs</h4>`;
                     let posHtml = '';
@@ -1682,7 +1615,7 @@
                         });
                     }
                     content += posHtml || `<p class="text-sm text-slate-500 italic">No positive signs selected.</p>`;
-                    
+                   
                     // Sabbath
                     const sabbathEntry = App.state.data.sabbathHistory.find(e => e.date === entry.date);
                     if (sabbathEntry) {
@@ -1703,14 +1636,14 @@
                             content += `<strong class="text-sm text-violet-700">Sabbath Notes:</strong><div class="notes-display !bg-violet-50 !border-violet-200">${ui.escapeHTML(sabbathEntry.notes)}</div>`;
                         }
                     }
-                    
+                   
                     // Gratitude
                     const gratitudeEntry = App.state.data.gratitudeHistory.find(e => e.date === entry.date);
                     if (gratitudeEntry) {
                         content += `<h4 class="text-lg font-semibold text-slate-700 mt-4">Gratitude</h4>
                                     <div class="entry-display">${ui.escapeHTML(gratitudeEntry.notes)}</div>`;
                     }
-                    
+                   
                     // Personal Notes
                     content += `<h4 class="text-lg font-semibold text-slate-700 mt-4">Personal Notes</h4>`;
                     if (entry.notes) {
@@ -1718,13 +1651,19 @@
                     } else {
                         content += `<p class="text-sm text-slate-500 italic">No personal notes for this day.</p>`;
                     }
-                    
+                   
                     summary.content.innerHTML = content;
-                    
-                    // TODO: Add prompt logic
-                    summary.prompt.style.display = 'none';
+                   
+                    // FIX: Added basic prompt logic
+                    const totals = this.calculateTotals(entry);
+                    if (totals.warning > 5) {
+                        summary.prompt.innerHTML = 'You have a high number of warning signs. Consider reaching out to support resources.';
+                        summary.prompt.style.display = 'block';
+                    } else {
+                        summary.prompt.style.display = 'none';
+                    }
                 },
-                
+               
                 saveNotes: async function() {
                     const { dom, state } = App;
                     const entry = state.data.checkinHistory[state.ui.currentNotesIndex];
@@ -1736,7 +1675,7 @@
                     }
                 }
             }, // End moduleCheckin
-            
+           
             // --- Gratitude Module (NEW) ---
             moduleGratitude: {
                 loadForToday: function() {
@@ -1744,38 +1683,38 @@
                     const entry = App.state.data.gratitudeHistory.find(e => e.date === today);
                     App.dom.gratitude.notes.value = entry ? entry.notes : '';
                 },
-                
+               
                 save: async function() {
                     const { dom, state } = App;
                     const today = App.util.getTodayDate();
                     let entry = state.data.gratitudeHistory.find(e => e.date === today);
-                    
+                   
                     if (!entry) {
                         entry = { date: today };
                         state.data.gratitudeHistory.push(entry);
                     }
-                    
+                   
                     entry.notes = dom.gratitude.notes.value;
-                    
+                   
                     if (!entry.notes.trim()) {
                         App.ui.showAlert("Please write something you're grateful for.", "info");
                         return;
                     }
-                    
+                   
                     await App.storage.saveEntry(App.config.STORES.GRATITUDE, entry);
                     App.ui.showAlert("Gratitude entry saved!", "success");
                     App.navigation.navigateTo('welcomeView');
                 },
-                
+               
                 renderPast: function() {
                     const { dom, state, ui } = App;
                     const history = [...state.data.gratitudeHistory].sort((a, b) => b.date.localeCompare(a.date));
-                    
+                   
                     if (history.length === 0) {
                         dom.gratitude.pastContainer.innerHTML = '<p class="text-slate-500 italic">No past gratitude entries found.</p>';
                         return;
                     }
-                    
+                   
                     dom.gratitude.pastContainer.innerHTML = history.map(entry => {
                         const d = App.util.parseDateString(entry.date);
                         const dateStr = d ? d.toLocaleDateString('en-NZ', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) : entry.date;
@@ -1788,28 +1727,25 @@
                     }).join('');
                 }
             }, // End moduleGratitude
-            
+           
             // --- Sabbath Module (NEW) ---
             moduleSabbath: {
                 renderCategory: function(categoryIndex) {
                     const { config, dom, state, ui } = App;
                     const { sabbath } = dom;
-
                     const categoryOrder = config.sabbathCategoryOrder;
                     const categoryNames = config.sabbathCategoryDisplayNames;
                     const data = config.sabbathSigns;
-                    
+                   
                     const categoryKey = categoryOrder[categoryIndex];
                     const questions = data[categoryKey];
                     const categoryName = categoryNames[categoryKey];
-
                     sabbath.title.textContent = categoryName;
                     sabbath.container.innerHTML = '';
-                    
+                   
                     const date = sabbath.dateInput.value || App.util.getTodayDate();
                     const entry = App.state.data.sabbathHistory.find(e => e.date === date) || {};
                     const selected = (entry.sab && entry.sab[categoryKey]) ? entry.sab[categoryKey] : [];
-
                     questions.forEach((q, index) => {
                         const qId = `sab-${categoryKey}-${index}`;
                         const isSelected = selected.includes(q);
@@ -1819,20 +1755,19 @@
                             </button>
                         `;
                     });
-                    
+                   
                     sabbath.container.querySelectorAll('.btn-choice').forEach(btn => {
                         btn.addEventListener('click', (e) => e.currentTarget.classList.toggle('active'));
                     });
-
                     const totalCategories = categoryOrder.length;
                     sabbath.progress.value = ((categoryIndex + 1) / totalCategories) * 100;
                     sabbath.progressText.textContent = `Category ${categoryIndex + 1} of ${totalCategories}`;
-                    
+                   
                     sabbath.prevBtn.style.display = (categoryIndex > 0) ? 'inline-block' : 'none';
                     sabbath.nextBtn.style.display = (categoryIndex < totalCategories - 1) ? 'inline-block' : 'none';
                     sabbath.finishBtn.style.display = (categoryIndex === totalCategories - 1) ? 'inline-block' : 'none';
                 },
-                
+               
                 navigateCategory: function(direction) {
                     this.saveCategory(); // Save current
                     let newIndex = App.state.ui.currentSabbathCategory + direction;
@@ -1841,34 +1776,33 @@
                         this.renderCategory(newIndex);
                     }
                 },
-
                 saveCategory: function() {
                     const { dom, state, config } = App;
                     const { sabbath } = dom;
                     const categoryKey = config.sabbathCategoryOrder[state.ui.currentSabbathCategory];
-                    
+                   
                     const date = sabbath.dateInput.value || App.util.getTodayDate();
                     let entry = state.data.sabbathHistory.find(e => e.date === date);
                     if (!entry) {
                         entry = { date: date, sab: {}, notes: '' };
                         state.data.sabbathHistory.push(entry);
                     }
-                    
+                   
                     if (!entry.sab) entry.sab = {};
-                    
+                   
                     const selected = Array.from(sabbath.container.querySelectorAll('.btn-choice.active'))
                                           .map(btn => btn.dataset.question);
                     entry.sab[categoryKey] = selected;
                     entry.notes = sabbath.notes.value; // Also save notes
                 },
-                
+               
                 finish: async function() {
                     this.saveCategory(); // Save last category
-                    
+                   
                     const { dom, state, config } = App;
                     const date = dom.sabbath.dateInput.value;
                     const entry = state.data.sabbathHistory.find(e => e.date === date);
-                    
+                   
                     if (entry) {
                         await App.storage.saveEntry(config.STORES.SABBATH, entry);
                         App.ui.showAlert("Sabbath reflection saved!", "success");
@@ -1877,32 +1811,31 @@
                         App.ui.showAlert("Error: Could not find entry to save.", "error");
                     }
                 },
-                
+               
                 loadForDate: function(dateStr = null) {
                     const { dom, state } = App;
                     const date = dateStr || App.util.getTodayDate();
                     dom.sabbath.dateInput.value = date;
-                    
+                   
                     const entry = state.data.sabbathHistory.find(e => e.date === date);
                     dom.sabbath.notes.value = entry ? entry.notes : '';
-                    
+                   
                     state.ui.currentSabbathCategory = 0;
                     this.renderCategory(0);
                 },
-
                 renderPast: function() {
                     const { dom, state, ui } = App;
                     const history = [...state.data.sabbathHistory].sort((a, b) => b.date.localeCompare(a.date));
-                    
+                   
                     if (history.length === 0) {
                         dom.sabbath.pastContainer.innerHTML = '<p class="text-slate-500 italic">No past Sabbath reflections found.</p>';
                         return;
                     }
-                    
+                   
                     dom.sabbath.pastContainer.innerHTML = history.map(entry => {
                         const d = App.util.parseDateString(entry.date);
                         const dateStr = d ? d.toLocaleDateString('en-NZ', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) : entry.date;
-                        
+                       
                         let sabHtml = '';
                         if (entry.sab) {
                              App.config.sabbathCategoryOrder.forEach(key => {
@@ -1914,7 +1847,7 @@
                                 }
                             });
                         }
-                        
+                       
                         return `
                             <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
                                 <h3 class="font-semibold text-violet-800">${dateStr}</h3>
@@ -1925,20 +1858,19 @@
                     }).join('');
                 }
             }, // End moduleSabbath
-            
+           
             // --- Rule of Life Module (NEW) ---
             moduleRule: {
                 renderRule: function(mode) {
                     const { dom, state, ui } = App;
                     const { rule } = dom;
                     const intentions = state.data.ruleOfLife.intentions || [];
-
                     if (mode === 'read') {
                         rule.readView.style.display = 'block';
                         rule.editView.style.display = 'none';
                         rule.editBtn.style.display = 'inline-block';
                         rule.saveBtn.style.display = 'none';
-                        
+                       
                         const filledIntentions = intentions.filter(i => i && i.trim() !== '');
                         if (filledIntentions.length > 0) {
                             rule.readList.innerHTML = filledIntentions.map(i => `<li>${ui.escapeHTML(i)}</li>`).join('');
@@ -1950,99 +1882,98 @@
                         rule.editView.style.display = 'block';
                         rule.editBtn.style.display = 'none';
                         rule.saveBtn.style.display = 'inline-block';
-                        
+                       
                         rule.inputs.forEach((input, index) => {
                             input.value = intentions[index] || '';
                         });
                     }
                 },
-                
+               
                 saveRule: async function() {
                     const { dom, state, config } = App;
                     const intentions = dom.rule.inputs.map(input => input.value.trim());
                     state.data.ruleOfLife.intentions = intentions;
-                    
+                   
                     await App.storage.saveAppState('ruleOfLife', state.data.ruleOfLife);
                     if (state.storageDriver === 'firestore') {
                         const docRef = doc(state.fb.db, `artifacts/${state.appId}/users/${state.userId}/data`, 'ruleOfLife');
                         await App.Firebase.setDoc(docRef, { data: await App.storage.encrypt(state.data.ruleOfLife) });
                     }
-                    
+                   
                     App.ui.showAlert("Rule of Life saved!", "success");
                     this.renderRule('read');
                     App.ui.renderDashboardPreview(); // Update dashboard
                 },
-                
+               
                 loadChecklist: function() {
                     const { dom, state, ui } = App;
                     const { rule } = dom;
                     const intentions = state.data.ruleOfLife.intentions || [];
                     const filledIntentions = intentions.filter(i => i && i.trim() !== '');
-
                     rule.checkinDate.value = App.util.getTodayDate();
-                    
+                   
                     if (filledIntentions.length === 0) {
                         rule.checklistContainer.innerHTML = '<p class="text-slate-500 italic">Please set your "Rule of Life" intentions first.</p>';
                         return;
                     }
-                    
+                   
                     rule.checklistContainer.innerHTML = filledIntentions.map((intention, index) => `
                         <label for="rule-check-${index}" class="flex items-center p-3 bg-white rounded-lg shadow-sm border border-slate-200">
                             <input type="checkbox" id="rule-check-${index}" data-intention="${ui.escapeHTML(intention)}" class="h-5 w-5 rounded border-gray-300 text-teal-600 focus:ring-teal-500">
                             <span class="ml-3 text-slate-700">${ui.escapeHTML(intention)}</span>
                         </label>
                     `).join('');
-                    
+                   
                     rule.checkinNotes.value = '';
                 },
-                
+               
                 saveChecklist: async function() {
                     const { dom, state, config, ui } = App;
                     const { rule } = dom;
-                    
+                   
                     const date = rule.checkinDate.value;
                     if (!date) {
                         ui.showAlert("Please select a date.", "info");
                         return;
                     }
-                    
+                   
                     const checkedIntentions = Array.from(rule.checklistContainer.querySelectorAll('input[type="checkbox"]:checked'))
                                                    .map(cb => cb.dataset.intention);
-                    
+                   
                     const allIntentions = Array.from(rule.checklistContainer.querySelectorAll('input[type="checkbox"]'))
                                                .map(cb => cb.dataset.intention);
-                                               
+                                              
                     const notes = rule.checkinNotes.value;
-                    
+                   
                     let entry = state.data.ruleOfLifeHistory.find(e => e.date === date);
                     if (!entry) {
                         entry = { date };
                         state.data.ruleOfLifeHistory.push(entry);
                     }
-                    
+                   
                     entry.checked = checkedIntentions;
                     entry.total = allIntentions.length;
                     entry.notes = notes;
-                    
+                   
                     await App.storage.saveEntry(config.STORES.RULE_HISTORY, entry);
                     ui.showAlert("Reflection saved!", "success");
                     App.navigation.navigateTo('pastRuleOfLifeView');
                 },
-                
+               
                 renderPast: function() {
                     const { dom, state, ui } = App;
                     const history = [...state.data.ruleOfLifeHistory].sort((a, b) => b.date.localeCompare(a.date));
-                    
+                   
                     if (history.length === 0) {
                         dom.rule.pastContainer.innerHTML = '<p class="text-slate-500 italic">No past reflections found.</p>';
                         return;
                     }
-                    
+                   
                     dom.rule.pastContainer.innerHTML = history.map(entry => {
                         const d = App.util.parseDateString(entry.date);
                         const dateStr = d ? d.toLocaleDateString('en-NZ', { day: 'numeric', month: 'long', year: 'numeric' }) : entry.date;
                         const score = entry.total > 0 ? `${entry.checked.length} / ${entry.total}` : `N/A`;
-                        
+                       
                         return `
                             <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
                                 <h3 class="font-semibold text-teal-800">${dateStr}</h3>
@@ -2052,28 +1983,28 @@
                         `;
                     }).join('');
                 },
-                
+               
                 renderTrends: function() {
                     const { dom, state, ui } = App;
                     const history = [...state.data.ruleOfLifeHistory].sort((a, b) => a.date.localeCompare(b.date));
-                    
+                   
                     if (ui.charts.rule) {
                         ui.charts.rule.destroy();
                     }
-                    
+                   
                     if (history.length === 0) {
                         dom.rule.chartEmpty.style.display = 'block';
                         return;
                     }
-                    
+                   
                     dom.rule.chartEmpty.style.display = 'none';
-                    
+                   
                     const labels = history.map(e => {
                         const d = App.util.parseDateString(e.date);
                         return d ? d.toLocaleDateString('en-NZ', { day: 'numeric', month: 'short' }) : e.date;
                     });
                     const data = history.map(e => e.total > 0 ? (e.checked.length / e.total) * 100 : 0);
-                    
+                   
                     ui.charts.rule = new Chart(dom.rule.chart.getContext('2d'), {
                         type: 'line',
                         data: {
@@ -2101,35 +2032,33 @@
                     });
                 }
             }, // End moduleRule
-            
+           
             // --- Trends Module (NEW) ---
             moduleTrends: {
                 renderTrends: function() {
                     const { dom, state, ui } = App;
                     const view = state.ui.currentTrendView;
                     let history = [...state.data.checkinHistory].sort((a, b) => a.date.localeCompare(b.date));
-                    
+                   
                     if (view === 'recent' && history.length > 12) {
                         history = history.slice(-12);
                     }
-                    
+                   
                     if (ui.charts.trends) {
                         ui.charts.trends.destroy();
                     }
-
                     if (history.length === 0) {
                         dom.trends.chartEmpty.style.display = 'block';
                         return;
                     }
                     dom.trends.chartEmpty.style.display = 'none';
-
                     const labels = history.map(e => {
                         const d = App.util.parseDateString(e.date);
                         return d ? d.toLocaleDateString('en-NZ', { day: 'numeric', month: 'short' }) : e.date;
                     });
-                    
+                   
                     const totals = history.map(e => App.moduleCheckin.calculateTotals(e));
-                    
+                   
                     ui.charts.trends = new Chart(dom.trends.chart.getContext('2d'), {
                         type: 'bar',
                         data: {
@@ -2166,12 +2095,12 @@
                         }
                     });
                 },
-                
+               
                 renderCorrelations: function() {
                     // This is a placeholder for a more complex analysis
                     App.dom.trends.correlationsContainer.innerHTML = '<p class="text-slate-500 italic text-center">Complete a few more weekly check-ins to unlock wellbeing insights.</p>';
                 },
-                
+               
                 toggleTrendView: function(view) {
                     App.state.ui.currentTrendView = view;
                     App.dom.trends.toggleRecentBtn.classList.toggle('active', view === 'recent');
@@ -2179,20 +2108,20 @@
                     this.renderTrends();
                 }
             }, // End moduleTrends
-            
+           
             // --- Resources Module (NEW) ---
             moduleResources: {
                 render: function(mode) {
                     const { dom, state } = App;
                     const { resources } = dom;
                     const data = state.data.userResources;
-                    
+                   
                     if (mode === 'read') {
                         resources.readView.style.display = 'block';
                         resources.editView.style.display = 'none';
                         resources.editBtn.style.display = 'inline-block';
                         resources.saveBtn.style.display = 'none';
-                        
+                       
                         Object.keys(resources.readSpans).forEach(key => {
                             const span = resources.readSpans[key];
                             const value = data[key];
@@ -2209,44 +2138,44 @@
                         resources.editView.style.display = 'block';
                         resources.editBtn.style.display = 'none';
                         resources.saveBtn.style.display = 'inline-block';
-                        
+                       
                         Object.keys(resources.editInputs).forEach(key => {
                             resources.editInputs[key].value = data[key] || '';
                         });
                     }
                 },
-                
+               
                 save: async function() {
                     const { dom, state, config } = App;
                     const { resources } = dom;
-                    
+                   
                     Object.keys(resources.editInputs).forEach(key => {
                         state.data.userResources[key] = resources.editInputs[key].value.trim();
                     });
-                    
+                   
                     await App.storage.saveAppState('userResources', state.data.userResources);
                     if (state.storageDriver === 'firestore') {
                         const docRef = doc(state.fb.db, `artifacts/${state.appId}/users/${state.userId}/data`, 'userResources');
                         await App.Firebase.setDoc(docRef, { data: await App.storage.encrypt(state.data.userResources) });
                     }
-                    
+                   
                     App.ui.showAlert("Resources saved!", "success");
                     this.render('read');
                 }
             }, // End moduleResources
-            
+           
             // --- Handlers Module (NEW) ---
             handlers: {
                 init: function() {
                     console.log("Initializing handlers...");
                     const { dom } = App;
-                    
+                   
                     // --- Lock Screen ---
                     dom.lock.keypad.addEventListener('click', (e) => {
                         const key = e.target.closest('.numpad-btn')?.dataset.key;
                         if (key) App.pin.onKeyPress(key);
                     });
-                    
+                   
                     // --- Login View ---
                     dom.login.signInGoogleBtn.addEventListener('click', () => App.auth.signInWithGoogle());
                     dom.login.showEmailLoginBtn.addEventListener('click', () => App.auth.showEmailLogin(true));
@@ -2254,7 +2183,7 @@
                     dom.login.emailLoginBtn.addEventListener('click', () => App.auth.signInWithEmail());
                     dom.login.emailSignUpBtn.addEventListener('click', () => App.auth.signUpWithEmail());
                     dom.login.backToLoginOptionsBtn.addEventListener('click', () => App.auth.showEmailLogin(false));
-                    
+                   
                     // --- Dashboard ---
                     dom.dashboard.startWarningBtn.addEventListener('click', () => {
                         App.state.ui.currentWarningCategory = 0;
@@ -2270,17 +2199,15 @@
                     dom.dashboard.startRuleBtn.addEventListener('click', () => App.navigation.navigateTo('ruleOfLifeView'));
                     dom.dashboard.startGratitudeBtn.addEventListener('click', () => App.navigation.navigateTo('gratitudeView'));
                     dom.dashboard.navToPrivacyBtn.addEventListener('click', () => App.navigation.navigateTo('privacyView'));
-
                     // --- Warning Check-in ---
                     dom.warn.prevBtn.addEventListener('click', () => App.moduleCheckin.navigateCategory('warn', -1));
                     dom.warn.nextBtn.addEventListener('click', () => App.moduleCheckin.navigateCategory('warn', 1));
                     dom.warn.finishBtn.addEventListener('click', () => App.moduleCheckin.finishCheckin('warn'));
-
                     // --- Positive Check-in ---
                     dom.positive.prevBtn.addEventListener('click', () => App.moduleCheckin.navigateCategory('pos', -1));
                     dom.positive.nextBtn.addEventListener('click', () => App.moduleCheckin.navigateCategory('pos', 1));
                     dom.positive.finishBtn.addEventListener('click', () => App.moduleCheckin.finishCheckin('pos'));
-                    
+                   
                     // --- Sabbath ---
                     dom.sabbath.dateInput.addEventListener('change', () => App.moduleSabbath.loadForDate(dom.sabbath.dateInput.value));
                     dom.sabbath.prevBtn.addEventListener('click', () => App.moduleSabbath.navigateCategory(-1));
@@ -2288,12 +2215,12 @@
                     dom.sabbath.finishBtn.addEventListener('click', () => App.moduleSabbath.finish());
                     dom.sabbath.viewPastBtn.addEventListener('click', () => App.navigation.navigateTo('pastSabbathView'));
                     dom.sabbath.backToSabbathCheckinBtn.addEventListener('click', () => App.navigation.navigateTo('sabbathCheckinView'));
-                    
+                   
                     // --- Gratitude ---
                     dom.gratitude.saveBtn.addEventListener('click', () => App.moduleGratitude.save());
                     dom.gratitude.viewPastBtn.addEventListener('click', () => App.navigation.navigateTo('pastGratitudeView'));
                     dom.gratitude.backToGratitudeBtn.addEventListener('click', () => App.navigation.navigateTo('gratitudeView'));
-                    
+                   
                     // --- Rule of Life ---
                     dom.rule.editBtn.addEventListener('click', () => App.moduleRule.renderRule('edit'));
                     dom.rule.saveBtn.addEventListener('click', () => App.moduleRule.saveRule());
@@ -2302,184 +2229,7 @@
                     dom.rule.saveCheckinBtn.addEventListener('click', () => App.moduleRule.saveChecklist());
                     dom.rule.backToRuleOfLifeBtn.addEventListener('click', () => App.navigation.navigateTo('ruleOfLifeView'));
                     dom.rule.backToRuleOfLifeBtn2.addEventListener('click', () => App.navigation.navigateTo('ruleOfLifeView'));
-
                     // --- Summary & Notes ---
                     dom.summary.backToTrendsBtn.addEventListener('click', () => App.navigation.navigateTo('trendsView'));
                     dom.summary.addNotesBtn.addEventListener('click', () => App.navigation.navigateTo('notesView'));
-                    dom.notes.saveBtn.addEventListener('click', () => App.moduleCheckin.saveNotes());
-                    dom.notes.backBtn.addEventListener('click', () => App.navigation.navigateTo('summaryView', { entryIndex: App.state.ui.currentNotesIndex }));
-
-                    // --- Trends ---
-                    dom.trends.toggleRecentBtn.addEventListener('click', () => App.moduleTrends.toggleTrendView('recent'));
-                    dom.trends.toggleAllBtn.addEventListener('click', () => App.moduleTrends.toggleTrendView('all'));
-                    
-                    // --- Resources ---
-                    dom.resources.editBtn.addEventListener('click', () => App.moduleResources.render('edit'));
-                    dom.resources.saveBtn.addEventListener('click', () => App.moduleResources.save());
-                    
-                    // --- Settings ---
-                    dom.settings.signInToSyncBtn.addEventListener('click', () => App.auth.showLogin());
-                    dom.settings.signOutBtn.addEventListener('click', () => App.auth.signOut());
-                    dom.settings.changePinBtn.addEventListener('click', () => App.pin.startChangePin());
-                    dom.settings.exportBtn.addEventListener('click', () => App.storage.exportData());
-                    dom.settings.importInput.addEventListener('change', (e) => App.storage.importData(e));
-                    dom.settings.viewDataBtn.addEventListener('click', () => App.storage.toggleViewRawData());
-                    dom.settings.clearDataBtn.addEventListener('click', () => App.storage.confirmClearAllData());
-                }
-            }, // End handlers
-            
-            // --- 
-            // END OF NEW/RECREATED MODULES
-            // ---
-
-            // --- Expose Firebase modules to the App (used by Auth module) ---
-            Firebase: {
-                initializeApp, getAuth, signInAnonymously, signInWithCustomToken, 
-                onAuthStateChanged, GoogleAuthProvider, 
-                signInWithRedirect, getRedirectResult, 
-                createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut,
-                getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, onSnapshot, 
-                collection, query, writeBatch, setLogLevel, enableNetwork, disableNetwork, getDocs,
-                setPersistence, browserLocalPersistence // <-- Added for persistence
-            },
-
-            // --- Storage & Crypto Module ---
-            storage: {
-                initDB: async function() {
-                    const { DB_NAME, DB_VERSION, STORES } = App.config;
-                    // Updated Schema to use separate object stores
-                    return await idb.openDB(DB_NAME, DB_VERSION, {
-                        upgrade(db, oldVersion) {
-                            if (oldVersion < 1) {
-                                db.createObjectStore(STORES.APP_STATE, { keyPath: 'id' });
-                                db.createObjectStore(STORES.CHECKIN, { keyPath: 'date' });
-                                db.createObjectStore(STORES.GRATITUDE, { keyPath: 'date' });
-                                db.createObjectStore(STORES.SABBATH, { keyPath: 'date' });
-                                db.createObjectStore(STORES.RULE_HISTORY, { keyPath: 'date' });
-                            }
-                        },
-                    });
-                },
-
-                deriveKey: async function(pin, saltHex) {
-                    try {
-                        const salt = App.util.hexToBuffer(saltHex);
-                        const encoder = new TextEncoder();
-                        const keyMaterial = await window.crypto.subtle.importKey(
-                            'raw', encoder.encode(pin), { name: 'PBKDF2' }, false, ['deriveKey']
-                        );
-                        return await window.crypto.subtle.deriveKey(
-                            { name: 'PBKDF2', salt, iterations: 100000, hash: 'SHA-256' },
-                            keyMaterial,
-                            { name: 'AES-GCM', length: 256 },
-                            false, // not extractable
-                            ['encrypt', 'decrypt']
-                        );
-                    } catch (e) { console.error("Key derivation failed:", e); return null; }
-                },
-
-                encrypt: async function(data) {
-                    const key = App.state.pin.encryptionKey;
-                    if (!key) throw new Error("Encryption key not available.");
-                    try {
-                        const iv = window.crypto.getRandomValues(new Uint8Array(12));
-                        const dataBuffer = new TextEncoder().encode(JSON.stringify(data));
-                        const encryptedBuffer = await window.crypto.subtle.encrypt(
-                            { name: 'AES-GCM', iv }, key, dataBuffer
-                        );
-                        return {
-                            iv: App.util.bufferToHex(iv),
-                            data: App.util.bufferToHex(encryptedBuffer)
-                        };
-                    } catch (e) { console.error("Encryption failed:", e); throw new Error("Could not encrypt data."); }
-                },
-                
-                decrypt: async function(encryptedObject) {
-                    const key = App.state.pin.encryptionKey;
-                    if (!key) throw new Error("Encryption key not available for decryption.");
-                    try {
-                        const iv = App.util.hexToBuffer(encryptedObject.iv);
-                        const data = App.util.hexToBuffer(encryptedObject.data);
-                        const decryptedBuffer = await window.crypto.subtle.decrypt(
-                            { name: 'AES-GCM', iv }, key, data
-                        );
-                        return JSON.parse(new TextDecoder().decode(decryptedBuffer));
-                    } catch (e) {
-                        console.error("Decryption failed (Wrong PIN or corrupt data):", e);
-                        return null; // Return null to handle gracefully
-                    }
-                },
-                
-                // --- Save/Load an ENTIRE store ---
-                saveStore: async function(storeName, dataArray) {
-                    try {
-                        const db = App.state.db;
-                        const tx = db.transaction(storeName, 'readwrite');
-                        await tx.objectStore(storeName).clear();
-                        for (const item of dataArray) {
-                            const encryptedData = await this.encrypt(item);
-                            // Use the date as the key
-                            await tx.objectStore(storeName).put({ [tx.objectStore(storeName).keyPath]: item.date, data: encryptedData });
-                        }
-                        await tx.done;
-                        console.log(`Store ${storeName} saved.`);
-                    } catch (e) {
-                        console.error(`Error saving store ${storeName}:`, e);
-                        App.ui.showAlert(`Could not save ${storeName}.`, "error");
-                    }
-                },
-
-                // --- Save/Load a SINGLE appState item ---
-                saveAppState: async function(id, data) {
-                     try {
-                        const db = App.state.db;
-                        // FIX: The pin/salt should NOT be encrypted.
-                        // We store 'value' directly for unencrypted pin info.
-                        if (id === 'securitySalt' || id === 'securityHash') {
-                            await db.put(App.config.STORES.APP_STATE, { id: id, value: data });
-                        } else {
-                            // Encrypt all other app state data
-                            const encryptedData = await this.encrypt(data);
-                            await db.put(App.config.STORES.APP_STATE, { id: id, data: encryptedData });
-                        }
-                        console.log(`AppState item saved: ${id}`);
-                     } catch (error) {
-                        console.error(`Error saving app state ${id}:`, error);
-                        App.ui.showAlert("Save Error", "Could not save app settings.");
-                     }
-                },
-                
-                // --- Unified Save/Load/Merge ---
-                saveEntry: async function(storeName, entry) {
-                    // Saves a single entry (checkin, gratitude, etc.)
-                    try {
-                        const encryptedData = await this.encrypt(entry);
-                        await App.state.db.put(storeName, { [App.state.db.objectStore(storeName).keyPath]: entry.date, data: encryptedData });
-                        
-                        if (App.state.storageDriver === 'firestore') {
-                            const docRef = doc(App.state.fb.db, `artifacts/${App.state.appId}/users/${App.state.userId}/data`, `${storeName}_${entry.date}`);
-                            await App.Firebase.setDoc(docRef, { data: encryptedData });
-                        }
-                    } catch (e) {
-                        console.error(`Error saving ${storeName} entry:`, e);
-                        App.ui.showAlert(`Could not save entry to ${storeName}.`, "error");
-                    }
-                },
-                
-                loadAllHistory: async function() {
-                    if (App.state.storageDriver === 'firestore') {
-                        console.log("Loading from Firestore...");
-                        await this.firestoreLoadAll();
-                    } else {
-                        console.log("Loading from Local...");
-                        await this.localLoadAll();
-                    }
-                },
-                
-                localLoadAll: async function() {
-                    const db = App.state.db;
-                    const { STORES } = App.config;
-                    const data = {};
-                    
-                    try {
-                        data.checkinHistory = (await Promise.all((await db.getAll(STORES.CHECKIN)).map
+                    dom.notes.saveBtn.addEventListener('click', ()
