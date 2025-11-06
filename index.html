@@ -7,12 +7,10 @@
     
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#4F46E5"> <!-- Indigo 600 -->
-    <link rel="apple-touch-icon" href="https://loneworkernelson-web.github.io/ClergyWB/Toku%20Haura.png">
+    <!-- FIX: Corrected typo from 'Haura' to 'Hauora' -->
+    <link rel="apple-touch-icon" href="https://loneworkernelson-web.github.io/ClergyWB/Toku%20Hauora.png">
 
-    <!-- 
-      We are now using the reliable Tailwind CDN.
-      The 'tailwind.css' file is NO LONGER NEEDED.
-    -->
+    <!-- Tailwind CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     
     <!-- External JS Libraries -->
@@ -24,16 +22,15 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js" type="module"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js" type="module"></script>
 
-    <!-- Your Firebase Config (MUST be loaded before the app script) -->
-    <script src="config.js"></script>
+    <!-- 
+      REMOVED: <script src="config.js"></script>
+      This file doesn't exist. The app uses the global __firebase_config variable injected by the environment.
+    -->
 
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     
     <style>
-        /*
-          Base layout styles.
-          All component styles are now provided by the Tailwind CDN link above.
-        */
+        /* Base layout styles */
         html, body {
             height: 100%; 
             overflow: hidden; 
@@ -44,8 +41,8 @@
         }
         
         #app {
-             height: 100%;
-             display: flex; 
+            height: 100%;
+            display: flex; 
         }
         
         #lockScreen {
@@ -189,11 +186,9 @@
 
         /* Nav Bar tabs */
         .nav-tab-btn {
-            /* FIX: Set text color to white/light for readability on dark background */
             @apply flex-1 flex flex-col items-center justify-center p-3 text-indigo-200 hover:bg-indigo-700 transition-colors;
         }
         .nav-tab-btn.active {
-            /* FIX: Make active state brighter and clearer */
             @apply text-white bg-indigo-800;
         }
         
@@ -249,7 +244,10 @@
                 <div class="w-16 h-16 sm:w-20 sm:h-20"></div> <!-- Placeholder -->
                 <button class="numpad-btn" data-key="0">0</button>
                 <button class="numpad-btn flex items-center justify-center" data-key="del">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9.75L14.25 12m0 0l2.25 2.25M14.25 12l2.25-2.25M14.25 12L12 14.25m-2.58 4.92l-6.375-6.375a1.125 1.125 0 010-1.59L9.42 4.83c.39-.39 1.023-.39 1.414 0l4.242 4.242a.375.375 0 00.53 0l4.242-4.242c.39-.39 1.023-.39 1.414 0l1.59 1.59a1.125 1.125 0 010 1.59l-6.375 6.375a.675.675 0 01-.954 0z" /></svg>
+                    <!-- FIX: Replaced malformed SVG path with a standard 'backspace' icon -->
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 14l-4-4m0 4l4-4M18 6H6a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V8a2 2 0 00-2-2z" />
+                    </svg>
                 </button>
             </div>
         </div>
@@ -257,7 +255,8 @@
     <!-- End of Lock Screen -->
 
     <!-- Login View (for optional cloud sync) -->
-    <div id="loginView" class="view fixed inset-0 z-1000 bg-slate-50 flex items-center justify-center p-4">
+    <!-- FIX: Replaced invalid 'z-1000' with valid Tailwind class 'z-50' -->
+    <div id="loginView" class="view fixed inset-0 z-50 bg-slate-50 flex items-center justify-center p-4">
         <div class="bg-white p-8 rounded-xl shadow-2xl max-w-md w-full text-center">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-16 h-16 text-indigo-600 mx-auto mb-4">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v-3m0 3h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
@@ -375,7 +374,7 @@
                  <div class="mt-4 text-center">
                     <progress id="checkinProgress" value="0" max="100" class="w-full h-2 rounded-full overflow-hidden [&::-webkit-progress-bar]:bg-slate-200 [&::-webkit-progress-value]:bg-indigo-600"></progress>
                     <p id="progressText" class="text-sm text-slate-500 mt-1"></p>
-                </div>
+                 </div>
             </div>
 
             <!-- Positive Signs Check-in View -->
@@ -392,7 +391,7 @@
                  <div class="mt-4 text-center">
                     <progress id="positiveCheckinProgress" value="0" max="100" class="w-full h-2 rounded-full overflow-hidden [&::-webkit-progress-bar]:bg-slate-200 [&::-webkit-progress-value]:bg-emerald-600"></progress>
                     <p id="positiveProgressText" class="text-sm text-slate-500 mt-1"></p>
-                </div>
+                 </div>
             </div>
 
             <!-- Sabbath Check-in View -->
@@ -418,7 +417,7 @@
                  <div class="mt-4 text-center">
                     <progress id="sabbathCheckinProgress" value="0" max="100" class="w-full h-2 rounded-full overflow-hidden [&::-webkit-progress-bar]:bg-slate-200 [&::-webkit-progress-value]:bg-violet-600"></progress>
                     <p id="sabbathProgressText" class="text-sm text-slate-500 mt-1"></p>
-                </div>
+                 </div>
                 <button id="viewPastSabbathBtn" class="px-4 py-2 rounded-lg shadow-md font-semibold transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 bg-white text-slate-700 border border-slate-300 hover:bg-slate-50 focus:ring-indigo-500 w-full mt-4">View Past Sabbath Reflections</button>
             </div>
 
@@ -650,7 +649,7 @@
                     <p><strong>Your Privacy is Paramount.</strong></p>
                     <p>This "Tōku Hauora" app is designed with your privacy as its core principle.</p>
                     <ul class="list-disc list-inside space-y-1 mt-2">
-                        <li><strong>Client-Side Encryption:</strong> All data you enter (check-ins, notes, trends) is **encrypted** using your PIN *before* it is saved.</li>
+                        <li><strong>Client-Side Encryption:</strong> All data you enter (check-ins, notes, trends) is <strong>encrypted</strong> using your PIN *before* it is saved.</li>
                         <li><strong>Local-First Storage:</strong> Your encrypted data is stored *exclusively* on your device within this web browser's private database (`IndexedDB`).</li>
                         <li><strong>Zero Knowledge:</strong> Your unencrypted data is never sent to any server, and no one (not even the app's creator) can read it without your PIN. Your PIN is never stored directly.</li>
                         <li><strong>Optional Cloud Sync:</strong> If you choose to sign in, your *already encrypted* data is synced to a private cloud database. No one, not even Google, can read this data.</li>
@@ -712,7 +711,7 @@
 
         </main>
 
-        <!-- Bottom Navigation Bar - FIX: Corrected text color and active state -->
+        <!-- Bottom Navigation Bar -->
         <nav class="bg-indigo-600 flex sticky bottom-0 shadow-inner border-t border-indigo-700">
             <button id="navHomeBtn" class="nav-tab-btn active" data-view="welcomeView">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 mx-auto"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" /></svg>
@@ -790,7 +789,8 @@
                 <h3 id="promptModalTitle" class="text-2xl font-semibold text-indigo-800">Wellbeing Reflection</h3>
                 <p id="promptModalMessage" class="text-slate-700"></p>
                 <div id="promptModalButtons" class="flex justify-end space-x-3">
-                    <button id="closePromptModalBtn" class_commented_out="btn btn-primary" class="px-4 py-2 rounded-lg shadow-md font-semibold transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 bg-indigo-600 text-white hover:bg-indigo-700 focus:ring-indigo-500">Okay, I Understand</button>
+                    <!-- FIX: Removed invalid 'class_commented_out' and added valid 'class' -->
+                    <button id="closePromptModalBtn" class="px-4 py-2 rounded-lg shadow-md font-semibold transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 bg-indigo-600 text-white hover:bg-indigo-700 focus:ring-indigo-500">Okay, I Understand</button>
                 </div>
             </div>
         </div>
@@ -800,12 +800,12 @@
              <div id="alert-content" class="p-4 rounded-lg shadow-xl text-white font-medium flex items-center space-x-3">
                 <svg id="alert-icon" class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm-1-9a1 1 0 112 0v4a1 1 0 11-2 0V9zm1-4a1 1 0 100 2 1 1 0 000-2z" clip-rule="evenodd"></path></svg>
                 <span id="alert-message">This is an alert</span>
-            </div>
+             </div>
         </div>
 
-    </div>
-// **************************************************************************************** PART 2 **************************************************************************
-<!-- 
+    </div> <!-- End #app -->
+
+    <!-- 
     ================================================================
     APP JAVASCRIPT
     ================================================================
@@ -823,7 +823,9 @@
             getRedirectResult,
             createUserWithEmailAndPassword,
             signInWithEmailAndPassword,
-            signOut
+            signOut,
+            setPersistence, // <-- Added for persistence
+            browserLocalPersistence // <-- Added for persistence
         } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
         import { 
             getFirestore, 
@@ -896,7 +898,8 @@
             config: {
                 warningSigns: {
                     emotional: ["Loss of joy or satisfaction in ministry", "Increased irritability, impatience, or anger", "Cynicism, negativity, or disillusionment about ministry or the Church", "Feeling emotionally exhausted, overwhelmed, or \"numb\"", "Increased anxiety or feelings of dread related to work", "Heightened sensitivity to criticism", "Feelings of failure, inadequacy, or guilt"],
-                    mentalCognitive: ["Difficulty concentrating or making decisions", "Forgetfulness", "Constant rumination about work problems, even during time off", "Loss of creativity or motivation", "A sennse that you are never \"not working\" mentally"],
+                    // FIX: Corrected typo "sennse" to "sense"
+                    mentalCognitive: ["Difficulty concentrating or making decisions", "Forgetfulness", "Constant rumination about work problems, even during time off", "Loss of creativity or motivation", "A sense that you are never \"not working\" mentally"],
                     physical: ["Persistent fatigue, exhaustion, or low energy", "Changes in sleep patterns (insomnia, oversleeping)", "Headaches, muscle tension, or other physical ailments", "Changes in appetite or weight", "Increased susceptibility to illness"],
                     spiritual: ["Feeling disconnected from God or your faith", "Finding prayer or spiritual practices a burden rather than a source of strength", "Loss of meaning or purpose in your ministry", "Questioning your calling"],
                     behaviouralRelational: ["Withdrawal from colleagues, friends, or family", "Increased conflict in relationships", "Neglecting personal needs or hobbies", "Increased use of alcohol, medication, or other coping mechanisms (e.g., overeating, excessive screen time, escapist behaviours)", "Procrastination or avoidance of tasks", "Working longer hours but feeling less effective", "Reduced empathy or compassion for others (depersonalisation)"]
@@ -938,7 +941,6 @@
                 
                 DB_NAME: 'TokuHauoraDB_v2', // New DB name for encrypted store
                 DB_VERSION: 1,
-                // New, safer DB structure
                 STORES: {
                     APP_STATE: 'appState', // For PIN, rule, resources
                     CHECKIN: 'checkinHistory',
@@ -1075,7 +1077,13 @@
                     readView: document.getElementById('ruleOfLifeReadView'),
                     editView: document.getElementById('ruleOfLifeEditView'),
                     readList: document.getElementById('ruleOfLifeReadList'),
-                    inputs: document.querySelectorAll('#ruleOfLifeEditView input'),
+                    inputs: [ // Get inputs by ID
+                        document.getElementById('ruleIntention1'),
+                        document.getElementById('ruleIntention2'),
+                        document.getElementById('ruleIntention3'),
+                        document.getElementById('ruleIntention4'),
+                        document.getElementById('ruleIntention5')
+                    ],
                     startCheckinBtn: document.getElementById('startRuleOfLifeCheckinBtn'),
                     viewPastBtn: document.getElementById('viewPastRuleOfLifeBtn'),
                     checkinDate: document.getElementById('ruleOfLifeCheckinDate'),
@@ -1153,8 +1161,50 @@
                 };
             },
             
-            // --- UI & Navigation Module ---
+            // --- UI Module (MERGED & FIXED) ---
             ui: {
+                init: function() {
+                    // This function is for listeners *inside* modals
+                    const { onboarding, prompt } = App.dom;
+                    
+                    // Onboarding
+                    onboarding.nextBtn.addEventListener('click', () => this.updateOnboardingStep(1));
+                    onboarding.prevBtn.addEventListener('click', () => this.updateOnboardingStep(-1));
+                    onboarding.finishBtn.addEventListener('click', () => this.finishOnboarding());
+
+                    // General Prompt Modal
+                    prompt.modal.addEventListener('click', (e) => {
+                        if (e.target === prompt.modal) this.hideModal();
+                    });
+                    prompt.closeBtn.addEventListener('click', () => this.hideModal());
+                },
+                
+                updateOnboardingStep: function(direction) {
+                    const { onboarding } = App.dom;
+                    const totalSteps = onboarding.steps.length;
+                    let currentStep = App.state.ui.currentOnboardingStep;
+                    
+                    currentStep += direction;
+                    if (currentStep < 1) currentStep = 1;
+                    if (currentStep > totalSteps) currentStep = totalSteps;
+                    App.state.ui.currentOnboardingStep = currentStep;
+
+                    onboarding.steps.forEach((step, index) => {
+                        step.style.display = (index + 1 === currentStep) ? 'block' : 'none';
+                    });
+                    
+                    onboarding.stepIndicator.textContent = `Step ${currentStep} of ${totalSteps}`;
+                    onboarding.prevBtn.style.display = (currentStep > 1) ? 'inline-block' : 'none';
+                    onboarding.nextBtn.style.display = (currentStep < totalSteps) ? 'inline-block' : 'none';
+                    onboarding.finishBtn.style.display = (currentStep === totalSteps) ? 'inline-block' : 'none';
+                },
+                
+                finishOnboarding: function() {
+                    localStorage.setItem('hauoraOnboardComplete', 'true');
+                    App.dom.onboarding.modal.classList.remove('visible');
+                    setTimeout(() => App.dom.onboarding.modal.style.display = 'none', 300);
+                },
+
                 showAlert: function(message, type = 'info', duration = 3000) {
                     const { alert } = App.dom;
                     if (!alert || !alert.box || !alert.content || !alert.message) {
@@ -1198,6 +1248,7 @@
                         prompt.modal.classList.add('visible');
                     }, 10);
 
+                    // Reset buttons to default
                     prompt.buttons.innerHTML = '';
                     const closeBtn = document.createElement('button');
                     closeBtn.id = 'closePromptModalBtn';
@@ -1236,34 +1287,16 @@
                     
                     prompt.buttons.prepend(btn);
                 },
-                
-                updateOnboardingStep: function(direction) {
-                    const { onboarding } = App.dom;
-                    const totalSteps = onboarding.steps.length;
-                    let currentStep = App.state.ui.currentOnboardingStep;
-                    
-                    currentStep += direction;
-                    if (currentStep < 1) currentStep = 1;
-                    if (currentStep > totalSteps) currentStep = totalSteps;
-                    App.state.ui.currentOnboardingStep = currentStep;
 
-                    onboarding.steps.forEach((step, index) => {
-                        step.style.display = (index + 1 === currentStep) ? 'block' : 'none';
-                    });
-                    
-                    onboarding.stepIndicator.textContent = `Step ${currentStep} of ${totalSteps}`;
-                    onboarding.prevBtn.style.display = (currentStep > 1) ? 'inline-block' : 'none';
-                    onboarding.nextBtn.style.display = (currentStep < totalSteps) ? 'inline-block' : 'none';
-                    onboarding.finishBtn.style.display = (currentStep === totalSteps) ? 'inline-block' : 'none';
-                },
-                
+                // --- Functions moved from the smaller (Part 2) UI module ---
                 renderDashboardPreview: function() {
                     const { dashboard } = App.dom;
                     const { checkinHistory, ruleOfLife } = App.state.data;
 
                     if (checkinHistory.length > 0) {
                         const lastEntry = checkinHistory[checkinHistory.length - 1];
-                        const totals = App.moduleCheckin.calculateTotals(lastEntry);
+                        // FIX: Call the calculateTotals function from the now-existing moduleCheckin
+                        const totals = App.moduleCheckin.calculateTotals(lastEntry); 
                         
                         const totalSigns = totals.warning + totals.positive;
                         const warningPercent = totalSigns === 0 ? 0 : (totals.warning / totalSigns) * 100;
@@ -1284,6 +1317,7 @@
                             </div>
                             <button id="dashboardViewSummaryBtn" class="text-indigo-600 hover:text-indigo-700 hover:underline cursor-pointer text-sm font-medium mt-3">View Full Summary</button>
                         `;
+                        // Re-add listener as innerHTML was replaced
                         document.getElementById('dashboardViewSummaryBtn').onclick = () => App.navigation.navigateTo('summaryViewLast');
 
                     } else {
@@ -1300,6 +1334,7 @@
                         dashboard.rulePreview.innerHTML = '<p class="text-slate-500 italic">You haven\'t set your intentions yet. Tap "My Rule of Life" to begin.</p>';
                     }
                 },
+
                 // Helper to prevent XSS
                 escapeHTML: function(str) {
                     if (typeof str !== 'string') return '';
@@ -1313,10 +1348,21 @@
                         }[m];
                     });
                 }
-            },
+            }, // End of App.ui
 
-            // --- Navigation Module ---
+            // --- Navigation Module (MERGED) ---
             navigation: {
+                init: function() {
+                    // --- Bottom Nav Bar ---
+                    App.dom.navButtons.forEach(link => {
+                        link.addEventListener('click', (e) => {
+                            e.preventDefault();
+                            const targetView = link.dataset.view;
+                            this.navigateTo(targetView);
+                        });
+                    });
+                },
+                
                 navigateTo: function(viewId, params = {}) {
                     const { dom, state } = App;
                     dom.views.forEach(view => view.classList.remove('active-view'));
@@ -1348,6 +1394,7 @@
                         }
                     } else if (viewId === 'notesView') {
                         const history = state.data.checkinHistory;
+                        // Use currentNotesIndex, which should be set by renderSummary
                         if (state.ui.currentNotesIndex !== -1 && history[state.ui.currentNotesIndex]) {
                             const entry = history[state.ui.currentNotesIndex];
                             dom.notes.notes.value = entry.notes || '';
@@ -1359,7 +1406,7 @@
                     } else if (viewId === 'pastGratitudeView') {
                         App.moduleGratitude.renderPast();
                     } else if (viewId === 'sabbathCheckinView') {
-                        App.moduleSabbath.loadForDate();
+                        App.moduleSabbath.loadForDate(); // Loads today by default
                     } else if (viewId === 'pastSabbathView') {
                         App.moduleSabbath.renderPast();
                     } else if (viewId === 'resourcesView') {
@@ -1403,10 +1450,18 @@
                         App.moduleTrends.renderCorrelations(); 
                     }
                 }
-            },
+            }, // End of App.navigation
 
             // --- Utility Module ---
             util: {
+                getTodayDate: function() {
+                    // Returns YYYY-MM-DD
+                    const d = new Date();
+                    const year = d.getFullYear();
+                    const month = (d.getMonth() + 1).toString().padStart(2, '0');
+                    const day = d.getDate().toString().padStart(2, '0');
+                    return `${year}-${month}-${day}`;
+                },
                 parseDateString: function(dateString) {
                     if (!dateString || !/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
                         console.warn("Invalid date string format for parsing:", dateString); 
@@ -1442,26 +1497,853 @@
                     return this.bufferToHex(array);
                 }
             },
+            
+            // --- 
+            // START OF NEW/RECREATED MODULES
+            // ---
+
+            // --- Check-in Module (NEW) ---
+            moduleCheckin: {
+                // Called by Dashboard
+                calculateTotals: function(entry) {
+                    const totals = { warning: 0, positive: 0, sabbath: 0 };
+                    if (entry) {
+                        if (entry.warn) totals.warning = Object.values(entry.warn).reduce((acc, val) => acc + val.length, 0);
+                        if (entry.pos) totals.positive = Object.values(entry.pos).reduce((acc, val) => acc + val.length, 0);
+                        if (entry.sab) totals.sabbath = Object.values(entry.sab).reduce((acc, val) => acc + val.length, 0);
+                    }
+                    return totals;
+                },
+                
+                // --- Warning Signs ---
+                renderCategory: function(type, categoryIndex) {
+                    const { config, dom, state } = App;
+                    const { warn, positive } = dom;
+                    
+                    let data, container, titleEl, progress, progressText, btnContainer, finishBtn, prevBtn, nextBtn;
+                    let categoryOrder, categoryNames, stateKey, cssClass;
+
+                    if (type === 'warn') {
+                        data = config.warningSigns;
+                        categoryOrder = config.categoryOrder;
+                        categoryNames = config.categoryDisplayNames;
+                        stateKey = 'currentWarningCategory';
+                        container = warn.container;
+                        titleEl = warn.title;
+                        progress = warn.progress;
+                        progressText = warn.progressText;
+                        btnContainer = warn.btnContainer;
+                        finishBtn = warn.finishBtn;
+                        prevBtn = warn.prevBtn;
+                        nextBtn = warn.nextBtn;
+                        cssClass = 'warn';
+                    } else { // 'pos'
+                        data = config.positiveSigns;
+                        categoryOrder = config.positiveCategoryOrder;
+                        categoryNames = config.positiveCategoryDisplayNames;
+                        stateKey = 'currentPositiveCategory';
+                        container = positive.container;
+                        titleEl = positive.title;
+                        progress = positive.progress;
+                        progressText = positive.progressText;
+                        btnContainer = positive.btnContainer;
+                        finishBtn = positive.finishBtn;
+                        prevBtn = positive.prevBtn;
+                        nextBtn = positive.nextBtn;
+                        cssClass = 'pos';
+                    }
+
+                    const categoryKey = categoryOrder[categoryIndex];
+                    const questions = data[categoryKey];
+                    const categoryName = categoryNames[categoryKey];
+
+                    titleEl.textContent = categoryName;
+                    container.innerHTML = '';
+                    
+                    const today = App.util.getTodayDate();
+                    const todayEntry = App.state.data.checkinHistory.find(e => e.date === today) || {};
+                    const selected = (todayEntry[type] && todayEntry[type][categoryKey]) ? todayEntry[type][categoryKey] : [];
+
+                    questions.forEach((q, index) => {
+                        const qId = `${type}-${categoryKey}-${index}`;
+                        const isSelected = selected.includes(q);
+                        container.innerHTML += `
+                            <button id="${qId}" data-question="${App.ui.escapeHTML(q)}" data-category="${categoryKey}" class="btn-choice checkin-btn-${cssClass} ${isSelected ? 'active' : ''}">
+                                ${App.ui.escapeHTML(q)}
+                            </button>
+                        `;
+                    });
+                    
+                    // Add listeners to new buttons
+                    container.querySelectorAll('.btn-choice').forEach(btn => {
+                        btn.addEventListener('click', (e) => {
+                            e.currentTarget.classList.toggle('active');
+                        });
+                    });
+
+                    // Update progress
+                    const totalCategories = categoryOrder.length;
+                    progress.value = ((categoryIndex + 1) / totalCategories) * 100;
+                    progressText.textContent = `Category ${categoryIndex + 1} of ${totalCategories}`;
+                    
+                    // Update buttons
+                    prevBtn.style.display = (categoryIndex > 0) ? 'inline-block' : 'none';
+                    nextBtn.style.display = (categoryIndex < totalCategories - 1) ? 'inline-block' : 'none';
+                    finishBtn.style.display = (categoryIndex === totalCategories - 1) ? 'inline-block' : 'none';
+                },
+
+                navigateCategory: function(type, direction) {
+                    const stateKey = (type === 'warn') ? 'currentWarningCategory' : 'currentPositiveCategory';
+                    const categoryOrder = (type === 'warn') ? App.config.categoryOrder : App.config.positiveCategoryOrder;
+                    
+                    this.saveCategory(type); // Save current answers before moving
+                    
+                    let newIndex = App.state.ui[stateKey] + direction;
+                    if (newIndex >= 0 && newIndex < categoryOrder.length) {
+                        App.state.ui[stateKey] = newIndex;
+                        this.renderCategory(type, newIndex);
+                    }
+                },
+                
+                saveCategory: function(type) {
+                    const stateKey = (type === 'warn') ? 'currentWarningCategory' : 'currentPositiveCategory';
+                    const categoryKey = (type === 'warn') ? App.config.categoryOrder[App.state.ui[stateKey]] : App.config.positiveCategoryOrder[App.state.ui[stateKey]];
+                    const container = (type === 'warn') ? App.dom.warn.container : App.dom.positive.container;
+                    
+                    const today = App.util.getTodayDate();
+                    let todayEntry = App.state.data.checkinHistory.find(e => e.date === today);
+                    if (!todayEntry) {
+                        todayEntry = { date: today, warn: {}, pos: {}, sab: {}, notes: '' };
+                        App.state.data.checkinHistory.push(todayEntry);
+                    }
+                    
+                    if (!todayEntry[type]) todayEntry[type] = {};
+                    
+                    const selected = Array.from(container.querySelectorAll('.btn-choice.active'))
+                                          .map(btn => btn.dataset.question);
+                    todayEntry[type][categoryKey] = selected;
+                },
+                
+                finishCheckin: async function(type) {
+                    this.saveCategory(type); // Save the last category
+                    
+                    const today = App.util.getTodayDate();
+                    const todayEntry = App.state.data.checkinHistory.find(e => e.date === today);
+                    
+                    if (todayEntry) {
+                        await App.storage.saveEntry(App.config.STORES.CHECKIN, todayEntry);
+                    }
+                    
+                    App.ui.showAlert("Check-in saved!", "success");
+                    App.navigation.navigateTo('summaryViewLast');
+                },
+                
+                renderSummary: function(entry) {
+                    if (!entry) {
+                        console.error("No entry provided to renderSummary");
+                        return;
+                    }
+
+                    const { dom, config, ui } = App;
+                    const { summary, notes } = dom;
+                    const d = App.util.parseDateString(entry.date);
+                    const dateStr = d ? d.toLocaleDateString('en-NZ', { day: '2-digit', month: 'short', year: 'numeric' }) : "Summary";
+                    
+                    App.state.ui.currentNotesIndex = App.state.data.checkinHistory.findIndex(e => e.date === entry.date);
+                    
+                    let content = `<h3 class="text-xl font-semibold text-indigo-800">${dateStr}</h3>`;
+                    
+                    // Warning Signs
+                    content += `<h4 class="text-lg font-semibold text-slate-700 mt-4">Warning Signs</h4>`;
+                    let warnHtml = '';
+                    if (entry.warn) {
+                        config.categoryOrder.forEach(key => {
+                            if (entry.warn[key] && entry.warn[key].length > 0) {
+                                warnHtml += `<strong class="text-sm text-indigo-700">${config.categoryDisplayNames[key]}</strong>
+                                    <ul class="list-disc list-inside text-sm text-slate-600 mb-2">
+                                        ${entry.warn[key].map(q => `<li>${ui.escapeHTML(q)}</li>`).join('')}
+                                    </ul>`;
+                            }
+                        });
+                    }
+                    content += warnHtml || `<p class="text-sm text-slate-500 italic">No warning signs selected.</p>`;
+                    
+                    // Positive Signs
+                    content += `<h4 class="text-lg font-semibold text-slate-700 mt-4">Positive Signs</h4>`;
+                    let posHtml = '';
+                    if (entry.pos) {
+                        config.positiveCategoryOrder.forEach(key => {
+                            if (entry.pos[key] && entry.pos[key].length > 0) {
+                                posHtml += `<strong class="text-sm text-emerald-700">${config.positiveCategoryDisplayNames[key]}</strong>
+                                    <ul class="list-disc list-inside text-sm text-slate-600 mb-2">
+                                        ${entry.pos[key].map(q => `<li>${ui.escapeHTML(q)}</li>`).join('')}
+                                    </ul>`;
+                            }
+                        });
+                    }
+                    content += posHtml || `<p class="text-sm text-slate-500 italic">No positive signs selected.</p>`;
+                    
+                    // Sabbath
+                    const sabbathEntry = App.state.data.sabbathHistory.find(e => e.date === entry.date);
+                    if (sabbathEntry) {
+                        content += `<h4 class="text-lg font-semibold text-slate-700 mt-4">Sabbath Reflection</h4>`;
+                        let sabHtml = '';
+                        if (sabbathEntry.sab) {
+                             config.sabbathCategoryOrder.forEach(key => {
+                                if (sabbathEntry.sab[key] && sabbathEntry.sab[key].length > 0) {
+                                    sabHtml += `<strong class="text-sm text-violet-700">${config.sabbathCategoryDisplayNames[key]}</strong>
+                                        <ul class="list-disc list-inside text-sm text-slate-600 mb-2">
+                                            ${sabbathEntry.sab[key].map(q => `<li>${ui.escapeHTML(q)}</li>`).join('')}
+                                        </ul>`;
+                                }
+                            });
+                        }
+                        content += sabHtml || `<p class="text-sm text-slate-500 italic">No sabbath signs selected.</p>`;
+                        if (sabbathEntry.notes) {
+                            content += `<strong class="text-sm text-violet-700">Sabbath Notes:</strong><div class="notes-display !bg-violet-50 !border-violet-200">${ui.escapeHTML(sabbathEntry.notes)}</div>`;
+                        }
+                    }
+                    
+                    // Gratitude
+                    const gratitudeEntry = App.state.data.gratitudeHistory.find(e => e.date === entry.date);
+                    if (gratitudeEntry) {
+                        content += `<h4 class="text-lg font-semibold text-slate-700 mt-4">Gratitude</h4>
+                                    <div class="entry-display">${ui.escapeHTML(gratitudeEntry.notes)}</div>`;
+                    }
+                    
+                    // Personal Notes
+                    content += `<h4 class="text-lg font-semibold text-slate-700 mt-4">Personal Notes</h4>`;
+                    if (entry.notes) {
+                        content += `<div class="notes-display">${ui.escapeHTML(entry.notes)}</div>`;
+                    } else {
+                        content += `<p class="text-sm text-slate-500 italic">No personal notes for this day.</p>`;
+                    }
+                    
+                    summary.content.innerHTML = content;
+                    
+                    // TODO: Add prompt logic
+                    summary.prompt.style.display = 'none';
+                },
+                
+                saveNotes: async function() {
+                    const { dom, state } = App;
+                    const entry = state.data.checkinHistory[state.ui.currentNotesIndex];
+                    if (entry) {
+                        entry.notes = dom.notes.notes.value;
+                        await App.storage.saveEntry(App.config.STORES.CHECKIN, entry);
+                        App.ui.showAlert("Notes saved!", "success");
+                        App.navigation.navigateTo('summaryView', { entryIndex: state.ui.currentNotesIndex });
+                    }
+                }
+            }, // End moduleCheckin
+            
+            // --- Gratitude Module (NEW) ---
+            moduleGratitude: {
+                loadForToday: function() {
+                    const today = App.util.getTodayDate();
+                    const entry = App.state.data.gratitudeHistory.find(e => e.date === today);
+                    App.dom.gratitude.notes.value = entry ? entry.notes : '';
+                },
+                
+                save: async function() {
+                    const { dom, state } = App;
+                    const today = App.util.getTodayDate();
+                    let entry = state.data.gratitudeHistory.find(e => e.date === today);
+                    
+                    if (!entry) {
+                        entry = { date: today };
+                        state.data.gratitudeHistory.push(entry);
+                    }
+                    
+                    entry.notes = dom.gratitude.notes.value;
+                    
+                    if (!entry.notes.trim()) {
+                        App.ui.showAlert("Please write something you're grateful for.", "info");
+                        return;
+                    }
+                    
+                    await App.storage.saveEntry(App.config.STORES.GRATITUDE, entry);
+                    App.ui.showAlert("Gratitude entry saved!", "success");
+                    App.navigation.navigateTo('welcomeView');
+                },
+                
+                renderPast: function() {
+                    const { dom, state, ui } = App;
+                    const history = [...state.data.gratitudeHistory].sort((a, b) => b.date.localeCompare(a.date));
+                    
+                    if (history.length === 0) {
+                        dom.gratitude.pastContainer.innerHTML = '<p class="text-slate-500 italic">No past gratitude entries found.</p>';
+                        return;
+                    }
+                    
+                    dom.gratitude.pastContainer.innerHTML = history.map(entry => {
+                        const d = App.util.parseDateString(entry.date);
+                        const dateStr = d ? d.toLocaleDateString('en-NZ', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) : entry.date;
+                        return `
+                            <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+                                <h3 class="font-semibold text-amber-800">${dateStr}</h3>
+                                <div class="entry-display mt-2">${ui.escapeHTML(entry.notes)}</div>
+                            </div>
+                        `;
+                    }).join('');
+                }
+            }, // End moduleGratitude
+            
+            // --- Sabbath Module (NEW) ---
+            moduleSabbath: {
+                renderCategory: function(categoryIndex) {
+                    const { config, dom, state, ui } = App;
+                    const { sabbath } = dom;
+
+                    const categoryOrder = config.sabbathCategoryOrder;
+                    const categoryNames = config.sabbathCategoryDisplayNames;
+                    const data = config.sabbathSigns;
+                    
+                    const categoryKey = categoryOrder[categoryIndex];
+                    const questions = data[categoryKey];
+                    const categoryName = categoryNames[categoryKey];
+
+                    sabbath.title.textContent = categoryName;
+                    sabbath.container.innerHTML = '';
+                    
+                    const date = sabbath.dateInput.value || App.util.getTodayDate();
+                    const entry = App.state.data.sabbathHistory.find(e => e.date === date) || {};
+                    const selected = (entry.sab && entry.sab[categoryKey]) ? entry.sab[categoryKey] : [];
+
+                    questions.forEach((q, index) => {
+                        const qId = `sab-${categoryKey}-${index}`;
+                        const isSelected = selected.includes(q);
+                        sabbath.container.innerHTML += `
+                            <button id="${qId}" data-question="${ui.escapeHTML(q)}" data-category="${categoryKey}" class="btn-choice checkin-btn-sab ${isSelected ? 'active' : ''}">
+                                ${ui.escapeHTML(q)}
+                            </button>
+                        `;
+                    });
+                    
+                    sabbath.container.querySelectorAll('.btn-choice').forEach(btn => {
+                        btn.addEventListener('click', (e) => e.currentTarget.classList.toggle('active'));
+                    });
+
+                    const totalCategories = categoryOrder.length;
+                    sabbath.progress.value = ((categoryIndex + 1) / totalCategories) * 100;
+                    sabbath.progressText.textContent = `Category ${categoryIndex + 1} of ${totalCategories}`;
+                    
+                    sabbath.prevBtn.style.display = (categoryIndex > 0) ? 'inline-block' : 'none';
+                    sabbath.nextBtn.style.display = (categoryIndex < totalCategories - 1) ? 'inline-block' : 'none';
+                    sabbath.finishBtn.style.display = (categoryIndex === totalCategories - 1) ? 'inline-block' : 'none';
+                },
+                
+                navigateCategory: function(direction) {
+                    this.saveCategory(); // Save current
+                    let newIndex = App.state.ui.currentSabbathCategory + direction;
+                    if (newIndex >= 0 && newIndex < App.config.sabbathCategoryOrder.length) {
+                        App.state.ui.currentSabbathCategory = newIndex;
+                        this.renderCategory(newIndex);
+                    }
+                },
+
+                saveCategory: function() {
+                    const { dom, state, config } = App;
+                    const { sabbath } = dom;
+                    const categoryKey = config.sabbathCategoryOrder[state.ui.currentSabbathCategory];
+                    
+                    const date = sabbath.dateInput.value || App.util.getTodayDate();
+                    let entry = state.data.sabbathHistory.find(e => e.date === date);
+                    if (!entry) {
+                        entry = { date: date, sab: {}, notes: '' };
+                        state.data.sabbathHistory.push(entry);
+                    }
+                    
+                    if (!entry.sab) entry.sab = {};
+                    
+                    const selected = Array.from(sabbath.container.querySelectorAll('.btn-choice.active'))
+                                          .map(btn => btn.dataset.question);
+                    entry.sab[categoryKey] = selected;
+                    entry.notes = sabbath.notes.value; // Also save notes
+                },
+                
+                finish: async function() {
+                    this.saveCategory(); // Save last category
+                    
+                    const { dom, state, config } = App;
+                    const date = dom.sabbath.dateInput.value;
+                    const entry = state.data.sabbathHistory.find(e => e.date === date);
+                    
+                    if (entry) {
+                        await App.storage.saveEntry(config.STORES.SABBATH, entry);
+                        App.ui.showAlert("Sabbath reflection saved!", "success");
+                        App.navigation.navigateTo('welcomeView');
+                    } else {
+                        App.ui.showAlert("Error: Could not find entry to save.", "error");
+                    }
+                },
+                
+                loadForDate: function(dateStr = null) {
+                    const { dom, state } = App;
+                    const date = dateStr || App.util.getTodayDate();
+                    dom.sabbath.dateInput.value = date;
+                    
+                    const entry = state.data.sabbathHistory.find(e => e.date === date);
+                    dom.sabbath.notes.value = entry ? entry.notes : '';
+                    
+                    state.ui.currentSabbathCategory = 0;
+                    this.renderCategory(0);
+                },
+
+                renderPast: function() {
+                    const { dom, state, ui } = App;
+                    const history = [...state.data.sabbathHistory].sort((a, b) => b.date.localeCompare(a.date));
+                    
+                    if (history.length === 0) {
+                        dom.sabbath.pastContainer.innerHTML = '<p class="text-slate-500 italic">No past Sabbath reflections found.</p>';
+                        return;
+                    }
+                    
+                    dom.sabbath.pastContainer.innerHTML = history.map(entry => {
+                        const d = App.util.parseDateString(entry.date);
+                        const dateStr = d ? d.toLocaleDateString('en-NZ', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) : entry.date;
+                        
+                        let sabHtml = '';
+                        if (entry.sab) {
+                             App.config.sabbathCategoryOrder.forEach(key => {
+                                if (entry.sab[key] && entry.sab[key].length > 0) {
+                                    sabHtml += `<strong class="text-sm text-violet-700">${App.config.sabbathCategoryDisplayNames[key]}</strong>
+                                        <ul class="list-disc list-inside text-sm text-slate-600 mb-2">
+                                            ${entry.sab[key].map(q => `<li>${ui.escapeHTML(q)}</li>`).join('')}
+                                        </ul>`;
+                                }
+                            });
+                        }
+                        
+                        return `
+                            <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+                                <h3 class="font-semibold text-violet-800">${dateStr}</h3>
+                                <div class="mt-2">${sabHtml || ''}</div>
+                                ${entry.notes ? `<strong class="text-sm text-violet-700">Notes:</strong><div class="notes-display !bg-violet-50 !border-violet-200">${ui.escapeHTML(entry.notes)}</div>` : ''}
+                            </div>
+                        `;
+                    }).join('');
+                }
+            }, // End moduleSabbath
+            
+            // --- Rule of Life Module (NEW) ---
+            moduleRule: {
+                renderRule: function(mode) {
+                    const { dom, state, ui } = App;
+                    const { rule } = dom;
+                    const intentions = state.data.ruleOfLife.intentions || [];
+
+                    if (mode === 'read') {
+                        rule.readView.style.display = 'block';
+                        rule.editView.style.display = 'none';
+                        rule.editBtn.style.display = 'inline-block';
+                        rule.saveBtn.style.display = 'none';
+                        
+                        const filledIntentions = intentions.filter(i => i && i.trim() !== '');
+                        if (filledIntentions.length > 0) {
+                            rule.readList.innerHTML = filledIntentions.map(i => `<li>${ui.escapeHTML(i)}</li>`).join('');
+                        } else {
+                            rule.readList.innerHTML = '<p class="text-slate-500 italic">No intentions set yet. Click "Edit" to add some.</p>';
+                        }
+                    } else { // 'edit'
+                        rule.readView.style.display = 'none';
+                        rule.editView.style.display = 'block';
+                        rule.editBtn.style.display = 'none';
+                        rule.saveBtn.style.display = 'inline-block';
+                        
+                        rule.inputs.forEach((input, index) => {
+                            input.value = intentions[index] || '';
+                        });
+                    }
+                },
+                
+                saveRule: async function() {
+                    const { dom, state, config } = App;
+                    const intentions = dom.rule.inputs.map(input => input.value.trim());
+                    state.data.ruleOfLife.intentions = intentions;
+                    
+                    await App.storage.saveAppState('ruleOfLife', state.data.ruleOfLife);
+                    if (state.storageDriver === 'firestore') {
+                        const docRef = doc(state.fb.db, `artifacts/${state.appId}/users/${state.userId}/data`, 'ruleOfLife');
+                        await App.Firebase.setDoc(docRef, { data: await App.storage.encrypt(state.data.ruleOfLife) });
+                    }
+                    
+                    App.ui.showAlert("Rule of Life saved!", "success");
+                    this.renderRule('read');
+                    App.ui.renderDashboardPreview(); // Update dashboard
+                },
+                
+                loadChecklist: function() {
+                    const { dom, state, ui } = App;
+                    const { rule } = dom;
+                    const intentions = state.data.ruleOfLife.intentions || [];
+                    const filledIntentions = intentions.filter(i => i && i.trim() !== '');
+
+                    rule.checkinDate.value = App.util.getTodayDate();
+                    
+                    if (filledIntentions.length === 0) {
+                        rule.checklistContainer.innerHTML = '<p class="text-slate-500 italic">Please set your "Rule of Life" intentions first.</p>';
+                        return;
+                    }
+                    
+                    rule.checklistContainer.innerHTML = filledIntentions.map((intention, index) => `
+                        <label for="rule-check-${index}" class="flex items-center p-3 bg-white rounded-lg shadow-sm border border-slate-200">
+                            <input type="checkbox" id="rule-check-${index}" data-intention="${ui.escapeHTML(intention)}" class="h-5 w-5 rounded border-gray-300 text-teal-600 focus:ring-teal-500">
+                            <span class="ml-3 text-slate-700">${ui.escapeHTML(intention)}</span>
+                        </label>
+                    `).join('');
+                    
+                    rule.checkinNotes.value = '';
+                },
+                
+                saveChecklist: async function() {
+                    const { dom, state, config, ui } = App;
+                    const { rule } = dom;
+                    
+                    const date = rule.checkinDate.value;
+                    if (!date) {
+                        ui.showAlert("Please select a date.", "info");
+                        return;
+                    }
+                    
+                    const checkedIntentions = Array.from(rule.checklistContainer.querySelectorAll('input[type="checkbox"]:checked'))
+                                                   .map(cb => cb.dataset.intention);
+                    
+                    const allIntentions = Array.from(rule.checklistContainer.querySelectorAll('input[type="checkbox"]'))
+                                               .map(cb => cb.dataset.intention);
+                                               
+                    const notes = rule.checkinNotes.value;
+                    
+                    let entry = state.data.ruleOfLifeHistory.find(e => e.date === date);
+                    if (!entry) {
+                        entry = { date };
+                        state.data.ruleOfLifeHistory.push(entry);
+                    }
+                    
+                    entry.checked = checkedIntentions;
+                    entry.total = allIntentions.length;
+                    entry.notes = notes;
+                    
+                    await App.storage.saveEntry(config.STORES.RULE_HISTORY, entry);
+                    ui.showAlert("Reflection saved!", "success");
+                    App.navigation.navigateTo('pastRuleOfLifeView');
+                },
+                
+                renderPast: function() {
+                    const { dom, state, ui } = App;
+                    const history = [...state.data.ruleOfLifeHistory].sort((a, b) => b.date.localeCompare(a.date));
+                    
+                    if (history.length === 0) {
+                        dom.rule.pastContainer.innerHTML = '<p class="text-slate-500 italic">No past reflections found.</p>';
+                        return;
+                    }
+                    
+                    dom.rule.pastContainer.innerHTML = history.map(entry => {
+                        const d = App.util.parseDateString(entry.date);
+                        const dateStr = d ? d.toLocaleDateString('en-NZ', { day: 'numeric', month: 'long', year: 'numeric' }) : entry.date;
+                        const score = entry.total > 0 ? `${entry.checked.length} / ${entry.total}` : `N/A`;
+                        
+                        return `
+                            <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+                                <h3 class="font-semibold text-teal-800">${dateStr}</h3>
+                                <p class="text-sm font-medium text-slate-600 mt-1">Score: ${score}</p>
+                                ${entry.notes ? `<div class="notes-display !bg-teal-50 !border-teal-200 mt-2">${ui.escapeHTML(entry.notes)}</div>` : ''}
+                            </div>
+                        `;
+                    }).join('');
+                },
+                
+                renderTrends: function() {
+                    const { dom, state, ui } = App;
+                    const history = [...state.data.ruleOfLifeHistory].sort((a, b) => a.date.localeCompare(b.date));
+                    
+                    if (ui.charts.rule) {
+                        ui.charts.rule.destroy();
+                    }
+                    
+                    if (history.length === 0) {
+                        dom.rule.chartEmpty.style.display = 'block';
+                        return;
+                    }
+                    
+                    dom.rule.chartEmpty.style.display = 'none';
+                    
+                    const labels = history.map(e => {
+                        const d = App.util.parseDateString(e.date);
+                        return d ? d.toLocaleDateString('en-NZ', { day: 'numeric', month: 'short' }) : e.date;
+                    });
+                    const data = history.map(e => e.total > 0 ? (e.checked.length / e.total) * 100 : 0);
+                    
+                    ui.charts.rule = new Chart(dom.rule.chart.getContext('2d'), {
+                        type: 'line',
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                label: 'Intention Adherence (%)',
+                                data: data,
+                                backgroundColor: 'rgba(13, 148, 136, 0.1)',
+                                borderColor: 'rgb(13, 148, 136)',
+                                borderWidth: 2,
+                                fill: true,
+                                tension: 0.1
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    max: 100
+                                }
+                            }
+                        }
+                    });
+                }
+            }, // End moduleRule
+            
+            // --- Trends Module (NEW) ---
+            moduleTrends: {
+                renderTrends: function() {
+                    const { dom, state, ui } = App;
+                    const view = state.ui.currentTrendView;
+                    let history = [...state.data.checkinHistory].sort((a, b) => a.date.localeCompare(b.date));
+                    
+                    if (view === 'recent' && history.length > 12) {
+                        history = history.slice(-12);
+                    }
+                    
+                    if (ui.charts.trends) {
+                        ui.charts.trends.destroy();
+                    }
+
+                    if (history.length === 0) {
+                        dom.trends.chartEmpty.style.display = 'block';
+                        return;
+                    }
+                    dom.trends.chartEmpty.style.display = 'none';
+
+                    const labels = history.map(e => {
+                        const d = App.util.parseDateString(e.date);
+                        return d ? d.toLocaleDateString('en-NZ', { day: 'numeric', month: 'short' }) : e.date;
+                    });
+                    
+                    const totals = history.map(e => App.moduleCheckin.calculateTotals(e));
+                    
+                    ui.charts.trends = new Chart(dom.trends.chart.getContext('2d'), {
+                        type: 'bar',
+                        data: {
+                            labels: labels,
+                            datasets: [
+                                {
+                                    label: 'Warning Signs',
+                                    data: totals.map(t => t.warning),
+                                    backgroundColor: 'rgb(79, 70, 229)', // indigo-600
+                                },
+                                {
+                                    label: 'Positive Signs',
+                                    data: totals.map(t => t.positive),
+                                    backgroundColor: 'rgb(5, 150, 105)', // emerald-600
+                                }
+                            ]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            scales: {
+                                x: { stacked: true },
+                                y: { stacked: true, beginAtZero: true }
+                            },
+                            onClick: (e, elements) => {
+                                if (elements.length > 0) {
+                                    const index = elements[0].index;
+                                    const entryIndex = state.data.checkinHistory.findIndex(entry => entry.date === history[index].date);
+                                    if(entryIndex > -1) {
+                                        App.navigation.navigateTo('summaryView', { entryIndex });
+                                    }
+                                }
+                            }
+                        }
+                    });
+                },
+                
+                renderCorrelations: function() {
+                    // This is a placeholder for a more complex analysis
+                    App.dom.trends.correlationsContainer.innerHTML = '<p class="text-slate-500 italic text-center">Complete a few more weekly check-ins to unlock wellbeing insights.</p>';
+                },
+                
+                toggleTrendView: function(view) {
+                    App.state.ui.currentTrendView = view;
+                    App.dom.trends.toggleRecentBtn.classList.toggle('active', view === 'recent');
+                    App.dom.trends.toggleAllBtn.classList.toggle('active', view === 'all');
+                    this.renderTrends();
+                }
+            }, // End moduleTrends
+            
+            // --- Resources Module (NEW) ---
+            moduleResources: {
+                render: function(mode) {
+                    const { dom, state } = App;
+                    const { resources } = dom;
+                    const data = state.data.userResources;
+                    
+                    if (mode === 'read') {
+                        resources.readView.style.display = 'block';
+                        resources.editView.style.display = 'none';
+                        resources.editBtn.style.display = 'inline-block';
+                        resources.saveBtn.style.display = 'none';
+                        
+                        Object.keys(resources.readSpans).forEach(key => {
+                            const span = resources.readSpans[key];
+                            const value = data[key];
+                            if (value) {
+                                span.textContent = value;
+                                span.classList.remove('placeholder');
+                            } else {
+                                span.textContent = 'Not set';
+                                span.classList.add('placeholder');
+                            }
+                        });
+                    } else { // 'edit'
+                        resources.readView.style.display = 'none';
+                        resources.editView.style.display = 'block';
+                        resources.editBtn.style.display = 'none';
+                        resources.saveBtn.style.display = 'inline-block';
+                        
+                        Object.keys(resources.editInputs).forEach(key => {
+                            resources.editInputs[key].value = data[key] || '';
+                        });
+                    }
+                },
+                
+                save: async function() {
+                    const { dom, state, config } = App;
+                    const { resources } = dom;
+                    
+                    Object.keys(resources.editInputs).forEach(key => {
+                        state.data.userResources[key] = resources.editInputs[key].value.trim();
+                    });
+                    
+                    await App.storage.saveAppState('userResources', state.data.userResources);
+                    if (state.storageDriver === 'firestore') {
+                        const docRef = doc(state.fb.db, `artifacts/${state.appId}/users/${state.userId}/data`, 'userResources');
+                        await App.Firebase.setDoc(docRef, { data: await App.storage.encrypt(state.data.userResources) });
+                    }
+                    
+                    App.ui.showAlert("Resources saved!", "success");
+                    this.render('read');
+                }
+            }, // End moduleResources
+            
+            // --- Handlers Module (NEW) ---
+            handlers: {
+                init: function() {
+                    console.log("Initializing handlers...");
+                    const { dom } = App;
+                    
+                    // --- Lock Screen ---
+                    dom.lock.keypad.addEventListener('click', (e) => {
+                        const key = e.target.closest('.numpad-btn')?.dataset.key;
+                        if (key) App.pin.onKeyPress(key);
+                    });
+                    
+                    // --- Login View ---
+                    dom.login.signInGoogleBtn.addEventListener('click', () => App.auth.signInWithGoogle());
+                    dom.login.showEmailLoginBtn.addEventListener('click', () => App.auth.showEmailLogin(true));
+                    dom.login.stayLocalBtn.addEventListener('click', () => App.auth.stayLocal());
+                    dom.login.emailLoginBtn.addEventListener('click', () => App.auth.signInWithEmail());
+                    dom.login.emailSignUpBtn.addEventListener('click', () => App.auth.signUpWithEmail());
+                    dom.login.backToLoginOptionsBtn.addEventListener('click', () => App.auth.showEmailLogin(false));
+                    
+                    // --- Dashboard ---
+                    dom.dashboard.startWarningBtn.addEventListener('click', () => {
+                        App.state.ui.currentWarningCategory = 0;
+                        App.moduleCheckin.renderCategory('warn', 0);
+                        App.navigation.navigateTo('checkinView');
+                    });
+                    dom.dashboard.startPositiveBtn.addEventListener('click', () => {
+                        App.state.ui.currentPositiveCategory = 0;
+                        App.moduleCheckin.renderCategory('pos', 0);
+                        App.navigation.navigateTo('positiveCheckinView');
+                    });
+                    dom.dashboard.startSabbathBtn.addEventListener('click', () => App.navigation.navigateTo('sabbathCheckinView'));
+                    dom.dashboard.startRuleBtn.addEventListener('click', () => App.navigation.navigateTo('ruleOfLifeView'));
+                    dom.dashboard.startGratitudeBtn.addEventListener('click', () => App.navigation.navigateTo('gratitudeView'));
+                    dom.dashboard.navToPrivacyBtn.addEventListener('click', () => App.navigation.navigateTo('privacyView'));
+
+                    // --- Warning Check-in ---
+                    dom.warn.prevBtn.addEventListener('click', () => App.moduleCheckin.navigateCategory('warn', -1));
+                    dom.warn.nextBtn.addEventListener('click', () => App.moduleCheckin.navigateCategory('warn', 1));
+                    dom.warn.finishBtn.addEventListener('click', () => App.moduleCheckin.finishCheckin('warn'));
+
+                    // --- Positive Check-in ---
+                    dom.positive.prevBtn.addEventListener('click', () => App.moduleCheckin.navigateCategory('pos', -1));
+                    dom.positive.nextBtn.addEventListener('click', () => App.moduleCheckin.navigateCategory('pos', 1));
+                    dom.positive.finishBtn.addEventListener('click', () => App.moduleCheckin.finishCheckin('pos'));
+                    
+                    // --- Sabbath ---
+                    dom.sabbath.dateInput.addEventListener('change', () => App.moduleSabbath.loadForDate(dom.sabbath.dateInput.value));
+                    dom.sabbath.prevBtn.addEventListener('click', () => App.moduleSabbath.navigateCategory(-1));
+                    dom.sabbath.nextBtn.addEventListener('click', () => App.moduleSabbath.navigateCategory(1));
+                    dom.sabbath.finishBtn.addEventListener('click', () => App.moduleSabbath.finish());
+                    dom.sabbath.viewPastBtn.addEventListener('click', () => App.navigation.navigateTo('pastSabbathView'));
+                    dom.sabbath.backToSabbathCheckinBtn.addEventListener('click', () => App.navigation.navigateTo('sabbathCheckinView'));
+                    
+                    // --- Gratitude ---
+                    dom.gratitude.saveBtn.addEventListener('click', () => App.moduleGratitude.save());
+                    dom.gratitude.viewPastBtn.addEventListener('click', () => App.navigation.navigateTo('pastGratitudeView'));
+                    dom.gratitude.backToGratitudeBtn.addEventListener('click', () => App.navigation.navigateTo('gratitudeView'));
+                    
+                    // --- Rule of Life ---
+                    dom.rule.editBtn.addEventListener('click', () => App.moduleRule.renderRule('edit'));
+                    dom.rule.saveBtn.addEventListener('click', () => App.moduleRule.saveRule());
+                    dom.rule.startCheckinBtn.addEventListener('click', () => App.navigation.navigateTo('ruleOfLifeCheckinView'));
+                    dom.rule.viewPastBtn.addEventListener('click', () => App.navigation.navigateTo('pastRuleOfLifeView'));
+                    dom.rule.saveCheckinBtn.addEventListener('click', () => App.moduleRule.saveChecklist());
+                    dom.rule.backToRuleOfLifeBtn.addEventListener('click', () => App.navigation.navigateTo('ruleOfLifeView'));
+                    dom.rule.backToRuleOfLifeBtn2.addEventListener('click', () => App.navigation.navigateTo('ruleOfLifeView'));
+
+                    // --- Summary & Notes ---
+                    dom.summary.backToTrendsBtn.addEventListener('click', () => App.navigation.navigateTo('trendsView'));
+                    dom.summary.addNotesBtn.addEventListener('click', () => App.navigation.navigateTo('notesView'));
+                    dom.notes.saveBtn.addEventListener('click', () => App.moduleCheckin.saveNotes());
+                    dom.notes.backBtn.addEventListener('click', () => App.navigation.navigateTo('summaryView', { entryIndex: App.state.ui.currentNotesIndex }));
+
+                    // --- Trends ---
+                    dom.trends.toggleRecentBtn.addEventListener('click', () => App.moduleTrends.toggleTrendView('recent'));
+                    dom.trends.toggleAllBtn.addEventListener('click', () => App.moduleTrends.toggleTrendView('all'));
+                    
+                    // --- Resources ---
+                    dom.resources.editBtn.addEventListener('click', () => App.moduleResources.render('edit'));
+                    dom.resources.saveBtn.addEventListener('click', () => App.moduleResources.save());
+                    
+                    // --- Settings ---
+                    dom.settings.signInToSyncBtn.addEventListener('click', () => App.auth.showLogin());
+                    dom.settings.signOutBtn.addEventListener('click', () => App.auth.signOut());
+                    dom.settings.changePinBtn.addEventListener('click', () => App.pin.startChangePin());
+                    dom.settings.exportBtn.addEventListener('click', () => App.storage.exportData());
+                    dom.settings.importInput.addEventListener('change', (e) => App.storage.importData(e));
+                    dom.settings.viewDataBtn.addEventListener('click', () => App.storage.toggleViewRawData());
+                    dom.settings.clearDataBtn.addEventListener('click', () => App.storage.confirmClearAllData());
+                }
+            }, // End handlers
+            
+            // --- 
+            // END OF NEW/RECREATED MODULES
+            // ---
 
             // --- Expose Firebase modules to the App (used by Auth module) ---
-            // THIS IS THE FIX.
             Firebase: {
                 initializeApp, getAuth, signInAnonymously, signInWithCustomToken, 
                 onAuthStateChanged, GoogleAuthProvider, 
-                signInWithRedirect, getRedirectResult, // <-- FIX
+                signInWithRedirect, getRedirectResult, 
                 createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut,
                 getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, onSnapshot, 
-                collection, query, writeBatch, setLogLevel, enableNetwork, disableNetwork, getDocs
-            }
-        }; // End App object
-//******************************************************************************************************************************************* PART3 *******************************
+                collection, query, writeBatch, setLogLevel, enableNetwork, disableNetwork, getDocs,
+                setPersistence, browserLocalPersistence // <-- Added for persistence
+            },
 
-//           ================================================================
-//            App Logic Part 3: Storage, Auth, and PIN Modules
-//           ================================================================
-//          -->
-
-//            <!-- --- Storage & Crypto Module --- -->
+            // --- Storage & Crypto Module ---
             storage: {
                 initDB: async function() {
                     const { DB_NAME, DB_VERSION, STORES } = App.config;
@@ -1600,1319 +2482,4 @@
                     const data = {};
                     
                     try {
-                        data.checkinHistory = (await Promise.all((await db.getAll(STORES.CHECKIN)).map(e => this.decrypt(e.data)))).filter(Boolean);
-                        data.gratitudeHistory = (await Promise.all((await db.getAll(STORES.GRATITUDE)).map(e => this.decrypt(e.data)))).filter(Boolean);
-                        data.sabbathHistory = (await Promise.all((await db.getAll(STORES.SABBATH)).map(e => this.decrypt(e.data)))).filter(Boolean);
-                        data.ruleOfLifeHistory = (await Promise.all((await db.getAll(STORES.RULE_HISTORY)).map(e => this.decrypt(e.data)))).filter(Boolean);
-                        
-                        const res = await db.get(STORES.APP_STATE, 'userResources');
-                        data.userResources = res ? (await this.decrypt(res.data) || {}) : {};
-                        const rule = await db.get(STORES.APP_STATE, 'ruleOfLife');
-                        data.ruleOfLife = rule ? (await this.decrypt(rule.data) || {}) : {};
-
-                    } catch (e) {
-                         console.error("Critical decryption error during localLoadAll:", e);
-                         throw new Error("Decryption failed. Wrong PIN?");
-                    }
-                    
-                    App.state.data = this.mergeData(data); // Set state here
-                },
-
-                firestoreLoadAll: async function() {
-                    if (!App.state.userId) {
-                        App.state.data = this.mergeData({});
-                        return;
-                    }
-                    
-                    const data = {};
-                    const collectionRef = collection(App.state.fb.db, `artifacts/${App.state.appId}/users/${App.state.userId}/data`);
-                    const q = query(collectionRef);
-                    
-                    const docsSnap = await App.Firebase.getDocs(q);
-                    
-                    data.checkinHistory = [];
-                    data.gratitudeHistory = [];
-                    data.sabbathHistory = [];
-                    data.ruleOfLifeHistory = [];
-                    
-                    for (const doc of docsSnap.docs) {
-                        const docId = doc.id;
-                        const decrypted = await this.decrypt(doc.data().data);
-                        if (decrypted) {
-                            if (docId.startsWith('checkinHistory_')) data.checkinHistory.push(decrypted);
-                            else if (docId.startsWith('gratitudeHistory_')) data.gratitudeHistory.push(decrypted);
-                            else if (docId.startsWith('sabbathHistory_')) data.sabbathHistory.push(decrypted);
-                            else if (docId.startsWith('ruleOfLifeHistory_')) data.ruleOfLifeHistory.push(decrypted);
-                            else if (docId === 'userResources') data.userResources = decrypted;
-                            else if (docId === 'ruleOfLife') data.ruleOfLife = decrypted;
-                        } else {
-                            console.warn(`Failed to decrypt ${docId} from Firestore`);
-                        }
-                    }
-                    App.state.data = this.mergeData(data); // Set state here
-                },
-                
-                migrateLocalToFirestore: async function() {
-                    console.log("Starting migration from local to Firestore...");
-                    App.ui.showModal("Migrating Data", "Please wait, we're securely moving your local data to the cloud...");
-                    
-                    const db = App.state.db;
-                    const batch = App.Firebase.writeBatch(App.state.fb.db);
-                    const basePath = `artifacts/${App.state.appId}/users/${App.state.userId}/data`;
-
-                    try {
-                        const storesToMigrate = [App.config.STORES.CHECKIN, App.config.STORES.GRATITUDE, App.config.STORES.SABBATH, App.config.STORES.RULE_HISTORY];
-                        for (const storeName of storesToMigrate) {
-                            const allItems = await db.getAll(storeName);
-                            for (const item of allItems) {
-                                // item = { date: "...", data: { iv: "...", data: "..." } }
-                                const docRef = doc(App.state.fb.db, basePath, `${storeName}_${item.date}`);
-                                batch.set(docRef, { data: item.data }); // Move the encrypted blob
-                            }
-                        }
-                        
-                        const appStateItems = ['userResources', 'ruleOfLife'];
-                        for (const id of appStateItems) {
-                            const item = await db.get(App.config.STORES.APP_STATE, id);
-                            if (item) {
-                                 const docRef = doc(App.state.fb.db, basePath, id);
-                                batch.set(docRef, { data: item.data });
-                            }
-                        }
-
-                        await batch.commit();
-                        console.log("Migration complete.");
-                        
-                        // Clear local data (but not PIN)
-                        const clearTx = db.transaction(db.objectStoreNames, 'readwrite');
-                        for (const storeName of storesToMigrate) {
-                            await clearTx.objectStore(storeName).clear();
-                        }
-                        await clearTx.objectStore(App.config.STORES.APP_STATE).delete('userResources');
-                        await clearTx.objectStore(App.config.STORES.APP_STATE).delete('ruleOfLife');
-                        await clearTx.done;
-                        
-                        console.log("Local data (except PIN) cleared after migration.");
-                        App.ui.hideModal();
-                        
-                    } catch (e) {
-                        console.error("Migration failed:", e);
-                        App.ui.showModal("Migration Error", `Could not move your data to the cloud. ${e.message}`);
-                    }
-                },
-                
-                mergeData: function(loadedData) {
-                    const defaults = {
-                        checkinHistory: [],
-                        gratitudeHistory: [],
-                        sabbathHistory: [],
-                        ruleOfLifeHistory: [],
-                        userResources: {},
-                        ruleOfLife: {}
-                    };
-                    return { ...defaults, ...loadedData };
-                },
-                
-                exportData: function() {
-                    const data = App.state.data;
-                    if (Object.values(data).every(val => (Array.isArray(val) && val.length === 0) || (typeof val === 'object' && Object.keys(val).length === 0))) {
-                        App.ui.showAlert("No data to export.", "info");
-                        return;
-                    }
-                    
-                    try {
-                        const exportObject = { ...data, appVersion: "2.1.0" };
-                        const dataStr = JSON.stringify(exportObject, null, 2);
-                        const blob = new Blob([dataStr], { type: 'application/json' });
-                        const url = URL.createObjectURL(blob);
-                        const a = document.createElement('a');
-                        a.href = url;
-                        a.download = `toku_hauora_backup_${new Date().toISOString().split('T')[0]}.json`;
-                        document.body.appendChild(a);
-                        a.click();
-                        document.body.removeChild(a);
-                        URL.revokeObjectURL(url);
-                        App.ui.showAlert("Export Successful!", "success");
-                    } catch (e) {
-                        console.error("Export failed:", e);
-                        App.ui.showAlert("Export failed. See console for details.", "error");
-                    }
-                },
-                
-                importData: function(event) {
-                    const file = event.target.files[0];
-                    if (!file) return;
-                    
-                    const reader = new FileReader();
-                    reader.onload = (e) => {
-                        let importedData;
-                        try {
-                            const importedObject = JSON.parse(e.target.result);
-                            importedData = this.mergeData(importedObject); // Use merge to ensure all keys exist
-                        } catch (err) {
-                            App.ui.showModal("Import Failed", `Could not parse file. ${err.message}`);
-                            return;
-                        }
-                        
-                        App.ui.showModal("Confirm Import", `This will OVERWRITE all current data. Are you sure?\n\nThis file contains:\n- ${importedData.checkinHistory.length} Check-ins\n- ${importedData.gratitudeHistory.length} Gratitude entries\n- ${importedData.sabbathHistory.length} Sabbath reflections\n- ${importedData.ruleOfLifeHistory.length} Rule reflections`);
-                        App.ui.addModalButton("Yes, Overwrite", "danger", async () => {
-                            try {
-                                App.state.data = App.storage.mergeData({});
-                                
-                                const { checkinHistory, gratitudeHistory, sabbathHistory, ruleOfLifeHistory, userResources, ruleOfLife } = importedData;
-                                
-                                const db = App.state.db;
-                                const stores = [App.config.STORES.CHECKIN, App.config.STORES.GRATITUDE, App.config.STORES.SABBATH, App.config.STORES.RULE_HISTORY, App.config.STORES.APP_STATE];
-                                const tx = db.transaction(stores, 'readwrite');
-                                
-                                // Clear old data
-                                await Promise.all([
-                                    tx.objectStore(App.config.STORES.CHECKIN).clear(),
-                                    tx.objectStore(App.config.STORES.GRATITUDE).clear(),
-                                    tx.objectStore(App.config.STORES.SABBATH).clear(),
-                                    tx.objectStore(App.config.STORES.RULE_HISTORY).clear(),
-                                    tx.objectStore(App.config.STORES.APP_STATE).delete('userResources'),
-                                    tx.objectStore(App.config.STORES.APP_STATE).delete('ruleOfLife')
-                                ]);
-                                
-                                // Add new data
-                                const promises = [];
-                                checkinHistory.forEach(e => promises.push(this.encrypt(e).then(d => tx.objectStore(App.config.STORES.CHECKIN).put({date: e.date, data: d}))));
-                                gratitudeHistory.forEach(e => promises.push(this.encrypt(e).then(d => tx.objectStore(App.config.STORES.GRATITUDE).put({date: e.date, data: d}))));
-                                sabbathHistory.forEach(e => promises.push(this.encrypt(e).then(d => tx.objectStore(App.config.STORES.SABBATH).put({date: e.date, data: d}))));
-                                ruleOfLifeHistory.forEach(e => promises.push(this.encrypt(e).then(d => tx.objectStore(App.config.STORES.RULE_HISTORY).put({date: e.date, data: d}))));
-                                promises.push(this.encrypt(userResources).then(d => tx.objectStore(App.config.STORES.APP_STATE).put({id: 'userResources', data: d})));
-                                promises.push(this.encrypt(ruleOfLife).then(d => tx.objectStore(App.config.STORES.APP_STATE).put({id: 'ruleOfLife', data: d})));
-
-                                await Promise.all(promises);
-                                await tx.done;
-
-                                if (App.state.storageDriver === 'firestore') {
-                                    App.ui.showAlert("Importing... clearing cloud data...", "info");
-                                    await this.clearAllData(false); // Clear cloud only
-                                    
-                                    App.ui.showAlert("Importing... saving to cloud...", "info");
-                                    const batch = App.Firebase.writeBatch(App.state.fb.db);
-                                    const basePath = `artifacts/${App.state.appId}/users/${App.state.userId}/data`;
-                                    
-                                    for(const e of checkinHistory) batch.set(doc(App.state.fb.db, basePath, `checkinHistory_${e.date}`), { data: await this.encrypt(e) });
-                                    for(const e of gratitudeHistory) batch.set(doc(App.state.fb.db, basePath, `gratitudeHistory_${e.date}`), { data: await this.encrypt(e) });
-                                    for(const e of sabbathHistory) batch.set(doc(App.state.fb.db, basePath, `sabbathHistory_${e.date}`), { data: await this.encrypt(e) });
-                                    for(const e of ruleOfLifeHistory) batch.set(doc(App.state.fb.db, basePath, `ruleOfLifeHistory_${e.date}`), { data: await this.encrypt(e) });
-                                    batch.set(doc(App.state.fb.db, basePath, 'userResources'), { data: await this.encrypt(userResources) });
-                                    batch.set(doc(App.state.fb.db, basePath, 'ruleOfLife'), { data: await this.encrypt(ruleOfLife) });
-                                    
-                                    await batch.commit();
-                                }
-                                
-                                App.state.data = importedData;
-                                
-                                App.navigation.navigateTo('welcomeView');
-                                App.ui.showAlert("Import Successful!", "success");
-
-                            } catch (importError) {
-                                console.error("Failed during import process:", importError);
-                                App.ui.showModal("Import Failed", "An error occurred while encrypting and saving the imported data.");
-                            }
-                        });
-                    };
-                    reader.readAsText(file);
-                    event.target.value = null; // Clear input
-                },
-                
-                // Set skipPinReload to true when importing
-                clearAllData: async function(showModal = true) {
-                    try {
-                        const db = App.state.db;
-                        const stores = [App.config.STORES.CHECKIN, App.config.STORES.GRATITUDE, App.config.STORES.SABBATH, App.config.STORES.RULE_HISTORY, App.config.STORES.APP_STATE];
-                        const tx = db.transaction(stores, 'readwrite');
-                        await Promise.all([
-                            tx.objectStore(App.config.STORES.CHECKIN).clear(),
-                            tx.objectStore(App.config.STORES.GRATITUDE).clear(),
-                            tx.objectStore(App.config.STORES.SABBATH).clear(),
-                            tx.objectStore(App.config.STORES.RULE_HISTORY).clear(),
-                            tx.objectStore(App.config.STORES.APP_STATE).clear() // Clears PIN too
-                        ]);
-                        await tx.done;
-                        
-                        localStorage.removeItem('hauoraOnboardComplete');
-                        
-                        if (App.state.userId) {
-                            if (showModal) App.ui.showAlert("Clearing cloud data... please wait.", "info", 5000);
-                            
-                            // We need to delete all docs in the /data collection
-                            const collectionRef = collection(App.state.fb.db, `artifacts/${App.state.appId}/users/${App.state.userId}/data`);
-                            const q = query(collectionRef);
-                            const docsSnap = await App.Firebase.getDocs(q);
-                            
-                            const batch = App.Firebase.writeBatch(App.state.fb.db);
-                            docsSnap.forEach(doc => batch.delete(doc.ref));
-                            
-                            // Delete the meta (PIN) doc
-                            batch.delete(doc(App.state.fb.db, `artifacts/${App.state.appId}/users/${App.state.userId}`, 'meta'));
-                            
-                            await batch.commit();
-                        }
-                        
-                        if(showModal) {
-                            App.ui.showModal("Data Cleared", "All your data has been removed. The app will now reload and require a new PIN setup.");
-                            setTimeout(() => window.location.reload(), 2500);
-                        }
-                        
-                    } catch (e) {
-                        console.error("Failed to clear data:", e);
-                        if(showModal) App.ui.showModal("Error", "Could not clear all data. Please try again.");
-                    }
-                },
-                
-                confirmClearAllData: function() {
-                    App.ui.showModal("Confirm Deletion", "Are you sure you want to clear ALL your data (Check-ins, Gratitude, Sabbath, Rule of Life, Resources, and PIN)? This action is permanent and cannot be undone.");
-                    App.ui.addModalButton("Yes, Delete Everything", "danger", () => this.clearAllData(true));
-                },
-                
-                toggleViewRawData: function() {
-                    const { rawDataDisplay } = App.dom.settings;
-                    if (rawDataDisplay.style.display === 'none') {
-                        try {
-                            rawDataDisplay.textContent = JSON.stringify(App.state.data, null, 2);
-                            rawDataDisplay.style.display = 'block';
-                        } catch (e) {
-                            rawDataDisplay.textContent = "Error displaying data.";
-                        }
-                    } else {
-                        rawDataDisplay.style.display = 'none';
-                    }
-                }
-            },
-            
-            // --- Auth & PIN Modules ---
-            auth: {
-                checkPinAndAuthState: async function() {
-                    const { db } = App.state;
-                    // FIX: Get PIN data from 'appState' store
-                    // And check for 'value' property, not 'data'
-                    const saltEntry = await db.get(App.config.STORES.APP_STATE, 'securitySalt');
-                    const hashEntry = await db.get(App.config.STORES.APP_STATE, 'securityHash');
-
-                    // FIX: Check for the 'value' property
-                    if (saltEntry && hashEntry && saltEntry.value && hashEntry.value) {
-                        // PIN is set.
-                        App.state.pin.salt = saltEntry.value;
-                        App.state.pin.hash = hashEntry.value;
-                        
-                        console.log("PIN info found in local DB.");
-                        if (App.state.fb.auth) {
-                             // *** START FIX for Cross-Origin-Opener-Policy ***
-                            // Check for a redirect result *before* setting up the listener
-                            try {
-                                const result = await App.Firebase.getRedirectResult(App.state.fb.auth);
-                                if (result) {
-                                    // This was a redirect login.
-                                    console.log("Redirect result obtained:", result.user);
-                                    // The onAuthStateChanged listener will now fire with this user.
-                                }
-                            } catch (error) {
-                                console.error("Error getting redirect result:", error);
-                                // Don't show an alert here, as it can fire on every page load
-                                // Only show if it's a specific type of error
-                                if (error.code !== 'auth/no-redirect-operation') {
-                                    App.ui.showAlert(`Sign-in failed: ${error.message}`, "error");
-                                }
-                            }
-                            // *** END FIX ***
-                            this.setupAuthListener();
-                        } else {
-                            App.pin.showLockScreen('login');
-                        }
-                    } else {
-                        console.log("No PIN info found. Forcing setup.");
-                        App.pin.showLockScreen('setup'); // No PIN is set. Force setup.
-                    }
-                },
-                
-                setupAuthListener: function() {
-                    const { auth } = App.state.fb;
-                    App.Firebase.onAuthStateChanged(auth, async (user) => {
-                        console.log("Auth state changed. User:", user ? user.uid : null);
-                        if (user) {
-                            // User is signed in
-                            App.state.userId = user.uid;
-                            App.state.storageDriver = 'firestore';
-                            
-                            // 1. Check for Firestore PIN meta
-                            const metaDocRef = doc(App.state.fb.db, `artifacts/${App.state.appId}/users/${user.uid}`, 'meta');
-                            const metaDoc = await App.Firebase.getDoc(metaDocRef);
-                            
-                            if (metaDoc.exists()) {
-                                // Cloud user exists. Use cloud PIN info.
-                                const cloudPin = metaDoc.data();
-                                App.state.pin.salt = cloudPin.salt;
-                                App.state.pin.hash = cloudPin.hash;
-                                
-                                // Overwrite local PIN info to sync
-                                // FIX: Use 'value' key, not 'data'
-                                await App.state.db.put(App.config.STORES.APP_STATE, {id: 'securitySalt', value: cloudPin.salt});
-                                await App.state.db.put(App.config.STORES.APP_STATE, {id: 'securityHash', value: cloudPin.hash});
-                                
-                                App.pin.showLockScreen('login');
-                            } else {
-                                // New cloud user. Migrate local PIN info.
-                                console.log("New cloud user. Migrating local PIN to cloud...");
-                                await App.Firebase.setDoc(metaDocRef, { 
-                                    salt: App.state.pin.salt, 
-                                    hash: App.state.pin.hash 
-                                });
-                                
-                                // Now migrate local *data*
-                                await App.storage.migrateLocalToFirestore();
-                                App.pin.showLockScreen('login');
-                            }
-                            
-                        } else {
-                            // User is signed out. Show login view.
-                            App.state.userId = null;
-                            App.state.storageDriver = 'local';
-                            App.dom.app.style.display = 'none';
-                            App.dom.lock.screen.style.display = 'none';
-                            App.dom.login.view.style.display = 'flex';
-                        }
-                        this.updateSyncStatusUI();
-                    });
-                },
-                
-                showLogin: function() {
-                    App.dom.app.style.display = 'none';
-                    App.dom.lock.screen.style.display = 'none';
-                    App.dom.login.view.style.display = 'flex';
-                },
-
-                stayLocal: function() {
-                    App.dom.login.view.style.display = 'none';
-                    App.pin.showLockScreen('login'); // Show local PIN login
-                },
-                
-                updateSyncStatusUI: function() {
-                    const { settings } = App.dom;
-                    const user = App.state.fb.auth ? App.state.fb.auth.currentUser : null;
-                    
-                    settings.syncLoading.style.display = 'none';
-                    if (user) {
-                        settings.syncIn.style.display = 'block';
-                        settings.syncOut.style.display = 'none';
-                        settings.userEmail.textContent = user.email || (user.isAnonymous ? 'Anonymous User' : 'Signed In');
-                    } else {
-                        settings.syncIn.style.display = 'none';
-                        settings.syncOut.style.display = 'block';
-                    }
-                },
-                
-                showEmailLogin: function(show) {
-                    App.dom.login.emailLoginView.style.display = show ? 'block' : 'none';
-                },
-                
-                signInWithGoogle: async function() {
-                    this.showAuthError('');
-                    if (!App.state.fb.auth) {
-                        this.showAuthError("Firebase is not configured. Cannot sign in.");
-                        return;
-                    }
-                    try {
-                        // *** FIX: Use signInWithRedirect instead of signInWithPopup ***
-                        await App.Firebase.signInWithRedirect(App.state.fb.auth, App.state.fb.googleProvider);
-                        // The app will now reload. onAuthStateChanged and getRedirectResult will handle it.
-                    } catch (e) { this.showAuthError(e.message); }
-                },
-                
-                signInWithEmail: async function() {
-                    this.showAuthError('');
-                    if (!App.state.fb.auth) {
-                        this.showAuthError("Firebase is not configured. Cannot sign in.");
-                        return;
-                    }
-                    try {
-                        const email = App.dom.login.emailInput.value;
-                        const pass = App.dom.login.passwordInput.value;
-                        await App.Firebase.signInWithEmailAndPassword(App.state.fb.auth, email, pass);
-                        // onAuthStateChanged will handle the rest
-                    } catch (e) { this.showAuthError(e.message); }
-                },
-                
-                signUpWithEmail: async function() {
-                    this.showAuthError('');
-                    if (!App.state.fb.auth) {
-                        this.showAuthError("Firebase is not configured. Cannot sign up.");
-                        return;
-                    }
-                    try {
-                        const email = App.dom.login.emailInput.value;
-                        const pass = App.dom.login.passwordInput.value;
-                        await App.Firebase.createUserWithEmailAndPassword(App.state.fb.auth, email, pass);
-                        // onAuthStateChanged will handle the rest
-                    } catch (e) { this.showAuthError(e.message); }
-                },
-                
-                signOut: async function() {
-                    if (!App.state.fb.auth) return;
-                    try {
-                        await App.Firebase.signOut(App.state.fb.auth);
-                        // onAuthStateChanged will handle showing the login screen
-                    } catch (e) { this.showAuthError(e.message); }
-                },
-                
-                showAuthError: function(message) {
-                    App.dom.login.authError.textContent = message;
-                }
-            },
-            
-            pin: {
-                showLockScreen: function(mode) { // 'login', 'setup', 'change'
-                    const { lock } = App.dom;
-                    lock.screen.style.display = 'flex';
-                    App.dom.app.style.display = 'none';
-                    this.resetInput();
-                    
-                    if (mode === 'setup') {
-                        lock.title.textContent = "Create PIN";
-                        lock.subtitle.textContent = "Create a 4-digit PIN to secure your data.";
-                        App.state.pin.setupStep = 1;
-                    } else if (mode === 'change') {
-                        lock.title.textContent = "Change PIN";
-                        lock.subtitle.textContent = "First, enter your CURRENT PIN.";
-                        App.state.pin.setupStep = 0; // 0 = login
-                        App.state.pin.actionCallback = this.startChangePinFlow.bind(this); // FIX: Bind this
-                    } else { // 'login'
-                        lock.title.textContent = "Enter PIN";
-                        lock.subtitle.textContent = "Enter your 4-digit PIN to unlock.";
-                        App.state.pin.setupStep = 0; // 0 = login
-                    }
-                },
-                
-                onKeyPress: function(key) {
-                    let { input } = App.state.pin;
-                    if (key === 'del') {
-                        input = input.slice(0, -1);
-                    } else if (input.length < 4) {
-                        input += key;
-                    }
-                    
-                    App.state.pin.input = input;
-                    this.updateDots();
-                    
-                    if (input.length === 4) {
-                        this.processInput();
-                    }
-                },
-                
-                updateDots: function() {
-                    App.dom.lock.dots.forEach((dot, index) => {
-                        dot.classList.toggle('filled', index < App.state.pin.input.length);
-                    });
-                },
-                
-                resetInput: function(errorMsg = '') {
-                    App.state.pin.input = "";
-                    if(App.state.pin.setupStep === 0) { // Only clear callback if in login mode
-                        App.state.pin.actionCallback = null;
-                    }
-                    App.dom.lock.error.textContent = errorMsg;
-                    if (errorMsg) {
-                        App.dom.lock.screen.classList.add('shake');
-                        setTimeout(() => App.dom.lock.screen.classList.remove('shake'), 500);
-                    }
-                    this.updateDots();
-                },
-                
-                processInput: async function() {
-                    const { setupStep } = App.state.pin;
-                    
-                    if (setupStep === 0) { // Login
-                        await this.handleLogin();
-                    } else { // Setup
-                        // FIX: Pass the original bound function
-                        await this.handleSetup(this.startChangePinFlow_original); 
-                    }
-                },
-                
-                handleLogin: async function() {
-                    const { input, salt, hash, actionCallback } = App.state.pin;
-                    
-                    const key = await App.storage.deriveKey(input, salt);
-                    if (!key) {
-                        this.resetInput("PIN derivation failed.");
-                        return;
-                    }
-                    
-                    const inputHash = App.util.bufferToHex(await window.crypto.subtle.digest('SHA-256', new TextEncoder().encode(input + salt)));
-
-                    if (inputHash === hash) {
-                        // Success!
-                        App.state.pin.encryptionKey = key;
-                        if (actionCallback) {
-                            actionCallback(); // Run "change pin" flow
-                        } else {
-                            this.unlock(); // Normal unlock
-                        }
-                    } else {
-                        // Fail
-                        setTimeout(() => this.resetInput("Invalid PIN. Please try again."), 200);
-                    }
-                },
-                
-                handleSetup: async function() {
-                    const { setupStep, input, confirmPin } = App.state.pin;
-                    
-                    if (setupStep === 1) { // Step 1: First PIN entry
-                        App.state.pin.confirmPin = input;
-                        setTimeout(() => {
-                            App.state.pin.input = "";
-                            App.dom.lock.title.textContent = "Confirm PIN";
-                            App.dom.lock.subtitle.textContent = "Please re-enter your 4-digit PIN.";
-                            this.updateDots();
-                            App.state.pin.setupStep = 2;
-                        }, 200);
-                    } else { // Step 2: Confirm PIN entry
-                        if (input === confirmPin) {
-                            // PINs match! Save and log in.
-                            await this.saveNewPin(input);
-                            this.unlock();
-                        } else {
-                            // PINs don't match. Reset.
-                            App.dom.lock.title.textContent = "Create PIN";
-                            App.dom.lock.subtitle.textContent = "PINs did not match. Please try again.";
-                            App.state.pin.setupStep = 1;
-                            App.state.pin.confirmPin = "";
-                            setTimeout(() => this.resetInput(""), 200);
-                        }
-                    }
-                },
-                
-                saveNewPin: async function(pin) {
-                    const newSalt = App.util.generateSalt();
-                    const newKey = await App.storage.deriveKey(pin, newSalt);
-                    const newHash = App.util.bufferToHex(await window.crypto.subtle.digest('SHA-256', new TextEncoder().encode(pin + newSalt)));
-                    
-                    // Save to local DB (unencrypted)
-                    // FIX: Use 'value' key, not 'data'
-                    await App.state.db.put(App.config.STORES.APP_STATE, {id: 'securitySalt', value: newSalt});
-                    await App.state.db.put(App.config.STORES.APP_STATE, {id: 'securityHash', value: newHash});
-                    
-                    // Save to Firestore if signed in
-                    if (App.state.userId) {
-                        const metaDocRef = doc(App.state.fb.db, `artifacts/${App.state.appId}/users/${App.state.userId}`, 'meta');
-                        await App.Firebase.setDoc(metaDocRef, { salt: newSalt, hash: newHash });
-                    }
-                    
-                    // Update runtime state
-                    App.state.pin.salt = newSalt;
-                    App.state.pin.hash = newHash;
-                    App.state.pin.encryptionKey = newKey;
-                    
-                    console.log("New PIN saved and key derived.");
-                },
-                
-                unlock: async function(targetView = 'welcomeView') {
-                    App.dom.lock.screen.style.display = 'none';
-                    App.dom.app.style.display = 'flex';
-                    
-                    try {
-                        await App.storage.loadAllHistory(); // Loads into App.state.data
-                        App.navigation.navigateTo(targetView);
-                        
-                        const hasOnboarded = localStorage.getItem('hauoraOnboardComplete');
-                        if (hasOnboarded !== 'true') {
-                            App.dom.onboarding.modal.style.display = 'flex'; // Use flex to center
-                            setTimeout(() => App.dom.onboarding.modal.classList.add('visible'), 10);
-                            App.state.ui.currentOnboardingStep = 1; // Reset to 1
-                            App.ui.updateOnboardingStep(0); // Start at step 1
-                        }
-                    } catch (e) {
-                        console.error("Failed to load and decrypt data:", e);
-                        this.showLockScreen('login');
-                        this.resetInput("Decryption failed. Wrong PIN or corrupt data.");
-                    }
-                },
-                
-                startChangePin: function() {
-                    this.showLockScreen('change');
-                },
-                
-                startChangePinFlow: function() {
-                    // `this` is App.pin
-                    console.log("Current PIN verified. Starting change flow...");
-                    App.state.pin.setupStep = 1; // 1 = new
-                    App.state.pin.confirmPin = "";
-                    App.dom.lock.title.textContent = "Enter NEW PIN";
-                    App.dom.lock.subtitle.textContent = "Create a new 4-digit PIN.";
-                    App.state.pin.input = ""; // Clear input for new PIN
-                    this.updateDots(); // Clear dots
-                    
-                    const oldKey = App.state.pin.encryptionKey; // Keep the old key for re-encryption
-                    
-                    // Store original handler and override
-                    this.startChangePinFlow_original = this.handleSetup.bind(this);
-                    
-                    this.handleSetup = async function() {
-                        const { setupStep, input, confirmPin } = App.state.pin;
-                        
-                        if (setupStep === 1) {
-                            App.state.pin.confirmPin = input;
-                            setTimeout(() => {
-                                App.state.pin.input = "";
-                                App.dom.lock.title.textContent = "Confirm NEW PIN";
-                                App.dom.lock.subtitle.textContent = "Re-enter your new 4-digit PIN.";
-                                this.updateDots();
-                                App.state.pin.setupStep = 2;
-                            }, 200);
-                        } else { // Step 2
-                            if (input === confirmPin) {
-                                try {
-                                    App.dom.lock.title.textContent = "Re-encrypting...";
-                                    App.dom.lock.subtitle.textContent = "Please wait, this may take a moment.";
-                                    
-                                    const newSalt = App.util.generateSalt();
-                                    const newKey = await App.storage.deriveKey(input, newSalt);
-                                    const newHash = App.util.bufferToHex(await window.crypto.subtle.digest('SHA-256', new TextEncoder().encode(input + newSalt)));
-                                    
-                                    const allData = App.state.data;
-                                    App.state.pin.encryptionKey = newKey; // Set to new key for saving
-                                    
-                                    await App.storage.saveStore(App.config.STORES.CHECKIN, allData.checkinHistory);
-                                    await App.storage.saveStore(App.config.STORES.GRATITUDE, allData.gratitudeHistory);
-                                    await App.storage.saveStore(App.config.STORES.SABBATH, allData.sabbathHistory);
-                                    await App.storage.saveStore(App.config.STORES.RULE_HISTORY, allData.ruleOfLifeHistory);
-                                    await App.storage.saveAppState('userResources', allData.userResources);
-                                    await App.storage.saveAppState('ruleOfLife', allData.ruleOfLife);
-
-                                    // Save new PIN info (unencrypted)
-                                    await App.state.db.put(App.config.STORES.APP_STATE, {id: 'securitySalt', value: newSalt});
-                                    await App.state.db.put(App.config.STORES.APP_STATE, {id: 'securityHash', value: newHash});
-                                    
-                                    App.state.pin.salt = newSalt;
-                                    App.state.pin.hash = newHash;
-
-                                    if (App.state.storageDriver === 'firestore') {
-                                        const metaDocRef = doc(App.state.fb.db, `artifacts/${App.state.appId}/users/${App.state.userId}`, 'meta');
-                                        await App.Firebase.setDoc(metaDocRef, { salt: newSalt, hash: newHash });
-                                        
-                                        // Re-encrypt cloud data
-                                        const batch = App.Firebase.writeBatch(App.state.fb.db);
-                                        const basePath = `artifacts/${App.state.appId}/users/${App.state.userId}/data`;
-                                        for(const e of allData.checkinHistory) batch.set(doc(App.state.fb.db, basePath, `checkinHistory_${e.date}`), { data: await App.storage.encrypt(e) });
-                                        for(const e of allData.gratitudeHistory) batch.set(doc(App.state.fb.db, basePath, `gratitudeHistory_${e.date}`), { data: await App.storage.encrypt(e) });
-                                        for(const e of allData.sabbathHistory) batch.set(doc(App.state.fb.db, basePath, `sabbathHistory_${e.date}`), { data: await App.storage.encrypt(e) });
-                                        for(const e of allData.ruleOfLifeHistory) batch.set(doc(App.state.fb.db, basePath, `ruleOfLifeHistory_${e.date}`), { data: await App.storage.encrypt(e) });
-                                        batch.set(doc(App.state.fb.db, basePath, 'userResources'), { data: await App.storage.encrypt(allData.userResources) });
-                                        batch.set(doc(App.state.fb.db, basePath, 'ruleOfLife'), { data: await App.storage.encrypt(allData.ruleOfLife) });
-                                        await batch.commit();
-                                    }
-                                    
-                                    App.ui.showAlert("PIN Changed Successfully!", "success");
-                                    this.unlock('settingsView');
-                                    
-                                } catch (e) {
-                                    console.error("Failed to change PIN:", e);
-                                    App.state.pin.encryptionKey = oldKey; // Restore old key on fail
-                                    App.ui.showModal("Error", "Failed to change PIN. Your old PIN is still active.");
-                                    this.unlock('settingsView');
-                                } finally {
-                                    // Restore original setup handler
-                                    App.pin.handleSetup = this.startChangePinFlow_original;
-                                    this.startChangePinFlow_original = null; // Clear temp handler
-                                }
-                            } else {
-                                // PINs don't match
-                                App.dom.lock.title.textContent = "Enter NEW PIN";
-                                App.dom.lock.subtitle.textContent = "PINs did not match. Please try again.";
-                                App.state.pin.setupStep = 1;
-                                App.state.pin.confirmPin = "";
-                                setTimeout(() => this.resetInput(""), 200);
-                            }
-                        }
-                    }.bind(this); // Bind the function to App.pin scope
-                }
-            }, // End of App.pin module
-// **************************************************************************************************** Part 4 **************************************************
-
-            ================================================================
-            App Logic Part 4: UI, Navigation, and Init
-            ================================================================
-            -->
-
-            <!-- --- UI Module --- -->
-            ui: {
-                init: function() {
-                    this.initModals();
-                    this.initOnboarding();
-                },
-
-                initModals: function() {
-                    // --- General Modal ---
-                    const modal = App.dom.modal.modal;
-                    const closeBtn = modal.querySelector('.close-button');
-                    const content = modal.querySelector('.modal-content');
-                    
-                    closeBtn.addEventListener('click', () => this.hideModal());
-                    modal.addEventListener('click', (e) => {
-                        if (e.target === modal) this.hideModal();
-                    });
-                    
-                    // --- Confirmation Modal (Re-using general modal) ---
-                    // The App.ui.showModal function handles this logic.
-                    
-                    // --- Resource Modal ---
-                    const resModal = App.dom.resources.modal;
-                    const resClose = resModal.querySelector('.close-button');
-                    resClose.addEventListener('click', () => this.hideResourceModal());
-                    resModal.addEventListener('click', (e) => {
-                        if (e.target === resModal) this.hideResourceModal();
-                    });
-                    
-                    App.dom.resources.form.addEventListener('submit', (e) => {
-                        e.preventDefault();
-                        App.handlers.saveResource();
-                    });
-                },
-                
-                initOnboarding: function() {
-                    const { modal, steps, prevBtn, nextBtn } = App.dom.onboarding;
-                    
-                    nextBtn.addEventListener('click', () => {
-                        App.ui.updateOnboardingStep(1);
-                    });
-                    prevBtn.addEventListener('click', () => {
-                        App.ui.updateOnboardingStep(-1);
-                    });
-                },
-
-                updateOnboardingStep: function(direction) {
-                    const { steps, prevBtn, nextBtn, indicatorDots, finishBtn } = App.dom.onboarding;
-                    let { currentOnboardingStep } = App.state.ui;
-                    
-                    const newStep = currentOnboardingStep + direction;
-                    
-                    if (newStep < 1 || newStep > steps.length) {
-                        return;
-                    }
-
-                    // Update current step
-                    App.state.ui.currentOnboardingStep = newStep;
-                    currentOnboardingStep = newStep; // Use new value
-
-                    // Hide all steps
-                    steps.forEach(step => step.style.display = 'none');
-                    // Show current step
-                    steps[currentOnboardingStep - 1].style.display = 'block';
-
-                    // Update indicators
-                    indicatorDots.forEach((dot, index) => {
-                        dot.classList.toggle('active', index === currentOnboardingStep - 1);
-                    });
-
-                    // Update button visibility
-                    prevBtn.style.display = currentOnboardingStep > 1 ? 'inline-block' : 'none';
-                    nextBtn.style.display = currentOnboardingStep < steps.length ? 'inline-block' : 'none';
-                    finishBtn.style.display = currentOnboardingStep === steps.length ? 'inline-block' : 'none';
-                },
-                
-                finishOnboarding: function() {
-                    localStorage.setItem('hauoraOnboardComplete', 'true');
-                    App.dom.onboarding.modal.classList.remove('visible');
-                    setTimeout(() => App.dom.onboarding.modal.style.display = 'none', 300);
-                },
-
-                showAlert: function(message, type = 'info', duration = 3000) {
-                    const alertBox = App.dom.alert;
-                    alertBox.textContent = message;
-                    alertBox.className = 'alert-box'; // Reset classes
-                    alertBox.classList.add(type); // 'info', 'success', 'error'
-                    
-                    alertBox.style.display = 'block';
-                    alertBox.style.opacity = 1;
-
-                    // Clear any existing timer
-                    if (App.state.ui.alertTimer) {
-                        clearTimeout(App.state.ui.alertTimer);
-                    }
-                    
-                    // Auto-hide
-                    App.state.ui.alertTimer = setTimeout(() => {
-                        alertBox.style.opacity = 0;
-                        // Wait for transition to finish before hiding
-                        setTimeout(() => alertBox.style.display = 'none', 300);
-                    }, duration);
-                },
-
-                showModal: function(title, message, buttons = []) {
-                    const { modal, titleEl, messageEl, buttonContainer } = App.dom.modal;
-                    
-                    titleEl.textContent = title;
-                    messageEl.textContent = message;
-                    
-                    // Clear old buttons
-                    buttonContainer.innerHTML = '';
-                    
-                    // Add new buttons if provided
-                    if (buttons.length > 0) {
-                        buttons.forEach(btn => {
-                            const button = document.createElement('button');
-                            button.textContent = btn.text;
-                            button.className = `btn btn-${btn.type || 'primary'}`; // 'primary', 'danger', 'secondary'
-                            button.addEventListener('click', (e) => {
-                                e.stopPropagation();
-                                if(btn.callback) btn.callback();
-                                if(btn.autoClose !== false) this.hideModal();
-                            });
-                            buttonContainer.appendChild(button);
-                        });
-                        buttonContainer.style.display = 'flex';
-                    } else {
-                        // Add a default "OK" button if no buttons are specified
-                        const okButton = document.createElement('button');
-                        okButton.textContent = "OK";
-                        okButton.className = "btn btn-primary";
-                        okButton.addEventListener('click', (e) => {
-                            e.stopPropagation();
-                            this.hideModal();
-                        });
-                        buttonContainer.appendChild(okButton);
-                        buttonContainer.style.display = 'flex';
-                    }
-                    
-                    modal.style.display = 'flex';
-                    setTimeout(() => modal.classList.add('visible'), 10);
-                },
-
-                hideModal: function() {
-                    const { modal } = App.dom.modal;
-                    modal.classList.remove('visible');
-                    setTimeout(() => {
-                        modal.style.display = 'none';
-                        // Clear modal content to prevent flash
-                        App.dom.modal.titleEl.textContent = '';
-                        App.dom.modal.messageEl.textContent = '';
-                        App.dom.modal.buttonContainer.innerHTML = '';
-                    }, 300); // Match CSS transition
-                },
-
-                // Add a convenience function for modal buttons
-                addModalButton: function(text, type, callback) {
-                    const button = document.createElement('button');
-                    button.textContent = text;
-                    button.className = `btn btn-${type || 'primary'}`;
-                    button.addEventListener('click', (e) => {
-                        e.stopPropagation();
-                        if(callback) callback();
-                        this.hideModal();
-                    });
-                    App.dom.modal.buttonContainer.appendChild(button);
-                },
-
-                showResourceModal: function(resource = null) {
-                    const { modal, form, idInput, titleInput, linkInput, descriptionInput, deleteBtn } = App.dom.resources;
-                    
-                    form.reset();
-                    if (resource) {
-                        idInput.value = resource.id;
-                        titleInput.value = resource.title;
-                        linkInput.value = resource.link;
-                        descriptionInput.value = resource.description;
-                        deleteBtn.style.display = 'inline-block';
-                        deleteBtn.onclick = () => App.handlers.deleteResource(resource.id);
-                    } else {
-                        idInput.value = `res_${Date.now()}`;
-                        deleteBtn.style.display = 'none';
-                        deleteBtn.onclick = null;
-                    }
-                    
-                    modal.style.display = 'flex';
-                    setTimeout(() => modal.classList.add('visible'), 10);
-                },
-                
-                hideResourceModal: function() {
-                    const { modal } = App.dom.resources;
-                    modal.classList.remove('visible');
-                    setTimeout(() => modal.style.display = 'none', 300);
-                },
-                
-                // --- Dynamic Content Updaters ---
-                
-                updateWelcomeView: function() {
-                    const { welcome } = App.dom;
-                    const today = App.util.getTodayDate();
-                    
-                    // Check for today's entries
-                    const hasCheckedIn = App.state.data.checkinHistory.some(e => e.date === today);
-                    const hasGratitude = App.state.data.gratitudeHistory.some(e => e.date === today);
-                    const hasSabbath = App.state.data.sabbathHistory.some(e => e.date === today);
-                    
-                    welcome.checkinBtn.innerHTML = hasCheckedIn ? 'View Today\'s Check-in <span class="check-mark">&#10003;</span>' : 'Daily Check-in';
-                    welcome.checkinBtn.classList.toggle('complete', hasCheckedIn);
-                    
-                    welcome.gratitudeBtn.innerHTML = hasGratitude ? 'View Today\'s Gratitude <span class="check-mark">&#10003;</span>' : 'Gratitude Journal';
-                    welcome.gratitudeBtn.classList.toggle('complete', hasGratitude);
-                    
-                    welcome.sabbathBtn.innerHTML = hasSabbath ? 'View Today\'s Sabbath <span class="check-mark">&#10003;</span>' : 'Sabbath Reflection';
-                    welcome.sabbathBtn.classList.toggle('complete', hasSabbath);
-                },
-                
-                updateCheckinView: function() {
-                    const today = App.util.getTodayDate();
-                    const { checkin } = App.dom;
-                    
-                    const entry = App.state.data.checkinHistory.find(e => e.date === today) || {
-                        date: today, feelings: [], note: '', ratings: {}
-                    };
-                    
-                    checkin.form.reset();
-                    checkin.note.value = entry.note;
-                    
-                    // Update feeling toggles
-                    checkin.feelingsContainer.querySelectorAll('.feeling-toggle').forEach(btn => {
-                        btn.classList.toggle('selected', entry.feelings.includes(btn.dataset.feeling));
-                    });
-                    
-                    // Update sliders
-                    checkin.sliders.forEach(slider => {
-                        const key = slider.id.split('-')[1]; // e.g., 'physical'
-                        slider.value = entry.ratings[key] || 5; // Default to 5
-                    });
-                },
-                
-                updateGratitudeView: function() {
-                    const today = App.util.getTodayDate();
-                    const { gratitude } = App.dom;
-                    
-                    const entry = App.state.data.gratitudeHistory.find(e => e.date === today) || {
-                        date: today, items: ['', '', ''], note: ''
-                    };
-                    
-                    gratitude.form.reset();
-                    gratitude.items[0].value = entry.items[0] || '';
-                    gratitude.items[1].value = entry.items[1] || '';
-                    gratitude.items[2].value = entry.items[2] || '';
-                    gratitude.note.value = entry.note || '';
-                },
-                
-                updateSabbathView: function() {
-                    const today = App.util.getTodayDate();
-                    const { sabbath } = App.dom;
-                    
-                    const entry = App.state.data.sabbathHistory.find(e => e.date === today) || {
-                        date: today, note: '', reflection: ''
-                    };
-                    
-                    sabbath.form.reset();
-                    sabbath.note.value = entry.note;
-                    sabbath.reflection.value = entry.reflection;
-                },
-                
-                updateHistoryView: function() {
-                    const { history } = App.dom;
-                    history.container.innerHTML = 'Loading history...';
-                    
-                    // Combine and sort all history data
-                    const allEntries = [
-                        ...App.state.data.checkinHistory.map(e => ({...e, type: 'Check-in'})),
-                        ...App.state.data.gratitudeHistory.map(e => ({...e, type: 'Gratitude'})),
-                        ...App.state.data.sabbathHistory.map(e => ({...e, type: 'Sabbath'})),
-                        ...App.state.data.ruleOfLifeHistory.map(e => ({...e, type: 'Rule of Life'}))
-                    ];
-                    
-                    // Sort descending by date
-                    allEntries.sort((a, b) => b.date.localeCompare(a.date));
-                    
-                    if (allEntries.length === 0) {
-                        history.container.innerHTML = '<p class="text-center text-gray-500 mt-8">No history entries yet.</p>';
-                        return;
-                    }
-                    
-                    history.container.innerHTML = allEntries.map(entry => {
-                        let content = '';
-                        switch (entry.type) {
-                            case 'Check-in':
-                                content = `
-                                    <p><strong>Feelings:</strong> ${entry.feelings.join(', ') || 'None'}</p>
-                                    <p><strong>Ratings:</strong> ${Object.entries(entry.ratings).map(([k,v]) => `${k}: ${v}`).join(', ')}</p>
-                                    <p><strong>Note:</strong> ${App.util.escapeHTML(entry.note) || '...'}</p>
-                                `;
-                                break;
-                            case 'Gratitude':
-                                content = `
-                                    <ol class="list-decimal list-inside">
-                                        ${entry.items.map(item => `<li>${App.util.escapeHTML(item) || '...'}</li>`).join('')}
-                                    </ol>
-                                    <p><strong>Note:</strong> ${App.util.escapeHTML(entry.note) || '...'}</p>
-                                `;
-                                break;
-                            case 'Sabbath':
-                                content = `
-                                    <p><strong>Practice:</strong> ${App.util.escapeHTML(entry.note) || '...'}</p>
-                                    <p><strong>Reflection:</strong> ${App.util.escapeHTML(entry.reflection) || '...'}</p>
-                                `;
-                                break;
-                            case 'Rule of Life':
-                                content = `
-                                    <p><strong>Reflection:</strong> ${App.util.escapeHTML(entry.reflection) || '...'}</p>
-                                `;
-                                break;
-                        }
-                        
-                        return `
-                            <div class="history-entry card">
-                                <h4 class="font-bold text-lg">${entry.type}</h4>
-                                <p class="text-sm text-gray-500 mb-2">${App.util.formatDate(entry.date)}</p>
-                                <div class="text-sm">${content}</div>
-                            </div>
-                        `;
-                    }).join('');
-                },
-                
-                updateRuleOfLifeView: function() {
-                    const { rule } = App.dom;
-                    const data = App.state.data.ruleOfLife || {};
-                    
-                    rule.form.reset();
-                    rule.inputs.vision.value = data.vision || '';
-                    rule.inputs.commitments.value = data.commitments || '';
-                    rule.inputs.practices.value = data.practices || '';
-                    rule.inputs.community.value = data.community || '';
-                    
-                    // For the "reflect" view
-                    rule.reflectVision.textContent = data.vision || '...';
-                    rule.reflectCommitments.textContent = data.commitments || '...';
-                    rule.reflectPractices.textContent = data.practices || '...';
-                    rule.reflectCommunity.textContent = data.community || '...';
-                },
-                
-                updateResourcesView: function() {
-                    const { resources } = App.dom;
-                    const data = App.state.data.userResources || {};
-                    
-                    const resourceList = Object.values(data);
-                    
-                    if (resourceList.length === 0) {
-                        resources.container.innerHTML = '<p class="text-center text-gray-500 mt-8">No saved resources yet.</p>';
-                        return;
-                    }
-                    
-                    resources.container.innerHTML = resourceList.map(res => `
-                        <div class="card resource-card">
-                            <h4 class="font-bold">${App.util.escapeHTML(res.title)}</h4>
-                            <p class="text-sm text-gray-600 mb-2">${App.util.escapeHTML(res.description) || '...'}</p>
-                            <div class="flex gap-2 mt-auto pt-2">
-                                <a href="${App.util.escapeHTML(res.link)}" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm">Open Link</a>
-                                <button class="btn btn-outline btn-sm" data-id="${res.id}">Edit</button>
-                            </div>
-                        </div>
-                    `).join('');
-                    
-                    // Add event listeners for edit buttons
-                    resources.container.querySelectorAll('.btn-outline').forEach(btn => {
-                        btn.addEventListener('click', () => {
-                            const res = App.state.data.userResources[btn.dataset.id];
-                            if (res) this.showResourceModal(res);
-                        });
-                    });
-                },
-                
-                updateSettingsView: function() {
-                    App.auth.updateSyncStatusUI();
-                }
-            }, // End of App.ui
-            
-            
-            <!-- --- Navigation Module --- -->
-            navigation: {
-                init: function() {
-                    // --- Bottom Nav Bar ---
-                    App.dom.nav.links.forEach(link => {
-                        link.addEventListener('click', (e) => {
-                            e.preventDefault();
-                            const targetView = link.dataset.view;
-                            this.navigateTo(targetView);
-                        });
-                    });
-                    
-                    // --- Welcome View Buttons ---
-                    App.dom.welcome.checkinBtn.addEventListener('click', () => this.navigateTo('checkinView'));
-                    App.dom.welcome.gratitudeBtn.addEventListener('click', () => this.navigateTo('gratitudeView'));
-                    App.dom.welcome.sabbathBtn.addEventListener('click', () => this.navigateTo('sabbathView'));
-                    
-                    // --- "Go Back" Buttons ---
-                    document.querySelectorAll('.btn-back').forEach(btn => {
-                        btn.addEventListener('click', (e) => {
-                            e.preventDefault();
-                            const defaultBack = btn.dataset.back || 'welcomeView';
-                            this.goBack(defaultBack);
-                        });
-                    });
-                },
-                
-                navigateTo: function(viewId) {
-                    console.log(`Navigating to: ${viewId}`);
-                    
-                    // Hide all views
-                    App.dom.views.forEach(view => {
-                        view.style.display = 'none';
-                    });
-                    
-                    // Show target view
-                    const targetView = document.getElementById(viewId);
-                    if (targetView) {
-                        targetView.style.display = 'block';
-                        App.state.ui.currentView = viewId;
-                        
-                        // Push to history
-                        if (App.state.ui.viewHistory[App.state.ui.viewHistory.length - 1] !== viewId) {
-                            App.state.ui.viewHistory.push(viewId);
-                        }
-                        
-                        // Run view-specific update logic
-                        this.updateViewContent(viewId);
-                        
-                        // Update nav link active state
-                        this.updateNavActiveState(viewId);
-                        
-                    } else {
-                        console.error(`View not found: ${viewId}`);
-                        App.dom.views[0].style.display = 'block'; // Show first view as fallback
-                    }
-                },
-                
-                goBack: function(defaultView = 'welcomeView') {
-                    App.state.ui.viewHistory.pop(); // Remove current view
-                    let lastView = App.state.ui.viewHistory.pop(); // Get previous view
-                    
-                    if (!lastView) {
-                        lastView = defaultView;
-                    }
-                    
-                    this.navigateTo(lastView);
-                },
-                
-                updateViewContent: function(viewId) {
-                    switch (viewId) {
-                        case 'welcomeView':
-                            App.ui.updateWelcomeView();
-                            break;
-                        case 'checkinView':
-                            App.ui.updateCheckinView();
-                            break;
-                        case 'gratitudeView':
-                            App.ui.updateGratitudeView();
-                            break;
-                        case 'sabbathView':
-                            App.ui.updateSabbathView();
-                            break;
-                        case 'historyView':
-                            App.ui.updateHistoryView();
-                            break;
-                        case 'ruleView':
-                            App.ui.updateRuleOfLifeView();
-                            break;
-                        case 'resourcesView':
-                            App.ui.updateResourcesView();
-                            break;
-                        case 'settingsView':
-                            App.ui.updateSettingsView();
-                            break;
-                    }
-                },
-                
-                updateNavActiveState: function(viewId) {
-                    App.dom.nav.links.forEach(link => {
-                        link.classList.toggle('active', link.dataset.view === viewId);
-                    });
-                }
-            }, // End of App.navigation
-
-            
-            <!-- 
-            ================================================================
-            App Init
-            ================================================================
-            -->
-            
-            init: async function() {
-                try {
-                    console.log("App.init started...");
-                    
-                    // 1. DOM Caching
-                    this.util.cacheDOM();
-                    
-                    // 2. Initialize UI (modals, etc.)
-                    this.ui.init();
-                    
-                    // 3. Initialize Firebase
-                    // FIX: Check for config before initializing
-                    if (typeof __firebase_config !== 'undefined' && __firebase_config) {
-                        try {
-                            const firebaseConfig = JSON.parse(__firebase_config);
-                            const fbApp = this.Firebase.initializeApp(firebaseConfig);
-                            this.state.fb.db = this.Firebase.getFirestore(fbApp);
-                            this.state.fb.auth = this.Firebase.getAuth(fbApp);
-                            this.state.fb.googleProvider = new this.Firebase.GoogleAuthProvider();
-                            
-                            // *** FIX: Add this line for Redirect persistence ***
-                            this.Firebase.setPersistence(this.state.fb.auth, this.Firebase.browserLocalPersistence);
-
-                            this.state.appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-                        } catch (e) {
-                            console.error("Firebase config error:", e);
-                            console.warn("Firebase config missing or invalid. App will run in local-only mode.");
-                            this.state.storageDriver = 'local';
-                            App.dom.settings.syncSection.style.display = 'none';
-                        }
-                    } else {
-                        console.warn("Firebase config not found. App will run in local-only mode.");
-                        this.state.storageDriver = 'local';
-                        App.dom.settings.syncSection.style.display = 'none';
-                    }
-                    
-                    // 4. Initialize Local DB (IndexedDB)
-                    this.state.db = await this.storage.initDB();
-                    console.log("IndexedDB initialized.");
-
-                    // 5. Initialize Event Handlers
-                    this.handlers.init();
-                    
-                    // 6. Initialize Navigation
-                    this.navigation.init();
-                    
-                    // 7. Check PIN & Auth State
-                    // This is the new entry point. It will:
-                    // - Check for local PIN
-                    // - If no PIN, force setup.
-                    // - If PIN, setup auth listener.
-                    // - Auth listener will:
-                    //   - If (no user), show login screen (or stay local).
-                    //   - If (user), check for cloud PIN, sync, and show PIN login.
-                    await this.auth.checkPinAndAuthState();
-                    
-                    console.log("App.init finished.");
-                    
-                } catch (error) {
-                    console.error("Critical error during App.init:", error);
-                    // Display a full-screen, non-closable error
-                    const body = document.querySelector('body');
-                    body.innerHTML = `
-                        <div style="padding: 20px; text-align: center; color: red;">
-                            <h1>Fatal Error</h1>
-                            <p>Toku Hauora could not start. ${error.message}</p>
-                            <p>Please try clearing your browser cache for this site or contact support.</p>
-                            <pre>${error.stack}</pre>
-                        </div>
-                    `;
-                }
-            }
-        }; // End of App object
-        
-        // --- Start the App ---
-        // Use DOMContentLoaded to ensure HTML is parsed
-        document.addEventListener('DOMContentLoaded', () => {
-            App.init();
-        });
-
-    </script>
-</body>
-</html>
+                        data.checkinHistory = (await Promise.all((await db.getAll(STORES.CHECKIN)).map
