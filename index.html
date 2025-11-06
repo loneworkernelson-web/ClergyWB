@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tōku Hauora</title>
-   
+    <link rel="icon" href="https://loneworkernelson-web.github.io/ClergyWB/favicon.ico" type="image/ico">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#4F46E5"> <!-- Indigo 600 -->
     <!-- FIX: Corrected typo from 'Haura' to 'Hauora' -->
@@ -519,16 +519,29 @@
                     this.pin.correctPin = localStorage.getItem('pin');
                 }
             },
-            loadData: function() {
+            loadData: async function() {
                 if (App.state.storageDriver === 'local') {
                     // Load from localStorage
                     App.state.data.checkinHistory = JSON.parse(localStorage.getItem('checkinHistory') || '[]');
                     App.state.data.userResources = JSON.parse(localStorage.getItem('userResources') || '{}');
                     // Load other data
+                    App.state.data.sabbathHistory = JSON.parse(localStorage.getItem('sabbathHistory') || '[]');
+                    App.state.data.gratitudeHistory = JSON.parse(localStorage.getItem('gratitudeHistory') || '[]');
+                    App.state.data.ruleOfLife = localStorage.getItem('ruleOfLife') || '';
+                    App.state.data.ruleHistory = JSON.parse(localStorage.getItem('ruleHistory') || '[]');
+                    App.state.ruleItems = App.state.data.ruleOfLife.split('\n').filter(line => line.trim());
                 } else {
                     // Load from Firestore
-                    const userDataRef = App.state.fb.db.collection(`artifacts/${App.state.appId}/users/${App.state.userId}/data`);
-                    // Fetch documents
+                    const userDataPath = `artifacts/${App.state.appId}/users/${App.state.userId}/data`;
+                    const keys = ['checkinHistory', 'userResources', 'sabbathHistory', 'gratitudeHistory', 'ruleOfLife', 'ruleHistory'];
+                    for (const key of keys) {
+                        const docRef = App.state.fb.db.doc(`${userDataPath}/${key}`);
+                        const docData = await App.Firebase.getDoc(docRef);
+                        if (docData && docData.data) {
+                            App.state.data[key] = await App.storage.decrypt(docData.data);
+                        }
+                    }
+                    App.state.ruleItems = App.state.data.ruleOfLife.split('\n').filter(line => line.trim());
                 }
             },
             dom: {
@@ -849,7 +862,7 @@
                 currentData: {},
                 renderCategory: function(type, index) {
                     const categories = type === 'warn' ? App.state.warningCategories : App.state.positiveCategories;
-                    const container = App.dom[type].categoryContainer;
+                    const container = App.dom[type === 'warn' ? 'warn' : 'positive'].categoryContainer;
                     container.innerHTML = '';
                     const category = categories[index];
                     const h3 = document.createElement('h3');
@@ -866,13 +879,14 @@
                         container.appendChild(btn);
                     });
                     // Update buttons visibility
-                    App.dom[type].prevBtn.style.display = index > 0 ? 'block' : 'none';
+                    const domType = type === 'warn' ? App.dom.warn : App.dom.positive;
+                    domType.prevBtn.style.display = index > 0 ? 'block' : 'none';
                     if (index === categories.length - 1) {
-                        App.dom[type].nextBtn.style.display = 'none';
-                        App.dom[type].finishBtn.style.display = 'block';
+                        domType.nextBtn.style.display = 'none';
+                        domType.finishBtn.style.display = 'block';
                     } else {
-                        App.dom[type].nextBtn.style.display = 'block';
-                        App.dom[type].finishBtn.style.display = 'none';
+                        domType.nextBtn.style.display = 'block';
+                        domType.finishBtn.style.display = 'none';
                     }
                 },
                 navigateCategory: function(type, dir) {
@@ -880,7 +894,7 @@
                     App.state.ui[current] = Math.max(0, App.state.ui[current] + dir);
                     this.renderCategory(type, App.state.ui[current]);
                 },
-                finishCheckin: function(type) {
+                finishCheckin: async function(type) {
                     const entry = {
                         date: App.util.getCurrentDate(),
                         type: type,
@@ -888,10 +902,10 @@
                     };
                     App.state.data.checkinHistory.push(entry);
                     // Save
-                    App.storage.saveAppState('checkinHistory', App.state.data.checkinHistory);
+                    await App.storage.saveAppState('checkinHistory', App.state.data.checkinHistory);
                     if (App.state.storageDriver === 'firestore') {
                         const docRef = App.state.fb.db.doc(`artifacts/${App.state.appId}/users/${App.state.userId}/data/checkinHistory`);
-                        App.Firebase.setDoc(docRef, { data: await App.storage.encrypt(App.state.data.checkinHistory) });
+                        await App.Firebase.setDoc(docRef, { data: await App.storage.encrypt(App.state.data.checkinHistory) });
                     }
                     this.currentData = {};
                     App.navigation.navigateTo('summaryView', { entryIndex: App.state.data.checkinHistory.length - 1 });
@@ -944,7 +958,7 @@
                     App.state.ui.currentSabbathCategory = Math.max(0, App.state.ui.currentSabbathCategory + dir);
                     this.renderCategory(App.state.ui.currentSabbathCategory);
                 },
-                finish: function() {
+                finish: async function() {
                     const index = App.state.data.sabbathHistory.findIndex(e => e.date === this.currentData.date);
                     if (index > -1) {
                         App.state.data.sabbathHistory[index] = this.currentData;
@@ -952,27 +966,27 @@
                         App.state.data.sabbathHistory.push(this.currentData);
                     }
                     // Save
-                    App.storage.saveAppState('sabbathHistory', App.state.data.sabbathHistory);
+                    await App.storage.saveAppState('sabbathHistory', App.state.data.sabbathHistory);
                     if (App.state.storageDriver === 'firestore') {
                         const docRef = App.state.fb.db.doc(`artifacts/${App.state.appId}/users/${App.state.userId}/data/sabbathHistory`);
-                        App.Firebase.setDoc(docRef, { data: await App.storage.encrypt(App.state.data.sabbathHistory) });
+                        await App.Firebase.setDoc(docRef, { data: await App.storage.encrypt(App.state.data.sabbathHistory) });
                     }
                     this.currentData = {};
                     App.navigation.navigateTo('dashboardView');
                 }
             },
             moduleGratitude: {
-                save: function() {
+                save: async function() {
                     const entry = {
                         date: App.util.getCurrentDate(),
                         text: App.dom.gratitude.entry.value
                     };
                     App.state.data.gratitudeHistory.push(entry);
                     // Save
-                    App.storage.saveAppState('gratitudeHistory', App.state.data.gratitudeHistory);
+                    await App.storage.saveAppState('gratitudeHistory', App.state.data.gratitudeHistory);
                     if (App.state.storageDriver === 'firestore') {
                         const docRef = App.state.fb.db.doc(`artifacts/${App.state.appId}/users/${App.state.userId}/data/gratitudeHistory`);
-                        App.Firebase.setDoc(docRef, { data: await App.storage.encrypt(App.state.data.gratitudeHistory) });
+                        await App.Firebase.setDoc(docRef, { data: await App.storage.encrypt(App.state.data.gratitudeHistory) });
                     }
                     App.dom.gratitude.entry.value = '';
                     App.ui.showAlert('Gratitude saved!');
@@ -996,14 +1010,14 @@
                         App.dom.rule.readText.classList.toggle('placeholder', !App.state.data.ruleOfLife);
                     }
                 },
-                saveRule: function() {
+                saveRule: async function() {
                     App.state.data.ruleOfLife = App.dom.rule.editInput.value.trim();
                     App.state.ruleItems = App.state.data.ruleOfLife.split('\n').filter(line => line.trim());
                     // Save
-                    App.storage.saveAppState('ruleOfLife', App.state.data.ruleOfLife);
+                    await App.storage.saveAppState('ruleOfLife', App.state.data.ruleOfLife);
                     if (App.state.storageDriver === 'firestore') {
                         const docRef = App.state.fb.db.doc(`artifacts/${App.state.appId}/users/${App.state.userId}/data/ruleOfLife`);
-                        App.Firebase.setDoc(docRef, { data: await App.storage.encrypt(App.state.data.ruleOfLife) });
+                        await App.Firebase.setDoc(docRef, { data: await App.storage.encrypt(App.state.data.ruleOfLife) });
                     }
                     App.ui.showAlert('Rule of Life saved!');
                     this.renderRule('read');
@@ -1020,7 +1034,7 @@
                         container.appendChild(label);
                     });
                 },
-                saveChecklist: function() {
+                saveChecklist: async function() {
                     const checks = Array.from(App.dom.rule.checklistContainer.querySelectorAll('input[type="checkbox"]')).map(cb => cb.checked);
                     const adherence = checks.reduce((sum, checked) => sum + (checked ? 1 : 0), 0) / checks.length * 100;
                     const entry = {
@@ -1029,10 +1043,10 @@
                     };
                     App.state.data.ruleHistory.push(entry);
                     // Save
-                    App.storage.saveAppState('ruleHistory', App.state.data.ruleHistory);
+                    await App.storage.saveAppState('ruleHistory', App.state.data.ruleHistory);
                     if (App.state.storageDriver === 'firestore') {
                         const docRef = App.state.fb.db.doc(`artifacts/${App.state.appId}/users/${App.state.userId}/data/ruleHistory`);
-                        App.Firebase.setDoc(docRef, { data: await App.storage.encrypt(App.state.data.ruleHistory) });
+                        await App.Firebase.setDoc(docRef, { data: await App.storage.encrypt(App.state.data.ruleHistory) });
                     }
                     App.ui.showAlert('Check-in saved!');
                     App.navigation.navigateTo('ruleOfLifeView');
@@ -1199,16 +1213,16 @@
                 }
             },
             moduleNotes: {
-                save: function() {
+                save: async function() {
                     const notes = App.dom.notes.entry.value.trim();
                     const entryIndex = App.state.ui.currentEntryIndex;
                     if (entryIndex !== null) {
                         App.state.data.checkinHistory[entryIndex].notes = notes;
                         // Save
-                        App.storage.saveAppState('checkinHistory', App.state.data.checkinHistory);
+                        await App.storage.saveAppState('checkinHistory', App.state.data.checkinHistory);
                         if (App.state.storageDriver === 'firestore') {
                             const docRef = App.state.fb.db.doc(`artifacts/${App.state.appId}/users/${App.state.userId}/data/checkinHistory`);
-                            App.Firebase.setDoc(docRef, { data: await App.storage.encrypt(App.state.data.checkinHistory) });
+                            await App.Firebase.setDoc(docRef, { data: await App.storage.encrypt(App.state.data.checkinHistory) });
                         }
                         App.ui.showAlert('Notes saved!');
                         App.navigation.navigateTo('summaryView');
