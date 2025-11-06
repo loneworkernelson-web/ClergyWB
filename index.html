@@ -1620,6 +1620,43 @@
                     return this.bufferToHex(array);
                 }
             },
+
+            // --- Expose Firebase modules to the App (used by Auth module) ---
+            // THIS IS THE FIX. `signInWithPopup` is removed and the other two are added.
+            Firebase: {
+                initializeApp, getAuth, signInAnonymously, signInWithCustomToken, 
+                onAuthStateChanged, GoogleAuthProvider, 
+                signInWithRedirect, getRedirectResult, // <-- FIX
+                createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut,
+                getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, onSnapshot, 
+                collection, query, writeBatch, setLogLevel, enableNetwork, disableNetwork, getDocs
+            }
+        }; // End App object
+        
+        
+        // --- Start the app ---
+        // This is the fix for the race condition.
+        // We ensure the DOM is fully loaded *before* we try to init the app,
+        // which includes caching DOM elements.
+        document.addEventListener('DOMContentLoaded', () => {
+            // A simple check for `initializeApp` from the module
+            if (typeof initializeApp !== 'undefined' && typeof idb !== 'undefined') {
+                App.init();
+            } else {
+                // This is a fallback if scripts are slow.
+                console.warn("SDKs not yet loaded, waiting...");
+                setTimeout(() => {
+                    if (typeof initializeApp !== 'undefined' && typeof idb !== 'undefined') {
+                        App.init();
+                    } else {
+                        console.error("Failed to load critical SDKs. App cannot start.");
+                        document.body.innerHTML = "Error: Could not load app dependencies. Please check your internet connection and refresh.";
+                    }
+                }, 1000); 
+            }
+        });
+
+    </script>
 //******************************************************************************************************************************************* PART3 *******************************
 // --- Storage & Crypto Module ---
             storage: {
