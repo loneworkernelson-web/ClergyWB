@@ -1,106 +1,101 @@
-const CACHE_NAME = 'toku-hauora-cache-v3'; // Incremented version
-const CACHE_FILES = [
-  '/', // The root
-  'TokuHauora_Corrected.html',
-  'config.js',
-  'tailwind.css', // This is the local file
-  'manifest.json',
-  'https://loneworkernelson-web.github.io/ClergyWB/Toku%20Haura.png', // App icon
-  // External Libraries
-  'https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js',
-  'https://cdn.jsdelivr.net/npm/idb@7/build/umd.js', // Updated from 7.1.1 to 7
-  // Firebase SDKs
-  'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js',
-  'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js',
-  'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js'
+const CACHE_NAME = 'hauora-cache-v4';
+// We now cache the app shell and the CDN resources.
+// We do NOT cache the tailwind.css file anymore.
+const URLS_TO_CACHE = [
+    'TokuHauora_Corrected.html', // This is the main HTML file
+    'config.js',
+    'manifest.json',
+    'https://cdn.tailwindcss.com',
+    'https://cdn.jsdelivr.net/npm/chart.js',
+    'https://cdn.jsdelivr.net/npm/idb@7/build/umd.js',
+    'https://loneworkernelson-web.github.io/ClergyWB/Toku%20Haura.png' // Icon
 ];
 
-// Install: Cache all critical files
-self.addEventListener('install', (e) => {
-  console.log('[ServiceWorker] Install');
-  e.waitUntil((async () => {
-    try {
-      const cache = await caches.open(CACHE_NAME);
-      console.log('[ServiceWorker] Caching app shell');
-      
-      // We need to fetch all files.
-      // For cross-origin files (CDNs), we must use 'cors' mode.
-      const requests = CACHE_FILES.map(url => {
-        // Use 'cors' mode for any URL that starts with 'http'
-        const mode = url.startsWith('http') ? 'cors' : 'same-origin';
-        const request = new Request(url, { mode: mode });
-        
-        return fetch(request).then(response => {
-          if (!response.ok) {
-            // For 'opaque' responses (like some 'cors' requests), we can't check status.
-            // But if it's not opaque and not ok, it's an error.
-            if (response.type !== 'opaque' && !response.ok) {
-              throw new Error(`Failed to fetch ${url} - status ${response.status}`);
-            }
-          }
-          // Put the valid response into the cache
-          return cache.put(request, response);
-        });
-      });
-      
-      await Promise.all(requests);
-      console.log('[ServiceWorker] All files cached successfully.');
-      
-    } catch (error) {
-      console.error('[ServiceWorker] Caching failed on install:', error);
-      // If caching fails, don't let this broken worker take over
-      self.skipWaiting();
-    }
-  })());
+// Install event: cache the app shell
+self.addEventListener('install', event => {
+    console.log('[ServiceWorker] Install v4');
+    event.waitUntil(
+        caches.open(CACHE_NAME)
+            .then(cache => {
+                console.log('[ServiceWorker] Caching app shell');
+                
+                // We must fetch these resources. 
+                // Using 'no-cors' for CDNs is an option but can be unreliable if the CDN 
+                // doesn't return an opaque response. We'll try a standard fetch first.
+                // The main issue before was trying to cache a file that 404'd (tailwind.css)
+                return cache.addAll(URLS_TO_CACHE);
+            })
+            .catch(err => {
+                // This is a common error with CDNs that don't support CORS in 'addAll'
+                // We'll try a more robust way by fetching individually.
+                console.warn('[ServiceWorker] addAll failed, trying individual fetches:', err);
+                return caches.open(CACHE_NAME).then(cache => {
+                    const promises = URLS_TO_CACHE.map(url => {
+                        // Use 'no-cors' for CDN assets as a fallback
+                        const request = new Request(url, { mode: 'no-cors' });
+                        return fetch(request).then(response => {
+                            // Only cache valid responses
+                            if (response.status === 200 || response.status === 0) { // status 0 for opaque
+                                return cache.put(url, response);
+                            }
+                            console.warn(`[ServiceWorker] Skipping cache for: ${url} (Status: ${response.status})`);
+                        }).catch(fetchErr => {
+                            console.error(`[ServiceWorker] Failed to fetch and cache: ${url}`, fetchErr);
+                        });
+                    });
+                    return Promise.all(promises);
+                });
+            })
+            .catch(err => {
+                 console.error('[ServiceWorker] Caching failed on install:', err);
+            })
+    );
 });
 
-// Activate: Clean up old caches
-self.addEventListener('activate', (e) => {
-  console.log('[ServiceWorker] Activate');
-  e.waitUntil(caches.keys().then((keyList) => {
-    return Promise.all(keyList.map((key) => {
-      // Delete all caches *except* the new one
-      if (key !== CACHE_NAME) {
-        console.log('[ServiceWorker] Removing old cache', key);
-        return caches.delete(key);
-      }
-    }));
-  }));
-  return self.clients.claim();
+// Activate event: clean up old caches
+self.addEventListener('activate', event => {
+    console.log('[ServiceWorker] Activate v4');
+    event.waitUntil(
+        caches.keys().then(cacheNames => {
+            return Promise.all(
+                cacheNames.map(cacheName => {
+                    if (cacheName !== CACHE_NAME) {
+                        console.log('[ServiceWorker] Removing old cache:', cacheName);
+                        return caches.delete(cacheName);
+                    }
+                })
+            );
+        })
+    );
+    return self.clients.claim();
 });
 
-// Fetch: Serve from cache, then network (Cache-First strategy)
-self.addEventListener('fetch', (e) => {
-  // We only want to cache GET requests
-  if (e.request.method !== 'GET') {
-    return;
-  }
-  
-  e.respondWith((async () => {
-    const r = await caches.match(e.request);
-    // console.log(`[ServiceWorker] Fetching resource: ${e.request.url}`);
-    if (r) {
-      // console.log(`[ServiceWorker] Serving from cache: ${e.request.url}`);
-      return r;
+// Fetch event: serve from cache, fall back to network
+self.addEventListener('fetch', event => {
+    // We only handle GET requests
+    if (event.request.method !== 'GET') {
+        return;
     }
 
-    // Not in cache, fetch from network
-    try {
-      const response = await fetch(e.request);
-      
-      // Don't cache firestore requests or non-OK responses
-      if (!response || response.status !== 200 || response.type === 'error' || e.request.url.includes('firestore.googleapis.com')) {
-        return response;
-      }
+    // Use a "Cache first, falling back to network" strategy for all cached assets
+    event.respondWith(
+        caches.match(event.request)
+            .then(cachedResponse => {
+                if (cachedResponse) {
+                    // console.log('[ServiceWorker] Fetching from cache:', event.request.url);
+                    return cachedResponse;
+                }
 
-      // Clone the response and cache it
-      const cache = await caches.open(CACHE_NAME);
-      // console.log(`[ServiceWorker] Caching new resource: ${e.request.url}`);
-      cache.put(e.request, response.clone());
-      return response;
-    } catch (error) {
-      console.error(`[ServiceWorker] Fetch failed: ${e.request.url}`, error);
-      // You could return a fallback offline page here if you had one
-    }
-  })());
+                // console.log('[ServiceWorker] Fetching from network:', event.request.url);
+                return fetch(event.request).then(
+                    response => {
+                        // We don't cache Firebase requests or other dynamic content
+                        return response;
+                    }
+                ).catch(err => {
+                    console.error('[ServiceWorker] Fetch failed:', err);
+                    // You could return a custom offline page here if you had one
+                });
+            })
+    );
 });
