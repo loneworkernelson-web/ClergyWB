@@ -2494,3 +2494,1098 @@
                     }.bind(App.pin); // Bind the function to App.pin scope
                 }
             },
+}
+            }, // End of App.pin module
+            
+            // --- Feature Modules ---
+            moduleCheckin: {
+                currentData: {},
+
+                start: function(type) { // 'warning' or 'positive'
+                    App.state.ui.currentWarningCategory = 0;
+                    App.state.ui.currentPositiveCategory = 0;
+                    
+                    const today = new Date().toISOString().split('T')[0];
+                    let entry = App.state.data.checkinHistory.find(e => e.date === today);
+                    
+                    if (!entry) {
+                        entry = { date: today, warningResponses: {}, positiveResponses: {}, notes: "" };
+                    }
+                    this.currentData = JSON.parse(JSON.stringify(entry)); // Deep copy to edit
+                    
+                    if (type === 'warning') {
+                        if (!this.currentData.warningResponses) this.currentData.warningResponses = {};
+                        this.renderQuestions('warning');
+                        App.navigation.navigateTo('checkinView');
+                    } else {
+                        if (!this.currentData.positiveResponses) this.currentData.positiveResponses = {};
+                        this.renderQuestions('positive');
+                        App.navigation.navigateTo('positiveCheckinView');
+                    }
+                },
+
+                renderQuestions: function(type) {
+                    const isWarning = type === 'warning';
+                    const { config, state, dom } = App;
+                    
+                    const index = isWarning ? state.ui.currentWarningCategory : state.ui.currentPositiveCategory;
+                    const order = isWarning ? config.categoryOrder : config.positiveCategoryOrder;
+                    const key = order[index];
+                    const questions = isWarning ? config.warningSigns[key] : config.positiveSigns[key];
+                    const titles = isWarning ? config.categoryDisplayNames : config.positiveCategoryDisplayNames;
+                    const responses = isWarning ? this.currentData.warningResponses : this.currentData.positiveResponses;
+                    
+                    const domEls = isWarning ? dom.warn : dom.positive;
+                    
+                    domEls.title.textContent = titles[key];
+                    domEls.container.innerHTML = '';
+                    
+                    if (!responses[key]) responses[key] = {};
+
+                    questions.forEach(q => {
+                        const res = responses[key][q];
+                        const noticed = res === true;
+                        const notReally = res === false;
+                        
+                        const qDiv = document.createElement('div');
+                        qDiv.className = 'p-4 border border-slate-200 rounded-xl shadow-sm bg-white';
+                        qDiv.innerHTML = `
+                            <p class="mb-3 text-slate-700">${App.ui.escapeHTML(q)}</p>
+                            <div class="flex flex-col sm:flex-row sm:space-x-2 space-y-2 sm:space-y-0">
+                                <button class="btn-choice ${isWarning ? 'checkin-btn-warn' : 'checkin-btn-pos'} ${noticed ? 'active' : ''}" data-value="true">Noticed</button>
+                                <button class="btn-choice checkin-btn-neg ${notReally ? 'active' : ''}" data-value="false">Not Really</button>
+                            </div>
+                        `;
+                        
+                        qDiv.querySelector('.checkin-btn-warn, .checkin-btn-pos').onclick = (e) => this.selectAnswer(e, key, q, true, type);
+                        qDiv.querySelector('.checkin-btn-neg').onclick = (e) => this.selectAnswer(e, key, q, false, type);
+                        
+                        domEls.container.appendChild(qDiv);
+                    });
+                    
+                    this.updateControls(type);
+                    this.updateProgress(type);
+                },
+                
+                selectAnswer: function(e, key, q, value, type) {
+                    const isWarning = type === 'warning';
+                    const responses = isWarning ? this.currentData.warningResponses : this.currentData.positiveResponses;
+                    responses[key][q] = value;
+                    
+                    const btn = e.currentTarget;
+                    const parent = btn.parentElement;
+                    
+                    parent.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                },
+
+                updateControls: function(type) {
+                    const isWarning = type === 'warning';
+                    const { config, state, dom } = App;
+                    const index = isWarning ? state.ui.currentWarningCategory : state.ui.currentPositiveCategory;
+                    const order = isWarning ? config.categoryOrder : config.positiveCategoryOrder;
+                    const domEls = isWarning ? dom.warn : dom.positive;
+
+                    domEls.prevBtn.style.display = index > 0 ? 'inline-block' : 'none';
+                    domEls.nextBtn.style.display = index < order.length - 1 ? 'inline-block' : 'none';
+                    domEls.finishBtn.style.display = index === order.length - 1 ? 'inline-block' : 'none';
+                    
+                    domEls.btnContainer.classList.toggle('sm:justify-between', index > 0);
+                    domEls.btnContainer.classList.toggle('sm:justify-end', index === 0);
+                },
+
+                updateProgress: function(type) {
+                    const isWarning = type === 'warning';
+                    const { config, state, dom } = App;
+                    const index = isWarning ? state.ui.currentWarningCategory : state.ui.currentPositiveCategory;
+                    const order = isWarning ? config.categoryOrder : config.positiveCategoryOrder;
+                    const domEls = isWarning ? dom.warn : dom.positive;
+                    
+                    const total = order.length;
+                    const percent = ((index + 1) / total) * 100;
+                    domEls.progress.value = percent;
+                    domEls.progressText.textContent = `Category ${index + 1} of ${total}`;
+                },
+                
+                navigateCategory: function(dir, type) {
+                    if (dir === 1 && !this.allQuestionsAnswered(type)) {
+                        App.ui.showAlert("Please answer all questions.", "info");
+                        return;
+                    }
+                    
+                    const isWarning = type === 'warning';
+                    const { config, state } = App;
+                    const order = isWarning ? config.categoryOrder : config.positiveCategoryOrder;
+                    
+                    if (isWarning) {
+                        state.ui.currentWarningCategory += dir;
+                    } else {
+                        state.ui.currentPositiveCategory += dir;
+                    }
+                    
+                    this.renderQuestions(type);
+                },
+                
+                allQuestionsAnswered: function(type) {
+                    const isWarning = type === 'warning';
+                    const { config, state } = App;
+                    
+                    const index = isWarning ? state.ui.currentWarningCategory : state.ui.currentPositiveCategory;
+                    const order = isWarning ? config.categoryOrder : config.positiveCategoryOrder;
+                    const key = order[index];
+                    const questions = isWarning ? config.warningSigns[key] : config.positiveSigns[key];
+                    const responses = isWarning ? this.currentData.warningResponses : this.currentData.positiveResponses;
+
+                    for (const q of questions) {
+                        if (typeof responses[key][q] === 'undefined') {
+                            return false;
+                        }
+                    }
+                    return true;
+                },
+                
+                finish: function(type) {
+                    if (!this.allQuestionsAnswered(type)) {
+                        App.ui.showAlert("Please answer all questions.", "info");
+                        return;
+                    }
+                    
+                    // Save to global state
+                    const existingEntryIndex = App.state.data.checkinHistory.findIndex(e => e.date === this.currentData.date);
+                    if (existingEntryIndex > -1) {
+                        App.state.data.checkinHistory[existingEntryIndex] = this.currentData;
+                    } else {
+                        App.state.data.checkinHistory.push(this.currentData);
+                    }
+                    
+                    // Save to DB
+                    App.storage.saveEntry('checkinHistory', this.currentData);
+                    
+                    App.state.ui.currentSummaryIndex = App.state.data.checkinHistory.length - 1;
+                    this.renderSummary(this.currentData);
+                    App.navigation.navigateTo('summaryView');
+                },
+                
+                calculateTotals: function(entry) {
+                    let warning = 0;
+                    let positive = 0;
+                    
+                    if (entry.warningResponses) {
+                        Object.values(entry.warningResponses).forEach(cat => {
+                            warning += Object.values(cat).filter(Boolean).length;
+                        });
+                    }
+                    if (entry.positiveResponses) {
+                        Object.values(entry.positiveResponses).forEach(cat => {
+                            positive += Object.values(cat).filter(Boolean).length;
+                        });
+                    }
+                    return { warning, positive };
+                },
+                
+                renderSummary: function(entry) {
+                    if (!entry) {
+                        App.dom.summary.content.innerHTML = "<p>No summary data.</p>";
+                        return;
+                    }
+                    
+                    const { summary } = App.dom;
+                    const { config } = App;
+                    const totals = this.calculateTotals(entry);
+                    let promptMsgs = [];
+                    
+                    let html = `<p class="text-sm text-slate-500 mb-3">Summary for: ${App.util.parseDateString(entry.date).toLocaleDateString('en-NZ', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>`;
+                    
+                    // Warning Signs
+                    html += `<h3 class="text-lg font-semibold text-indigo-800 mb-2 border-b border-indigo-200 pb-1">Warning Signs Noted</h3>`;
+                    let warnCount = 0;
+                    if (entry.warningResponses) {
+                        config.categoryOrder.forEach(key => {
+                            const responses = entry.warningResponses[key];
+                            if (responses && Object.values(responses).some(v => v)) {
+                                let catCount = 0;
+                                let listHtml = `<ul class="list-disc list-inside text-sm text-slate-600">`;
+                                Object.entries(responses).forEach(([q, val]) => {
+                                    if (val) {
+                                        catCount++;
+                                        listHtml += `<li>${App.ui.escapeHTML(q)}</li>`;
+                                    }
+                                });
+                                listHtml += `</ul>`;
+                                
+                                html += `<div class="mb-2 p-3 bg-white rounded-md shadow-sm">
+                                    <h3 class="font-semibold text-indigo-700">${config.categoryDisplayNames[key]}</h3>
+                                    ${listHtml}
+                                </div>`;
+                                
+                                warnCount += catCount;
+                                if (catCount >= 3) promptMsgs.push(`You noted ${catCount} signs in "${config.categoryDisplayNames[key]}".`);
+                            }
+                        });
+                    }
+                    if (warnCount === 0) html += `<p class="text-sm text-slate-500 italic mb-3">No warning signs noted.</p>`;
+                    
+                    // Positive Signs
+                    html += `<h3 class="text-lg font-semibold text-emerald-800 mt-4 mb-2 border-b border-emerald-200 pb-1">Positive Signs Noted</h3>`;
+                    let posCount = 0;
+                    if (entry.positiveResponses) {
+                        config.positiveCategoryOrder.forEach(key => {
+                            const responses = entry.positiveResponses[key];
+                            if (responses && Object.values(responses).some(v => v)) {
+                                let listHtml = `<ul class="list-disc list-inside text-sm text-slate-600">`;
+                                Object.entries(responses).forEach(([q, val]) => {
+                                    if (val) {
+                                        posCount++;
+                                        listHtml += `<li>${App.ui.escapeHTML(q)}</li>`;
+                                    }
+                                });
+                                listHtml += `</ul>`;
+                                html += `<div class="mb-2 p-3 bg-white rounded-md shadow-sm">
+                                    <h3 class="font-semibold text-emerald-700">${config.positiveCategoryDisplayNames[key]}</h3>
+                                    ${listHtml}
+                                </div>`;
+                            }
+                        });
+                    }
+                    if (posCount === 0) html += `<p class="text-sm text-slate-500 italic mb-3">No positive signs noted.</p>`;
+                    
+                    // Totals and Notes
+                    html += `<p class="font-bold mt-4 text-md text-indigo-800">Total Warning Signs: ${totals.warning}</p>`;
+                    html += `<p class="font-bold mt-1 text-md text-emerald-800">Total Positive Signs: ${totals.positive}</p>`;
+                    
+                    if (entry.notes) {
+                        html += `<h3 class="font-semibold text-amber-700 mt-4">Personal Notes:</h3>
+                                 <div class="notes-display">${App.ui.escapeHTML(entry.notes).replace(/\n/g, '<br>')}</div>`;
+                    }
+                    
+                    summary.content.innerHTML = html;
+                    
+                    // Prompt
+                    if (totals.warning >= 7 && !promptMsgs.some(m => m.includes("total"))) {
+                        promptMsgs.push(`You noted a total of ${totals.warning} warning signs.`);
+                    }
+                    
+                    if (promptMsgs.length > 0) {
+                        summary.prompt.innerHTML = `
+                            <p class="font-semibold mb-1">A Moment for Reflection:</p>
+                            <ul class="list-disc list-inside text-sm">
+                                ${promptMsgs.map(m => `<li>${m}</li>`).join('')}
+                            </ul>
+                            <p class="mt-2">Acknowledging these signs is a strength. Consider talking with a supervisor, mentor, or counsellor.</p>`;
+                        summary.prompt.style.display = 'block';
+                    } else {
+                        summary.prompt.style.display = 'none';
+                    }
+                },
+                
+                editNotesForSummary: function() {
+                    App.state.ui.currentNotesIndex = App.state.ui.currentSummaryIndex;
+                    App.navigation.navigateTo('notesView');
+                },
+                
+                saveNotes: function() {
+                    const { state, dom } = App;
+                    if (state.ui.currentNotesIndex !== -1 && state.data.checkinHistory[state.ui.currentNotesIndex]) {
+                        state.data.checkinHistory[state.ui.currentNotesIndex].notes = dom.notes.notes.value;
+                        App.storage.saveEntry('checkinHistory', state.data.checkinHistory[state.ui.currentNotesIndex]);
+                        App.ui.showAlert("Notes Saved!", "success");
+                        this.backToSummary();
+                    } else {
+                        App.ui.showAlert("Error saving notes.", "error");
+                    }
+                },
+                
+                backToSummary: function() {
+                    const { state, dom } = App;
+                    if (dom.summary.backToTrendsBtn.style.display === 'block') {
+                        App.navigation.navigateTo('summaryView', { entryIndex: state.ui.currentNotesIndex });
+                    } else {
+                        App.navigation.navigateTo('summaryViewLast');
+                    }
+                    state.ui.currentNotesIndex = -1;
+                }
+            }, // End App.moduleCheckin
+
+            // --- Sabbath Module ---
+            moduleSabbath: {
+                currentData: {},
+
+                loadForDate: function() {
+                    const { sabbath } = App.dom;
+                    const { data } = App.state;
+                    const date = sabbath.dateInput.value || new Date().toISOString().split('T')[0];
+                    sabbath.dateInput.value = date; // Ensure it's set
+                    
+                    this.currentData = data.sabbathHistory.find(e => e.date === date);
+                    if (!this.currentData) {
+                        this.currentData = {
+                            date,
+                            responses: {},
+                            notes: ""
+                        };
+                        App.config.sabbathCategoryOrder.forEach(key => this.currentData.responses[key] = {});
+                    }
+                    
+                    // Create a deep copy to edit, so we don't modify state directly
+                    this.currentData = JSON.parse(JSON.stringify(this.currentData));
+                    
+                    sabbath.notes.value = this.currentData.notes || '';
+                    App.state.ui.currentSabbathCategory = 0;
+                    this.renderQuestions();
+                },
+
+                renderQuestions: function() {
+                    const { config, state, dom } = App;
+                    const { sabbath } = dom;
+                    
+                    const index = state.ui.currentSabbathCategory;
+                    const key = config.sabbathCategoryOrder[index];
+                    const questions = config.sabbathSigns[key];
+                    const responses = this.currentData.responses;
+
+                    sabbath.title.textContent = config.sabbathCategoryDisplayNames[key];
+                    sabbath.container.innerHTML = '';
+                    
+                    if (!responses[key]) responses[key] = {};
+
+                    questions.forEach(q => {
+                        const res = responses[key][q];
+                        const noticed = res === true;
+                        const notReally = res === false;
+                        
+                        const qDiv = document.createElement('div');
+                        qDiv.className = 'p-4 border border-slate-200 rounded-xl shadow-sm bg-white';
+                        qDiv.innerHTML = `
+                            <p class="mb-3 text-slate-700">${App.ui.escapeHTML(q)}</p>
+                            <div class="flex flex-col sm:flex-row sm:space-x-2 space-y-2 sm:space-y-0">
+                                <button class="btn-choice checkin-btn-sab ${noticed ? 'active' : ''}" data-value="true">Yes, I experienced this</button>
+                                <button class="btn-choice checkin-btn-neg ${notReally ? 'active' : ''}" data-value="false">No, not really</button>
+                            </div>
+                        `;
+                        
+                        qDiv.querySelector('.checkin-btn-sab').onclick = (e) => App.moduleCheckin.selectAnswer(e, key, q, true, 'sabbath');
+                        qDiv.querySelector('.checkin-btn-neg').onclick = (e) => App.moduleCheckin.selectAnswer(e, key, q, false, 'sabbath');
+                        
+                        sabbath.container.appendChild(qDiv);
+                    });
+                    
+                    this.updateControls();
+                    this.updateProgress();
+                },
+                
+                updateControls: function() {
+                    const { sabbath } = App.dom;
+                    const index = App.state.ui.currentSabbathCategory;
+                    const order = App.config.sabbathCategoryOrder;
+
+                    sabbath.prevBtn.style.display = index > 0 ? 'inline-block' : 'none';
+                    sabbath.nextBtn.style.display = index < order.length - 1 ? 'inline-block' : 'none';
+                    sabbath.finishBtn.style.display = index === order.length - 1 ? 'inline-block' : 'none';
+                    
+                    sabbath.btnContainer.classList.toggle('sm:justify-between', index > 0);
+                    sabbath.btnContainer.classList.toggle('sm:justify-end', index === 0);
+                },
+
+                updateProgress: function() {
+                    const { sabbath } = App.dom;
+                    const index = App.state.ui.currentSabbathCategory;
+                    const total = App.config.sabbathCategoryOrder.length;
+                    
+                    const percent = ((index + 1) / total) * 100;
+                    sabbath.progress.value = percent;
+                    sabbath.progressText.textContent = `Category ${index + 1} of ${total}`;
+                },
+                
+                navigateCategory: function(dir) {
+                    if (dir === 1 && !App.moduleCheckin.allQuestionsAnswered('sabbath')) {
+                        return;
+                    }
+                    App.state.ui.currentSabbathCategory += dir;
+                    this.renderQuestions();
+                },
+
+                finish: function() {
+                    if (!App.moduleCheckin.allQuestionsAnswered('sabbath')) {
+                        return;
+                    }
+                    
+                    const reflectionDate = App.dom.sabbath.dateInput.value;
+                    this.currentData.date = reflectionDate;
+                    this.currentData.notes = App.dom.sabbath.notes.value;
+
+                    App.storage.saveEntry('sabbathHistory', this.currentData);
+                    
+                    const existingEntryIndex = App.state.data.sabbathHistory.findIndex(e => e.date === reflectionDate);
+                    if (existingEntryIndex > -1) {
+                        App.state.data.sabbathHistory[existingEntryIndex] = this.currentData;
+                    } else {
+                        App.state.data.sabbathHistory.push(this.currentData);
+                    }
+                    
+                    App.ui.showAlert("Sabbath reflection saved!", "success");
+                    App.navigation.navigateTo('pastSabbathView');
+                },
+
+                renderPast: function() {
+                    const { sabbath } = App.dom;
+                    sabbath.pastContainer.innerHTML = '';
+                    if (App.state.data.sabbathHistory.length === 0) {
+                        sabbath.pastContainer.innerHTML = '<p class="text-slate-500 italic">No past Sabbath reflections found.</p>';
+                        return;
+                    }
+                    
+                    const reversedHistory = [...App.state.data.sabbathHistory].sort((a, b) => b.date.localeCompare(a.date));
+                    
+                    reversedHistory.forEach(entry => {
+                        const entryWrapper = document.createElement('div');
+                        entryWrapper.className = "mb-4";
+                        
+                        const dateEl = document.createElement('h3');
+                        dateEl.className = "font-semibold text-violet-700";
+                        const displayDate = App.util.parseDateString(entry.date);
+                        dateEl.textContent = displayDate ? displayDate.toLocaleDateString('en-NZ', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) : 'Invalid Date';
+                        entryWrapper.appendChild(dateEl);
+                        
+                        const summaryDiv = document.createElement('div');
+                        summaryDiv.className = "entry-display space-y-2";
+                        
+                        App.config.sabbathCategoryOrder.forEach(catKey => {
+                            const catTitle = document.createElement('p');
+                            catTitle.className = "font-semibold text-sm text-violet-600";
+                            catTitle.textContent = App.config.sabbathCategoryDisplayNames[catKey];
+                            summaryDiv.appendChild(catTitle);
+                            
+                            const ul = document.createElement('ul');
+                            ul.className = 'list-disc list-inside text-sm text-slate-600';
+                            let countInCategory = 0;
+                            if(entry.responses && entry.responses[catKey]) {
+                                Object.entries(entry.responses[catKey]).forEach(([question, noticed]) => {
+                                    if (noticed) {
+                                        countInCategory++;
+                                        const li = document.createElement('li');
+                                        li.textContent = App.ui.escapeHTML(question);
+                                        ul.appendChild(li);
+                                    }
+                                });
+                            }
+                            if(countInCategory === 0) {
+                                const li = document.createElement('li');
+                                li.className = "italic text-slate-400";
+                                li.textContent = "No signs noted in this category.";
+                                ul.appendChild(li);
+                            }
+                            summaryDiv.appendChild(ul);
+                        });
+                        
+                        if (entry.notes && entry.notes.trim() !== "") {
+                            const notesTitle = document.createElement('p');
+                            notesTitle.className = "font-semibold text-sm text-amber-700 mt-3";
+                            notesTitle.textContent = "Additional Reflections:";
+                            summaryDiv.appendChild(notesTitle);
+                            
+                            const notesEl = document.createElement('p');
+                            notesEl.className = "italic whitespace-pre-wrap text-slate-600";
+                            notesEl.textContent = entry.notes;
+                            summaryDiv.appendChild(notesEl);
+                        }
+                        
+                        entryWrapper.appendChild(summaryDiv);
+                        sabbath.pastContainer.appendChild(entryWrapper);
+                    });
+                }
+            }, // End App.moduleSabbath
+
+            // --- Gratitude Module ---
+            moduleGratitude: {
+                loadForToday: function() {
+                    const todayDateString = new Date().toISOString().split('T')[0];
+                    const entry = App.state.data.gratitudeHistory.find(g => g.date === todayDateString);
+                    App.dom.gratitude.notes.value = entry ? entry.entry : '';
+                },
+
+                save: function() {
+                    const todayDateString = new Date().toISOString().split('T')[0];
+                    const entryText = App.dom.gratitude.notes.value;
+                    let entry = App.state.data.gratitudeHistory.find(g => g.date === todayDateString);
+                    
+                    let entryToSave;
+                    if (entry) {
+                        entry.entry = entryText; // Update existing in global state
+                        entryToSave = entry;
+                    } else {
+                        entryToSave = { date: todayDateString, entry: entryText };
+                        App.state.data.gratitudeHistory.push(entryToSave); // Add new to global state
+                    }
+                    
+                    App.storage.saveEntry('gratitudeHistory', entryToSave);
+                    App.ui.showAlert("Gratitude entry saved!", "success");
+                },
+
+                renderPast: function() {
+                    const { pastContainer } = App.dom.gratitude;
+                    pastContainer.innerHTML = '';
+                    if (App.state.data.gratitudeHistory.length === 0) {
+                        pastContainer.innerHTML = '<p class="text-slate-500 italic">No past gratitude entries found.</p>';
+                        return;
+                    }
+                    
+                    const reversedHistory = [...App.state.data.gratitudeHistory].sort((a, b) => b.date.localeCompare(a.date));
+                    reversedHistory.forEach(entry => {
+                        if (!entry.entry || entry.entry.trim() === '') return; // Skip empty entries
+                        
+                        const entryWrapper = document.createElement('div');
+                        entryWrapper.className = "mb-4";
+                        
+                        const dateEl = document.createElement('h3');
+                        dateEl.className = "font-semibold text-amber-700";
+                        const displayDate = App.util.parseDateString(entry.date);
+                        dateEl.textContent = displayDate ? displayDate.toLocaleDateString('en-NZ', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) : 'Invalid Date';
+                        
+                        const entryEl = document.createElement('p');
+                        entryEl.className = "entry-display";
+                        entryEl.textContent = App.ui.escapeHTML(entry.entry);
+                        
+                        entryWrapper.appendChild(dateEl);
+                        entryWrapper.appendChild(entryEl);
+                        pastContainer.appendChild(entryWrapper);
+                    });
+                }
+            }, // End App.moduleGratitude
+
+            // --- Rule of Life Module ---
+            moduleRule: {
+                renderRule: function(mode = 'read') {
+                    const { rule } = App.dom;
+                    const intentions = (App.state.data.ruleOfLife && App.state.data.ruleOfLife.intentions) ? App.state.data.ruleOfLife.intentions.filter(i => i) : [];
+                    
+                    if (mode === 'read') {
+                        rule.readList.innerHTML = '';
+                        if (intentions.length === 0) {
+                            rule.readList.innerHTML = '<li class="italic text-slate-500">You haven\'t set any intentions yet. Click \'Edit\' to add some.</li>';
+                        } else {
+                            intentions.forEach(intention => {
+                                if (intention && intention.trim() !== "") {
+                                    const li = document.createElement('li');
+                                    li.textContent = App.ui.escapeHTML(intention);
+                                    rule.readList.appendChild(li);
+                                }
+                            });
+                        }
+                        rule.readView.style.display = 'block';
+                        rule.editView.style.display = 'none';
+                        rule.editBtn.style.display = 'inline-block';
+                        rule.saveBtn.style.display = 'none';
+                    } else { // 'edit' mode
+                        const currentIntentions = (App.state.data.ruleOfLife && App.state.data.ruleOfLife.intentions) ? App.state.data.ruleOfLife.intentions : [];
+                        rule.inputs.forEach((input, index) => {
+                            input.value = currentIntentions[index] || '';
+                        });
+                        rule.readView.style.display = 'none';
+                        rule.editView.style.display = 'block';
+                        rule.editBtn.style.display = 'none';
+                        rule.saveBtn.style.display = 'inline-block';
+                    }
+                },
+
+                saveRule: function() {
+                    App.state.data.ruleOfLife.intentions = App.dom.rule.inputs
+                        .map(input => input.value.trim())
+                        .filter(intention => intention !== ""); // Filter out empty strings
+                    
+                    App.storage.saveAppState('ruleOfLife', App.state.data.ruleOfLife);
+                    this.renderRule('read');
+                    App.ui.showAlert("Rule of Life saved!", "success");
+                },
+
+                loadChecklist: function() {
+                    const { rule } = App.dom;
+                    const todayDateString = new Date().toISOString().split('T')[0];
+                    rule.checkinDate.value = todayDateString;
+                    rule.checklistContainer.innerHTML = '';
+                    
+                    const intentions = (App.state.data.ruleOfLife && App.state.data.ruleOfLife.intentions) ? App.state.data.ruleOfLife.intentions.filter(i => i) : [];
+                    if (intentions.length === 0) {
+                        rule.checklistContainer.innerHTML = '<p class="text-slate-500 italic">Please define your intentions on the "My Rule of Life" page first.</p>';
+                        rule.saveCheckinBtn.style.display = 'none';
+                        return;
+                    }
+                    
+                    rule.saveCheckinBtn.style.display = 'block';
+                    
+                    const existingEntry = App.state.data.ruleOfLifeHistory.find(e => e.date === todayDateString);
+                    rule.checkinNotes.value = existingEntry ? existingEntry.notes || '' : '';
+                    
+                    intentions.forEach((intention, index) => {
+                        const isChecked = existingEntry ? (existingEntry.responses && existingEntry.responses[index]) : false;
+                        
+                        const label = document.createElement('label');
+                        label.className = "flex items-center space-x-3 p-3 bg-white rounded-md shadow-sm border border-slate-200";
+                        
+                        const checkbox = document.createElement('input');
+                        checkbox.type = "checkbox";
+                        checkbox.id = `ruleCheck-${index}`;
+                        checkbox.checked = isChecked;
+                        checkbox.className = "h-5 w-5 rounded border-gray-300 text-teal-600 focus:ring-teal-500";
+                        
+                        const text = document.createElement('span');
+                        text.className = "text-slate-700";
+                        text.textContent = App.ui.escapeHTML(intention);
+                        
+                        label.appendChild(checkbox);
+                        label.appendChild(text);
+                        rule.checklistContainer.appendChild(label);
+                    });
+                },
+
+                saveCheckin: function() {
+                    const { rule } = App.dom;
+                    const reflectionDate = rule.checkinDate.value || new Date().toISOString().split('T')[0];
+                    const responses = {};
+                    const intentions = (App.state.data.ruleOfLife && App.state.data.ruleOfLife.intentions) ? App.state.data.ruleOfLife.intentions.filter(i => i) : [];
+                    
+                    intentions.forEach((intention, index) => {
+                        const checkbox = document.getElementById(`ruleCheck-${index}`);
+                        if (checkbox) {
+                            responses[index] = checkbox.checked;
+                        }
+                    });
+                    
+                    const notes = rule.checkinNotes.value;
+                    
+                    const newEntry = {
+                        date: reflectionDate,
+                        responses: responses,
+                        notes: notes,
+                        intentionsAtTime: [...intentions] // Snapshot intentions at time of check-in
+                    };
+                    
+                    App.storage.saveEntry('ruleOfLifeHistory', newEntry);
+                    
+                    const existingEntryIndex = App.state.data.ruleOfLifeHistory.findIndex(e => e.date === reflectionDate);
+                    if (existingEntryIndex > -1) {
+                        App.state.data.ruleOfLifeHistory[existingEntryIndex] = newEntry;
+                    } else {
+                        App.state.data.ruleOfLifeHistory.push(newEntry);
+                    }
+                    
+                    App.ui.showAlert("Rule reflection saved!", "success");
+                    App.navigation.navigateTo('pastRuleOfLifeView');
+                },
+
+                renderPast: function() {
+                    const { pastContainer } = App.dom.rule;
+                    pastContainer.innerHTML = '';
+                    if (App.state.data.ruleOfLifeHistory.length === 0) {
+                         pastContainer.innerHTML = '<p class="text-slate-500 italic">No past Rule of Life reflections found.</p>';
+                    }
+                    
+                    const reversedHistory = [...App.state.data.ruleOfLifeHistory].sort((a, b) => b.date.localeCompare(a.date));
+                    
+                    reversedHistory.forEach(entry => {
+                        const entryWrapper = document.createElement('div');
+                        entryWrapper.className = "mb-4";
+                        
+                        const dateEl = document.createElement('h3');
+                        dateEl.className = "font-semibold text-teal-700";
+                        const displayDate = App.util.parseDateString(entry.date);
+                        dateEl.textContent = displayDate ? displayDate.toLocaleDateString('en-NZ', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) : 'Invalid Date';
+                        entryWrapper.appendChild(dateEl);
+                        
+                        const summaryDiv = document.createElement('div');
+                        summaryDiv.className = "entry-display space-y-2";
+                        
+                        const intentionsAtTime = entry.intentionsAtTime || (App.state.data.ruleOfLife && App.state.data.ruleOfLife.intentions) ? App.state.data.ruleOfLife.intentions : [];
+                        
+                        if (intentionsAtTime.length > 0) {
+                            const ul = document.createElement('ul');
+                            ul.className = 'list-none space-y-1 text-sm';
+                            
+                            intentionsAtTime.forEach((intention, index) => {
+                                const wasChecked = entry.responses ? entry.responses[index] : false;
+                                const li = document.createElement('li');
+                                li.className = "flex items-center";
+                                
+                                const icon = document.createElement('span');
+                                icon.className = `mr-2 w-5 h-5 inline-block ${wasChecked ? 'text-teal-500' : 'text-slate-300'}`;
+                                icon.innerHTML = wasChecked 
+                                    ? `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" /></svg>` 
+                                    : `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM7 9a1 1 0 000 2h6a1 1 0 100-2H7z" clip-rule="evenodd" /></svg>`;
+                                    
+                                const text = document.createElement('span');
+                                text.textContent = App.ui.escapeHTML(intention);
+                                text.className = wasChecked ? 'text-slate-700' : 'text-slate-500 line-through';
+                                
+                                li.appendChild(icon);
+                                li.appendChild(text);
+                                ul.appendChild(li);
+                            });
+                            summaryDiv.appendChild(ul);
+                        } else {
+                            summaryDiv.innerHTML = '<p class="italic text-slate-400">No intentions were defined for this entry.</p>';
+                        }
+                        
+                        if (entry.notes && entry.notes.trim() !== "") {
+                            const notesTitle = document.createElement('p');
+                            notesTitle.className = "font-semibold text-sm text-amber-700 mt-3";
+                            notesTitle.textContent = "Reflections:";
+                            summaryDiv.appendChild(notesTitle);
+                            
+                            const notesEl = document.createElement('p');
+                            notesEl.className = "italic whitespace-pre-wrap text-slate-600";
+                            notesEl.textContent = App.ui.escapeHTML(entry.notes);
+                            summaryDiv.appendChild(notesEl);
+                        }
+                        
+                        entryWrapper.appendChild(summaryDiv);
+                        pastContainer.appendChild(entryWrapper);
+                    });
+                },
+
+                renderTrends: function() {
+                    const { chart, chartEmpty } = App.dom.rule;
+                    if (App.state.ui.charts.rule) {
+                        App.state.ui.charts.rule.destroy();
+                    }
+
+                    if (App.state.data.ruleOfLifeHistory.length === 0) {
+                        chartEmpty.style.display = 'block';
+                        chart.style.display = 'none';
+                        return;
+                    }
+                    
+                    chartEmpty.style.display = 'none';
+                    chart.style.display = 'block';
+                    
+                    const sortedHistory = [...App.state.data.ruleOfLifeHistory].sort((a, b) => a.date.localeCompare(b.date));
+                    const dataToShow = sortedHistory.slice(-12); // Show recent 12
+                    
+                    const labels = dataToShow.map(entry => {
+                        const displayDate = App.util.parseDateString(entry.date);
+                        return displayDate ? displayDate.toLocaleDateString('en-NZ', { day: '2-digit', month: 'short' }) : 'Invalid';
+                    });
+
+                    const intentionsMetData = dataToShow.map(entry => {
+                        if (!entry.responses) return 0;
+                        return Object.values(entry.responses).filter(Boolean).length;
+                    });
+                    
+                    const totalIntentionsData = dataToShow.map(entry => {
+                         const intentions = entry.intentionsAtTime || (App.state.data.ruleOfLife && App.state.data.ruleOfLife.intentions) ? App.state.data.ruleOfLife.intentions : [];
+                         return intentions.length;
+                    });
+
+                    const ctx = chart.getContext('2d');
+                    App.state.ui.charts.rule = new Chart(ctx, {
+                        type: 'bar',
+                        data: {
+                            labels: labels,
+                            datasets: [
+                                {
+                                    label: 'Intentions Met',
+                                    data: intentionsMetData,
+                                    backgroundColor: 'rgba(13, 148, 136, 0.7)', // teal-600
+                                    borderColor: 'rgba(13, 148, 136, 1)',
+                                    borderWidth: 1
+                                }
+                            ]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    ticks: {
+                                        stepSize: 1, 
+                                        callback: function(value) {
+                                            if (value % 1 === 0) { return value; } // Only show whole numbers
+                                        }
+                                    },
+                                    max: Math.max(...totalIntentionsData, 1) // Set max based on defined intentions
+                                }
+                            },
+                            plugins: {
+                                tooltip: {
+                                    callbacks: {
+                                        label: function(context) {
+                                            let label = context.dataset.label || '';
+                                            if (label) {
+                                                label += ': ';
+                                            }
+                                            const intentionsMet = context.parsed.y;
+                                            const totalIntentions = totalIntentionsData[context.dataIndex] || 0;
+                                            label += `${intentionsMet} of ${totalIntentions}`;
+                                            return label;
+                                        }
+                                    }
+                                },
+                                legend: {
+                                    position: 'bottom',
+                                }
+                            },
+                            onClick: null, 
+                            onHover: (event, chartElement) => {
+                                event.native.target.style.cursor = 'default'; 
+                            }
+                        }
+                    });
+                }
+            }, // End App.moduleRule
+
+            // --- Trends Module ---
+            moduleTrends: {
+                renderTrends: function() {
+                    const { chart, chartEmpty } = App.dom.trends;
+                    if (App.state.ui.charts.trends) {
+                        App.state.ui.charts.trends.destroy();
+                    }
+
+                    if (App.state.data.checkinHistory.length === 0) {
+                        chartEmpty.style.display = 'block';
+                        chart.style.display = 'none';
+                        return;
+                    }
+                    
+                    chartEmpty.style.display = 'none';
+                    chart.style.display = 'block';
+
+                    let dataToShow = [];
+                    if (App.state.ui.currentTrendView === 'recent') {
+                        dataToShow = App.state.data.checkinHistory.slice(-12);
+                    } else {
+                        dataToShow = [...App.state.data.checkinHistory];
+                    }
+                    
+                    const originalIndices = dataToShow.map(entry => App.state.data.checkinHistory.indexOf(entry));
+                    const labels = dataToShow.map(entry => {
+                        const displayDate = App.util.parseDateString(entry.date);
+                        return displayDate ? displayDate.toLocaleDateString('en-NZ', { day: '2-digit', month: 'short' }) : 'Invalid';
+                    });
+                    const warningData = dataToShow.map(entry => App.moduleCheckin.calculateTotals(entry).warning);
+                    const positiveData = dataToShow.map(entry => App.moduleCheckin.calculateTotals(entry).positive);
+
+                    const ctx = chart.getContext('2d');
+                    App.state.ui.charts.trends = new Chart(ctx, {
+                        type: 'bar',
+                        data: {
+                            labels: labels,
+                            datasets: [
+                                {
+                                    label: 'Warning Signs',
+                                    data: warningData,
+                                    backgroundColor: 'rgba(79, 70, 229, 0.7)', // indigo-600
+                                    borderColor: 'rgba(79, 70, 229, 1)',
+                                    borderWidth: 1
+                                },
+                                {
+                                    label: 'Positive Signs',
+                                    data: positiveData,
+                                    backgroundColor: 'rgba(5, 150, 105, 0.7)', // emerald-600
+                                    borderColor: 'rgba(5, 150, 105, 1)',
+                                    borderWidth: 1
+                                }
+                            ]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } },
+                            plugins: {
+                                tooltip: { mode: 'index', intersect: false },
+                                legend: { position: 'bottom' }
+                            },
+                            onClick: (event, elements) => {
+                                if (elements.length > 0) {
+                                    const index = elements[0].index;
+                                    const originalIndex = originalIndices[index];
+                                    if (typeof originalIndex !== 'undefined') {
+                                        App.navigation.navigateTo('summaryView', { entryIndex: originalIndex });
+                                    }
+                                }
+                            },
+                            onHover: (event, chartElement) => {
+                                event.native.target.style.cursor = chartElement[0] ? 'pointer' : 'default';
+                            }
+                        }
+                    });
+                },
+
+                setTrendView: function(view) { // 'recent' or 'all'
+                    App.state.ui.currentTrendView = view;
+                    App.dom.trends.toggleRecentBtn.classList.toggle('active', view === 'recent');
+                    App.dom.trends.toggleAllBtn.classList.toggle('active', view === 'all');
+                    this.renderTrends();
+                },
+
+                renderCorrelations: function() {
+                    const { correlationsContainer } = App.dom.trends;
+                    correlationsContainer.innerHTML = ''; // Clear previous insights
+                    
+                    if (App.state.data.checkinHistory.length < 3) {
+                         correlationsContainer.innerHTML = '<p class="text-slate-500 italic text-center">Complete a few more weekly check-ins to unlock wellbeing insights.</p>';
+                        return;
+                    }
+
+                    let insightsFound = 0;
+                    
+                    // Insight 1: Rule of Life vs. Positive Signs
+                    try {
+                        const { ruleOfLifeHistory, checkinHistory, ruleOfLife } = App.state.data;
+                        if (ruleOfLifeHistory.length > 2 && checkinHistory.length > 2) {
+                            let highRulePositiveTotal = 0, highRuleCount = 0, lowRulePositiveTotal = 0, lowRuleCount = 0;
+
+                            ruleOfLifeHistory.forEach(ruleEntry => {
+                                const checkin = checkinHistory.find(c => c.date === ruleEntry.date);
+                                if (!checkin) return;
+                                const intentions = ruleEntry.intentionsAtTime || (ruleOfLife.intentions) || [];
+                                const totalIntentions = intentions.length;
+                                if (totalIntentions === 0) return;
+                                const metIntentions = Object.values(ruleEntry.responses).filter(Boolean).length;
+                                const percentMet = metIntentions / totalIntentions;
+                                const totalPositive = App.moduleCheckin.calculateTotals(checkin).positive;
+
+                                if (percentMet >= 0.75) { highRulePositiveTotal += totalPositive; highRuleCount++; } 
+                                else if (percentMet <= 0.4) { lowRulePositiveTotal += totalPositive; lowRuleCount++; }
+                            });
+
+                            if (highRuleCount > 1 && lowRuleCount > 1) {
+                                const avgHigh = highRulePositiveTotal / highRuleCount;
+                                const avgLow = lowRulePositiveTotal / lowRuleCount;
+                                if (avgHigh > avgLow * 1.25) { // At least 25% more
+                                    const diff = Math.round(((avgHigh / avgLow) - 1) * 100);
+                                    this.addInsightCard('Rule of Life', `On weeks you met most of your 'Rule of Life' intentions, you reported <strong>${diff}% more Positive Signs</strong>.`, 'bg-teal-50', 'text-teal-800');
+                                    insightsFound++;
+                                }
+                            }
+                        }
+                    } catch (e) { console.error("Correlation 1 error:", e); }
+                    
+                    // Insight 2: Sabbath vs. Warning Signs
+                    try {
+                        const { checkinHistory, sabbathHistory } = App.state.data;
+                        if (sabbathHistory.length > 2 && checkinHistory.length > 2) {
+                            let goodSabbathWarningTotal = 0, goodSabbathCount = 0, poorSabbathWarningTotal = 0, poorSabbathCount = 0;
+
+                            sabbathHistory.forEach(sabbathEntry => {
+                                const checkin = checkinHistory.find(c => c.date === sabbathEntry.date);
+                                if (!checkin) return;
+                                
+                                let totalSabbathQuestions = 0, totalSabbathMet = 0;
+                                Object.values(sabbathEntry.responses).forEach(cat => {
+                                    totalSabbathQuestions += Object.keys(cat).length;
+                                    totalSabbathMet += Object.values(cat).filter(Boolean).length;
+                                });
+                                if (totalSabbathQuestions === 0) return;
+                                
+                                const percentMet = totalSabbathMet / totalSabbathQuestions;
+                                const totalWarning = App.moduleCheckin.calculateTotals(checkin).warning;
+
+                                if (percentMet >= 0.7) { goodSabbathWarningTotal += totalWarning; goodSabbathCount++; } 
+                                else if (percentMet <= 0.4) { poorSabbathWarningTotal += totalWarning; poorSabbathCount++; }
+                            });
+
+                            if (goodSabbathCount > 1 && poorSabbathCount > 1) {
+                                const avgGood = goodSabbathWarningTotal / goodSabbathCount;
+                                const avgPoor = poorSabbathWarningTotal / poorSabbathCount;
+                                if (avgPoor > avgGood * 1.25) { // At least 25% more
+                                    const diff = Math.round(((avgPoor / avgGood) - 1) * 100);
+                                     this.addInsightCard('Sabbath Quality', `You reported <strong>${diff}% more Warning Signs</strong> after a poor Sabbath, compared to a restful one.`, 'bg-violet-50', 'text-violet-800');
+                                    insightsFound++;
+                                }
+                            }
+                        }
+                    } catch (e) { console.error("Correlation 2 error:", e); }
+                    
+                    if (insightsFound === 0) {
+                         correlationsContainer.innerHTML = '<p class="text-slate-500 italic text-center">Keep going! As you add more data from different modules, new insights will appear here.</p>';
+                    }
+                },
+
+                addInsightCard: function(title, text, bgColor, textColor) {
+                    const card = document.createElement('div');
+                    card.className = `p-4 rounded-xl shadow-sm border ${bgColor} ${textColor}`;
+                    card.innerHTML = `<h4 class="font-semibold mb-1">${title}</h4><p class="text-sm">${text}</p>`;
+                    App.dom.trends.correlationsContainer.appendChild(card);
+                }
+            }, // End App.moduleTrends
+            
+            // --- Resources Module ---
+            moduleResources: {
+                render: function(mode = 'read') {
+                    const { resources } = App.dom;
+                    const { userResources } = App.state.data;
+                    const placeholder = "Not set";
+                    
+                    if (mode === 'read') {
+                        Object.entries(resources.readSpans).forEach(([key, span]) => {
+                            const value = userResources[key];
+                            span.textContent = value || placeholder;
+                            span.classList.toggle('placeholder', !value);
+                        });
+                        resources.readView.style.display = 'block';
+                        resources.editView.style.display = 'none';
+                        resources.editBtn.style.display = 'inline-block';
+                        resources.saveBtn.style.display = 'none';
+                    } else { // 'edit' mode
+                        Object.entries(resources.editInputs).forEach(([key, input]) => {
+                            input.value = userResources[key] || '';
+                        });
+                        resources.readView.style.display = 'none';
+                        resources.editView.style.display = 'block';
+                        resources.editBtn.style.display = 'none';
+                        resources.saveBtn.style.display = 'inline-block';
+                    }
+                },
+                
+                save: function() {
+                    const { resources } = App.dom;
+                    const { userResources } = App.state.data;
+                    
+                    Object.keys(resources.editInputs).forEach(key => {
+                        userResources[key] = resources.editInputs[key].value.trim();
+                    });
+                    
+                    App.storage.saveAppState('userResources', userResources);
+                    this.render('read');
+                    App.ui.showAlert("Resources saved!", "success");
+                }
+            } // End App.moduleResources
+        }; // End App object
+
+        // --- Global App Init ---
+        // Expose App to global scope
+        window.App = App;
+        // Expose Firebase modules to be used by App
+        window.Firebase = {
+            initializeApp, getAuth, signInAnonymously, signInWithCustomToken, 
+            onAuthStateChanged, GoogleAuthProvider, signInWithPopup, 
+            createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut,
+            getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, onSnapshot, 
+            collection, query, writeBatch, setLogLevel, enableNetwork, disableNetwork, getDocs
+        };
+
+        // --- Start the app ---
+        // This is the fix for the race condition.
+        // We ensure the DOM is fully loaded *before* we try to init the app,
+        // which includes caching DOM elements.
+        document.addEventListener('DOMContentLoaded', () => {
+            // A simple check for `initializeApp` from the module
+            if (typeof initializeApp !== 'undefined' && typeof idb !== 'undefined') {
+                App.init();
+            } else {
+                // This is a fallback if scripts are slow.
+                console.warn("SDKs not yet loaded, waiting...");
+                setTimeout(() => {
+                    if (typeof initializeApp !== 'undefined' && typeof idb !== 'undefined') {
+                        App.init();
+                    } else {
+                        console.error("Failed to load critical SDKs. App cannot start.");
+                        document.body.innerHTML = "Error: Could not load app dependencies. Please check your internet connection and refresh.";
+                    }
+                }, 1000); 
+            }
+        });
+
+    </script>
+</body>
+</html>
