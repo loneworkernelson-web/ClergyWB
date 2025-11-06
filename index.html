@@ -496,22 +496,28 @@
                 // Firebase initialization using window.firebaseConfig
                 const app = firebase.initializeApp(window.firebaseConfig);
                 App.state.fb.db = firebase.firestore();
-                firebase.auth().onAuthStateChanged((user) => {
-                    if (user) {
-                        App.state.userId = user.uid;
-                        App.state.storageDriver = 'firestore';
-                        // Load data from Firestore
-                        App.loadData();
-                    }
-                });
-                // Check if stay local
-                if (localStorage.getItem('stayLocal')) {
-                    App.state.storageDriver = 'local';
-                    App.navigation.navigateTo('dashboardView');
-                    App.loadData();
-                } else {
-                    App.navigation.navigateTo('loginView');
-                }
+               firebase.auth().onAuthStateChanged((user) => {
+                    if (user) {
+                        // A user is logged in with Firebase
+                        console.log("User is logged in, navigating to dashboard.");
+                        App.state.userId = user.uid;
+                        App.state.storageDriver = 'firestore';
+                        App.loadData();
+                        App.navigation.navigateTo('dashboardView'); // <-- ADDED
+.
+                    } else {
+                        // No Firebase user. Now check for 'Stay Local'.
+                        console.log("No Firebase user. Checking for local storage.");
+                        if (localStorage.getItem('stayLocal')) {
+                            App.state.storageDriver = 'local';
+                            App.navigation.navigateTo('dashboardView');
+                              App.loadData();
+                        } else {
+                  // No user AND not staying local. Show login.
+                            App.navigation.navigateTo('loginView');
+                        }
+                    }
+               });
                 this.handlers.init();
                 // Show lock screen if PIN is set
                 if (localStorage.getItem('pin')) {
