@@ -2603,10 +2603,8 @@
                 
                 selectAnswer: function(e, key, q, value, type) {
                     const isWarning = type === 'warning';
-                    // FIX: Select the correct data object based on type
-                    const dataObject = type === 'sabbath' ? App.moduleSabbath.currentData : this.currentData;
-                    const responses = isWarning ? dataObject.warningResponses : (type === 'positive' ? dataObject.positiveResponses : dataObject.responses);
-                    
+                    const responses = isWarning ? this.currentData.warningResponses : this.currentData.positiveResponses;
+                    if (!responses[key]) responses[key] = {}; // Ensure category object exists
                     responses[key][q] = value;
                     
                     const btn = e.currentTarget;
@@ -2646,8 +2644,7 @@
                 
                 navigateCategory: function(dir, type) {
                     if (dir === 1 && !this.allQuestionsAnswered(type)) {
-                        // allQuestionsAnswered shows the alert
-                        return;
+                        return; // allQuestionsAnswered shows the alert
                     }
                     
                     const isWarning = type === 'warning';
@@ -2666,13 +2663,11 @@
                     const isWarning = type === 'warning';
                     const { config, state } = App;
                     
-                    const dataObject = type === 'sabbath' ? App.moduleSabbath.currentData : this.currentData;
-                    
-                    const index = isWarning ? state.ui.currentWarningCategory : (type === 'positive' ? state.ui.currentPositiveCategory : state.ui.currentSabbathCategory);
-                    const order = isWarning ? config.categoryOrder : (type === 'positive' ? config.positiveCategoryOrder : config.sabbathCategoryOrder);
+                    const index = isWarning ? state.ui.currentWarningCategory : state.ui.currentPositiveCategory;
+                    const order = isWarning ? config.categoryOrder : config.positiveCategoryOrder;
                     const key = order[index];
-                    const questions = isWarning ? config.warningSigns[key] : (type === 'positive' ? config.positiveSigns[key] : config.sabbathSigns[key]);
-                    const responses = isWarning ? dataObject.warningResponses : (type === 'positive' ? dataObject.positiveResponses : dataObject.responses);
+                    const questions = isWarning ? config.warningSigns[key] : config.positiveSigns[key];
+                    const responses = isWarning ? this.currentData.warningResponses : this.currentData.positiveResponses;
 
                     if (!responses[key]) { // Handle case where category hasn't been touched yet
                          App.ui.showAlert("Please answer all questions.", "info");
@@ -2737,7 +2732,9 @@
                     const totals = this.calculateTotals(entry);
                     let promptMsgs = [];
                     
-                    let html = `<p class="text-sm text-slate-500 mb-3">Summary for: ${App.util.parseDateString(entry.date).toLocaleDateString('en-NZ', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>`;
+                    const d = App.util.parseDateString(entry.date);
+                    const dateStr = d ? d.toLocaleDateString('en-NZ', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) : entry.date;
+                    let html = `<p class="text-sm text-slate-500 mb-3">Summary for: ${dateStr}</p>`;
                     
                     // Warning Signs
                     html += `<h3 class="text-lg font-semibold text-indigo-800 mb-2 border-b border-indigo-200 pb-1">Warning Signs Noted</h3>`;
@@ -2851,7 +2848,7 @@
 
             // --- Sabbath Module ---
             moduleSabbath: {
-                currentData: {},
+                currentData: {}, // This will hold a deep copy of the entry being edited
 
                 loadForDate: function() {
                     const { sabbath } = App.dom;
@@ -2866,6 +2863,7 @@
                             responses: {},
                             notes: ""
                         };
+                        // Ensure all categories exist on the new entry
                         App.config.sabbathCategoryOrder.forEach(key => entry.responses[key] = {});
                     }
                     
@@ -2906,15 +2904,26 @@
                             </div>
                         `;
                         
-                        // Use moduleCheckin.selectAnswer as it's the generic implementation
-                        qDiv.querySelector('.checkin-btn-sab').onclick = (e) => App.moduleCheckin.selectAnswer(e, key, q, true, 'sabbath');
-                        qDiv.querySelector('.checkin-btn-neg').onclick = (e) => App.moduleCheckin.selectAnswer(e, key, q, false, 'sabbath');
+                        // We can't use moduleCheckin.selectAnswer, need a local one
+                        qDiv.querySelector('.checkin-btn-sab').onclick = (e) => this.selectAnswer(e, key, q, true);
+                        qDiv.querySelector('.checkin-btn-neg').onclick = (e) => this.selectAnswer(e, key, q, false);
                         
                         sabbath.container.appendChild(qDiv);
                     });
                     
                     this.updateControls();
                     this.updateProgress();
+                },
+                
+                selectAnswer: function(e, key, q, value) {
+                    if (!this.currentData.responses[key]) this.currentData.responses[key] = {};
+                    this.currentData.responses[key][q] = value;
+                    
+                    const btn = e.currentTarget;
+                    const parent = btn.parentElement;
+                    
+                    parent.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
                 },
                 
                 updateControls: function() {
@@ -2941,15 +2950,35 @@
                 },
                 
                 navigateCategory: function(dir) {
-                    if (dir === 1 && !App.moduleCheckin.allQuestionsAnswered('sabbath')) {
+                    if (dir === 1 && !this.allQuestionsAnswered()) {
                         return;
                     }
                     App.state.ui.currentSabbathCategory += dir;
                     this.renderQuestions();
                 },
 
+                allQuestionsAnswered: function() {
+                    const { config, state } = App;
+                    const index = state.ui.currentSabbathCategory;
+                    const key = config.sabbathCategoryOrder[index];
+                    const questions = config.sabbathSigns[key];
+                    const responses = this.currentData.responses;
+
+                    if (!responses[key]) {
+                        App.ui.showAlert("Please answer all questions.", "info");
+                        return false;
+                    }
+                    for (const q of questions) {
+                        if (typeof responses[key][q] === 'undefined') {
+                            App.ui.showAlert("Please answer all questions.", "info");
+                            return false;
+                        }
+                    }
+                    return true;
+                },
+
                 finish: function() {
-                    if (!App.moduleCheckin.allQuestionsAnswered('sabbath')) {
+                    if (!this.allQuestionsAnswered()) {
                         return;
                     }
                     
@@ -2984,10 +3013,12 @@
                         const entryWrapper = document.createElement('div');
                         entryWrapper.className = "mb-4";
                         
+                        const d = App.util.parseDateString(entry.date);
+                        const dateStr = d ? d.toLocaleDateString('en-NZ', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) : entry.date;
+                        
                         const dateEl = document.createElement('h3');
                         dateEl.className = "font-semibold text-violet-700";
-                        const displayDate = App.util.parseDateString(entry.date);
-                        dateEl.textContent = displayDate ? displayDate.toLocaleDateString('en-NZ', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) : 'Invalid Date';
+                        dateEl.textContent = dateStr;
                         entryWrapper.appendChild(dateEl);
                         
                         const summaryDiv = document.createElement('div');
@@ -3080,10 +3111,12 @@
                         const entryWrapper = document.createElement('div');
                         entryWrapper.className = "mb-4";
                         
+                        const d = App.util.parseDateString(entry.date);
+                        const dateStr = d ? d.toLocaleDateString('en-NZ', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) : entry.date;
+                        
                         const dateEl = document.createElement('h3');
                         dateEl.className = "font-semibold text-amber-700";
-                        const displayDate = App.util.parseDateString(entry.date);
-                        dateEl.textContent = displayDate ? displayDate.toLocaleDateString('en-NZ', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) : 'Invalid Date';
+                        dateEl.textContent = dateStr;
                         
                         const entryEl = document.createElement('p');
                         entryEl.className = "entry-display";
@@ -3132,7 +3165,7 @@
                 },
 
                 saveRule: function() {
-                    App.state.data.ruleOfLife.intentions = App.dom.rule.inputs
+                    App.state.data.ruleOfLife.intentions = Array.from(App.dom.rule.inputs)
                         .map(input => input.value.trim())
                         .filter(intention => intention !== ""); // Filter out empty strings
                     
@@ -3221,6 +3254,7 @@
                     pastContainer.innerHTML = '';
                     if (App.state.data.ruleOfLifeHistory.length === 0) {
                          pastContainer.innerHTML = '<p class="text-slate-500 italic">No past Rule of Life reflections found.</p>';
+                         return; // Added return
                     }
                     
                     const reversedHistory = [...App.state.data.ruleOfLifeHistory].sort((a, b) => b.date.localeCompare(a.date));
@@ -3229,10 +3263,12 @@
                         const entryWrapper = document.createElement('div');
                         entryWrapper.className = "mb-4";
                         
+                        const d = App.util.parseDateString(entry.date);
+                        const dateStr = d ? d.toLocaleDateString('en-NZ', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) : entry.date;
+                        
                         const dateEl = document.createElement('h3');
                         dateEl.className = "font-semibold text-teal-700";
-                        const displayDate = App.util.parseDateString(entry.date);
-                        dateEl.textContent = displayDate ? displayDate.toLocaleDateString('en-NZ', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) : 'Invalid Date';
+                        dateEl.textContent = dateStr;
                         entryWrapper.appendChild(dateEl);
                         
                         const summaryDiv = document.createElement('div');
@@ -3395,9 +3431,9 @@
 
                     let dataToShow = [];
                     if (App.state.ui.currentTrendView === 'recent') {
-                        dataToShow = App.state.data.checkinHistory.slice(-12);
+                        dataToShow = [...App.state.data.checkinHistory].sort((a, b) => a.date.localeCompare(b.date)).slice(-12);
                     } else {
-                        dataToShow = [...App.state.data.checkinHistory];
+                        dataToShow = [...App.state.data.checkinHistory].sort((a, b) => a.date.localeCompare(b.date));
                     }
                     
                     const originalIndices = dataToShow.map(entry => App.state.data.checkinHistory.indexOf(entry));
@@ -3598,15 +3634,13 @@
                     App.ui.showAlert("Resources saved!", "success");
                 }
             } // End App.moduleResources
-        }; // End App object
+            
+        }; // End App object definition
 
-        // --- Global App Init ---
-        // Expose App to global scope
-        window.App = App;
         // Expose Firebase modules to be used by App
         window.Firebase = {
             initializeApp, getAuth, signInAnonymously, signInWithCustomToken, 
-            onAuthStateChanged, GoogleAuthProvider, signInWithPopup, 
+            onAuthStateChanged, GoogleAuthProvider, signInWithRedirect, getRedirectResult, 
             createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut,
             getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, onSnapshot, 
             collection, query, writeBatch, setLogLevel, enableNetwork, disableNetwork, getDocs
