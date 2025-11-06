@@ -1579,3 +1579,851 @@
                     return this.bufferToHex(array);
                 }
             }
+// --- Storage & Crypto Module ---
+            storage: {
+                initDB: async function() {
+                    const { DB_NAME, DB_VERSION } = App.config;
+                    // Updated Schema to use separate object stores
+                    return await idb.openDB(DB_NAME, DB_VERSION, {
+                        upgrade(db, oldVersion) {
+                            if (oldVersion < 1) {
+                                db.createObjectStore('appState', { keyPath: 'id' });
+                                db.createObjectStore('checkinHistory', { keyPath: 'date' });
+                                db.createObjectStore('gratitudeHistory', { keyPath: 'date' });
+                                db.createObjectStore('sabbathHistory', { keyPath: 'date' });
+                                db.createObjectStore('ruleOfLifeHistory', { keyPath: 'date' });
+                            }
+                        },
+                    });
+                },
+
+                deriveKey: async function(pin, saltHex) {
+                    try {
+                        const salt = App.util.hexToBuffer(saltHex);
+                        const encoder = new TextEncoder();
+                        const keyMaterial = await window.crypto.subtle.importKey(
+                            'raw', encoder.encode(pin), { name: 'PBKDF2' }, false, ['deriveKey']
+                        );
+                        return await window.crypto.subtle.deriveKey(
+                            { name: 'PBKDF2', salt, iterations: 100000, hash: 'SHA-256' },
+                            keyMaterial,
+                            { name: 'AES-GCM', length: 256 },
+                            false, // not extractable
+                            ['encrypt', 'decrypt']
+                        );
+                    } catch (e) { console.error("Key derivation failed:", e); return null; }
+                },
+
+                encrypt: async function(data) {
+                    const key = App.state.pin.encryptionKey;
+                    if (!key) throw new Error("Encryption key not available.");
+                    try {
+                        const iv = window.crypto.getRandomValues(new Uint8Array(12));
+                        const dataBuffer = new TextEncoder().encode(JSON.stringify(data));
+                        const encryptedBuffer = await window.crypto.subtle.encrypt(
+                            { name: 'AES-GCM', iv }, key, dataBuffer
+                        );
+                        return {
+                            iv: App.util.bufferToHex(iv),
+                            data: App.util.bufferToHex(encryptedBuffer)
+                        };
+                    } catch (e) { console.error("Encryption failed:", e); throw new Error("Could not encrypt data."); }
+                },
+                
+                decrypt: async function(encryptedObject) {
+                    const key = App.state.pin.encryptionKey;
+                    if (!key) throw new Error("Encryption key not available for decryption.");
+                    try {
+                        const iv = App.util.hexToBuffer(encryptedObject.iv);
+                        const data = App.util.hexToBuffer(encryptedObject.data);
+                        const decryptedBuffer = await window.crypto.subtle.decrypt(
+                            { name: 'AES-GCM', iv }, key, data
+                        );
+                        return JSON.parse(new TextDecoder().decode(decryptedBuffer));
+                    } catch (e) {
+                        console.error("Decryption failed (Wrong PIN or corrupt data):", e);
+                        return null; // Return null to handle gracefully
+                    }
+                },
+                
+                // --- Save/Load an ENTIRE store ---
+                saveStore: async function(storeName, dataArray) {
+                    try {
+                        const db = App.state.db;
+                        const tx = db.transaction(storeName, 'readwrite');
+                        await tx.objectStore(storeName).clear();
+                        for (const item of dataArray) {
+                            const encryptedData = await this.encrypt(item);
+                            // Use the date as the key
+                            await tx.objectStore(storeName).put({ [tx.objectStore(storeName).keyPath]: item.date, data: encryptedData });
+                        }
+                        await tx.done;
+                        console.log(`Store ${storeName} saved.`);
+                    } catch (e) {
+                        console.error(`Error saving store ${storeName}:`, e);
+                        App.ui.showAlert(`Could not save ${storeName}.`, "error");
+                    }
+                },
+
+                // --- Save/Load a SINGLE appState item ---
+                saveAppState: async function(id, data) {
+                     try {
+                        const db = App.state.db;
+                        const encryptedData = await this.encrypt(data);
+                        await db.put('appState', { id: id, data: encryptedData });
+                        console.log(`AppState item saved: ${id}`);
+                     } catch (error) {
+                        console.error(`Error saving app state ${id}:`, error);
+                        App.ui.showAlert("Save Error", "Could not save app settings.");
+                     }
+                },
+                
+                // --- Unified Save/Load/Merge ---
+                saveEntry: async function(storeName, entry) {
+                    // Saves a single entry (checkin, gratitude, etc.)
+                    try {
+                        const encryptedData = await this.encrypt(entry);
+                        await App.state.db.put(storeName, { [App.state.db.objectStore(storeName).keyPath]: entry.date, data: encryptedData });
+                        
+                        if (App.state.storageDriver === 'firestore') {
+                            const docRef = doc(App.state.fb.db, `artifacts/${App.state.appId}/users/${App.state.userId}/data`, `${storeName}_${entry.date}`);
+                            await setDoc(docRef, { data: encryptedData });
+                        }
+                    } catch (e) {
+                        console.error(`Error saving ${storeName} entry:`, e);
+                        App.ui.showAlert(`Could not save entry to ${storeName}.`, "error");
+                    }
+                },
+                
+                loadAllHistory: async function() {
+                    if (App.state.storageDriver === 'firestore') {
+                        console.log("Loading from Firestore...");
+                        return await this.firestoreLoadAll();
+                    } else {
+                        console.log("Loading from Local...");
+                        return await this.localLoadAll();
+                    }
+                },
+                
+                localLoadAll: async function() {
+                    const db = App.state.db;
+                    const data = {};
+                    
+                    try {
+                        data.checkinHistory = (await Promise.all((await db.getAll('checkinHistory')).map(e => this.decrypt(e.data)))).filter(Boolean);
+                        data.gratitudeHistory = (await Promise.all((await db.getAll('gratitudeHistory')).map(e => this.decrypt(e.data)))).filter(Boolean);
+                        data.sabbathHistory = (await Promise.all((await db.getAll('sabbathHistory')).map(e => this.decrypt(e.data)))).filter(Boolean);
+                        data.ruleOfLifeHistory = (await Promise.all((await db.getAll('ruleOfLifeHistory')).map(e => this.decrypt(e.data)))).filter(Boolean);
+                        
+                        const res = await db.get('appState', 'userResources');
+                        data.userResources = res ? (await this.decrypt(res.data) || {}) : {};
+                        const rule = await db.get('appState', 'ruleOfLife');
+                        data.ruleOfLife = rule ? (await this.decrypt(rule.data) || {}) : {};
+
+                    } catch (e) {
+                         console.error("Critical decryption error during localLoadAll:", e);
+                         throw new Error("Decryption failed. Wrong PIN?");
+                    }
+                    
+                    App.state.data = this.mergeData(data); // Set state here
+                },
+
+                firestoreLoadAll: async function() {
+                    if (!App.state.userId) {
+                        App.state.data = this.mergeData({});
+                        return;
+                    }
+                    
+                    const data = {};
+                    const collectionRef = collection(App.state.fb.db, `artifacts/${App.state.appId}/users/${App.state.userId}/data`);
+                    const q = query(collectionRef);
+                    
+                    const docsSnap = await getDocs(q);
+                    
+                    data.checkinHistory = [];
+                    data.gratitudeHistory = [];
+                    data.sabbathHistory = [];
+                    data.ruleOfLifeHistory = [];
+                    
+                    for (const doc of docsSnap.docs) {
+                        const docId = doc.id;
+                        const decrypted = await this.decrypt(doc.data().data);
+                        if (decrypted) {
+                            if (docId.startsWith('checkinHistory_')) data.checkinHistory.push(decrypted);
+                            else if (docId.startsWith('gratitudeHistory_')) data.gratitudeHistory.push(decrypted);
+                            else if (docId.startsWith('sabbathHistory_')) data.sabbathHistory.push(decrypted);
+                            else if (docId.startsWith('ruleOfLifeHistory_')) data.ruleOfLifeHistory.push(decrypted);
+                            else if (docId === 'userResources') data.userResources = decrypted;
+                            else if (docId === 'ruleOfLife') data.ruleOfLife = decrypted;
+                        } else {
+                            console.warn(`Failed to decrypt ${docId} from Firestore`);
+                        }
+                    }
+                    App.state.data = this.mergeData(data); // Set state here
+                },
+                
+                migrateLocalToFirestore: async function() {
+                    console.log("Starting migration from local to Firestore...");
+                    App.ui.showModal("Migrating Data", "Please wait, we're securely moving your local data to the cloud...");
+                    
+                    const db = App.state.db;
+                    const batch = writeBatch(App.state.fb.db);
+                    const basePath = `artifacts/${App.state.appId}/users/${App.state.userId}/data`;
+
+                    try {
+                        const storesToMigrate = ['checkinHistory', 'gratitudeHistory', 'sabbathHistory', 'ruleOfLifeHistory'];
+                        for (const storeName of storesToMigrate) {
+                            const allItems = await db.getAll(storeName);
+                            for (const item of allItems) {
+                                // item = { date: "...", data: { iv: "...", data: "..." } }
+                                const docRef = doc(App.state.fb.db, basePath, `${storeName}_${item.date}`);
+                                batch.set(docRef, { data: item.data }); // Move the encrypted blob
+                            }
+                        }
+                        
+                        const appStateItems = ['userResources', 'ruleOfLife'];
+                        for (const id of appStateItems) {
+                            const item = await db.get('appState', id);
+                            if (item) {
+                                 const docRef = doc(App.state.fb.db, basePath, id);
+                                batch.set(docRef, { data: item.data });
+                            }
+                        }
+
+                        await batch.commit();
+                        console.log("Migration complete.");
+                        
+                        // Clear local data (but not PIN)
+                        const clearTx = db.transaction(db.objectStoreNames, 'readwrite');
+                        for (const storeName of storesToMigrate) {
+                            await clearTx.objectStore(storeName).clear();
+                        }
+                        await clearTx.objectStore('appState').delete('userResources');
+                        await clearTx.objectStore('appState').delete('ruleOfLife');
+                        await clearTx.done;
+                        
+                        console.log("Local data (except PIN) cleared after migration.");
+                        App.ui.hideModal();
+                        
+                    } catch (e) {
+                        console.error("Migration failed:", e);
+                        App.ui.showModal("Migration Error", `Could not move your data to the cloud. ${e.message}`);
+                    }
+                },
+                
+                mergeData: function(loadedData) {
+                    const defaults = {
+                        checkinHistory: [],
+                        gratitudeHistory: [],
+                        sabbathHistory: [],
+                        ruleOfLifeHistory: [],
+                        userResources: {},
+                        ruleOfLife: {}
+                    };
+                    return { ...defaults, ...loadedData };
+                },
+                
+                exportData: function() {
+                    const data = App.state.data;
+                    if (Object.values(data).every(val => (Array.isArray(val) && val.length === 0) || (typeof val === 'object' && Object.keys(val).length === 0))) {
+                        App.ui.showAlert("No data to export.", "info");
+                        return;
+                    }
+                    
+                    try {
+                        const exportObject = { ...data, appVersion: "2.1.0" };
+                        const dataStr = JSON.stringify(exportObject, null, 2);
+                        const blob = new Blob([dataStr], { type: 'application/json' });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `toku_hauora_backup_${new Date().toISOString().split('T')[0]}.json`;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        URL.revokeObjectURL(url);
+                        App.ui.showAlert("Export Successful!", "success");
+                    } catch (e) {
+                        console.error("Export failed:", e);
+                        App.ui.showAlert("Export failed. See console for details.", "error");
+                    }
+                },
+                
+                importData: function(event) {
+                    const file = event.target.files[0];
+                    if (!file) return;
+                    
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        let importedData;
+                        try {
+                            const importedObject = JSON.parse(e.target.result);
+                            importedData = this.mergeData(importedObject); // Use merge to ensure all keys exist
+                        } catch (err) {
+                            App.ui.showModal("Import Failed", `Could not parse file. ${err.message}`);
+                            return;
+                        }
+                        
+                        App.ui.showModal("Confirm Import", `This will OVERWRITE all current data. Are you sure?\n\nThis file contains:\n- ${importedData.checkinHistory.length} Check-ins\n- ${importedData.gratitudeHistory.length} Gratitude entries\n- ${importedData.sabbathHistory.length} Sabbath reflections\n- ${importedData.ruleOfLifeHistory.length} Rule reflections`);
+                        App.ui.addModalButton("Yes, Overwrite", "danger", async () => {
+                            try {
+                                App.state.data = App.storage.mergeData({});
+                                
+                                const { checkinHistory, gratitudeHistory, sabbathHistory, ruleOfLifeHistory, userResources, ruleOfLife } = importedData;
+                                
+                                const db = App.state.db;
+                                const stores = ['checkinHistory', 'gratitudeHistory', 'sabbathHistory', 'ruleOfLifeHistory', 'appState'];
+                                const tx = db.transaction(stores, 'readwrite');
+                                
+                                // Clear old data
+                                await Promise.all([
+                                    tx.objectStore('checkinHistory').clear(),
+                                    tx.objectStore('gratitudeHistory').clear(),
+                                    tx.objectStore('sabbathHistory').clear(),
+                                    tx.objectStore('ruleOfLifeHistory').clear(),
+                                    tx.objectStore('appState').delete('userResources'),
+                                    tx.objectStore('appState').delete('ruleOfLife')
+                                ]);
+                                
+                                // Add new data
+                                const promises = [];
+                                checkinHistory.forEach(e => promises.push(this.encrypt(e).then(d => tx.objectStore('checkinHistory').put({date: e.date, data: d}))));
+                                gratitudeHistory.forEach(e => promises.push(this.encrypt(e).then(d => tx.objectStore('gratitudeHistory').put({date: e.date, data: d}))));
+                                sabbathHistory.forEach(e => promises.push(this.encrypt(e).then(d => tx.objectStore('sabbathHistory').put({date: e.date, data: d}))));
+                                ruleOfLifeHistory.forEach(e => promises.push(this.encrypt(e).then(d => tx.objectStore('ruleOfLifeHistory').put({date: e.date, data: d}))));
+                                promises.push(this.encrypt(userResources).then(d => tx.objectStore('appState').put({id: 'userResources', data: d})));
+                                promises.push(this.encrypt(ruleOfLife).then(d => tx.objectStore('appState').put({id: 'ruleOfLife', data: d})));
+
+                                await Promise.all(promises);
+                                await tx.done;
+
+                                if (App.state.storageDriver === 'firestore') {
+                                    App.ui.showAlert("Importing... clearing cloud data...", "info");
+                                    await this.clearAllData(false); // Clear cloud only
+                                    
+                                    App.ui.showAlert("Importing... saving to cloud...", "info");
+                                    const batch = writeBatch(App.state.fb.db);
+                                    const basePath = `artifacts/${App.state.appId}/users/${App.state.userId}/data`;
+                                    
+                                    for(const e of checkinHistory) batch.set(doc(App.state.fb.db, basePath, `checkinHistory_${e.date}`), { data: await this.encrypt(e) });
+                                    for(const e of gratitudeHistory) batch.set(doc(App.state.fb.db, basePath, `gratitudeHistory_${e.date}`), { data: await this.encrypt(e) });
+                                    for(const e of sabbathHistory) batch.set(doc(App.state.fb.db, basePath, `sabbathHistory_${e.date}`), { data: await this.encrypt(e) });
+                                    for(const e of ruleOfLifeHistory) batch.set(doc(App.state.fb.db, basePath, `ruleOfLifeHistory_${e.date}`), { data: await this.encrypt(e) });
+                                    batch.set(doc(App.state.fb.db, basePath, 'userResources'), { data: await this.encrypt(userResources) });
+                                    batch.set(doc(App.state.fb.db, basePath, 'ruleOfLife'), { data: await this.encrypt(ruleOfLife) });
+                                    
+                                    await batch.commit();
+                                }
+                                
+                                App.state.data = importedData;
+                                
+                                App.navigation.navigateTo('welcomeView');
+                                App.ui.showAlert("Import Successful!", "success");
+
+                            } catch (importError) {
+                                console.error("Failed during import process:", importError);
+                                App.ui.showModal("Import Failed", "An error occurred while encrypting and saving the imported data.");
+                            }
+                        });
+                    };
+                    reader.readAsText(file);
+                    event.target.value = null; // Clear input
+                },
+                
+                // Set skipPinReload to true when importing
+                clearAllData: async function(showModal = true) {
+                    try {
+                        const db = App.state.db;
+                        const stores = ['checkinHistory', 'gratitudeHistory', 'sabbathHistory', 'ruleOfLifeHistory', 'appState'];
+                        const tx = db.transaction(stores, 'readwrite');
+                        await Promise.all([
+                            tx.objectStore('checkinHistory').clear(),
+                            tx.objectStore('gratitudeHistory').clear(),
+                            tx.objectStore('sabbathHistory').clear(),
+                            tx.objectStore('ruleOfLifeHistory').clear(),
+                            tx.objectStore('appState').clear() // Clears PIN too
+                        ]);
+                        await tx.done;
+                        
+                        localStorage.removeItem('hauoraOnboardComplete');
+                        
+                        if (App.state.userId) {
+                            if (showModal) App.ui.showAlert("Clearing cloud data... please wait.", "info", 5000);
+                            
+                            // We need to delete all docs in the /data collection
+                            const collectionRef = collection(App.state.fb.db, `artifacts/${App.state.appId}/users/${App.state.userId}/data`);
+                            const q = query(collectionRef);
+                            const docsSnap = await getDocs(q);
+                            
+                            const batch = writeBatch(App.state.fb.db);
+                            docsSnap.forEach(doc => batch.delete(doc.ref));
+                            
+                            // Delete the meta (PIN) doc
+                            batch.delete(doc(App.state.fb.db, `artifacts/${App.state.appId}/users/${App.state.userId}`, 'meta'));
+                            
+                            await batch.commit();
+                        }
+                        
+                        if(showModal) {
+                            App.ui.showModal("Data Cleared", "All your data has been removed. The app will now reload and require a new PIN setup.");
+                            setTimeout(() => window.location.reload(), 2500);
+                        }
+                        
+                    } catch (e) {
+                        console.error("Failed to clear data:", e);
+                        if(showModal) App.ui.showModal("Error", "Could not clear all data. Please try again.");
+                    }
+                },
+                
+                confirmClearAllData: function() {
+                    App.ui.showModal("Confirm Deletion", "Are you sure you want to clear ALL your data (Check-ins, Gratitude, Sabbath, Rule of Life, Resources, and PIN)? This action is permanent and cannot be undone.");
+                    App.ui.addModalButton("Yes, Delete Everything", "danger", () => this.clearAllData(true));
+                },
+                
+                toggleViewRawData: function() {
+                    const { rawDataDisplay } = App.dom.settings;
+                    if (rawDataDisplay.style.display === 'none') {
+                        try {
+                            rawDataDisplay.textContent = JSON.stringify(App.state.data, null, 2);
+                            rawDataDisplay.style.display = 'block';
+                        } catch (e) {
+                            rawDataDisplay.textContent = "Error displaying data.";
+                        }
+                    } else {
+                        rawDataDisplay.style.display = 'none';
+                    }
+                }
+            },
+            
+            // --- Auth & PIN Modules ---
+            auth: {
+                checkPinAndAuthState: async function() {
+                    const { db } = App.state;
+                    const saltEntry = await db.get('appState', 'securitySalt');
+                    const hashEntry = await db.get('appState', 'securityHash');
+
+                    if (saltEntry && hashEntry) {
+                        // PIN is set.
+                        App.state.pin.salt = saltEntry.data;
+                        App.state.pin.hash = hashEntry.data;
+                        
+                        // Now, check auth state
+                        if (App.state.fb.auth) {
+                            this.setupAuthListener();
+                        } else {
+                            // No Firebase, just stay local
+                            App.pin.showLockScreen('login');
+                        }
+                    } else {
+                        // No PIN is set. Force setup.
+                        App.pin.showLockScreen('setup');
+                    }
+                },
+                
+                setupAuthListener: function() {
+                    const { auth } = App.state.fb;
+                    onAuthStateChanged(auth, async (user) => {
+                        console.log("Auth state changed. User:", user ? user.uid : null);
+                        if (user) {
+                            // User is signed in
+                            App.state.userId = user.uid;
+                            App.state.storageDriver = 'firestore';
+                            
+                            // 1. Check for Firestore PIN meta
+                            const metaDocRef = doc(App.state.fb.db, `artifacts/${App.state.appId}/users/${user.uid}`, 'meta');
+                            const metaDoc = await getDoc(metaDocRef);
+                            
+                            if (metaDoc.exists()) {
+                                // Cloud user exists. Use cloud PIN info.
+                                const cloudPin = metaDoc.data();
+                                App.state.pin.salt = cloudPin.salt;
+                                App.state.pin.hash = cloudPin.hash;
+                                
+                                // Overwrite local PIN info to sync
+                                await App.storage.saveAppState('securitySalt', cloudPin.salt);
+                                await App.storage.saveAppState('securityHash', cloudPin.hash);
+                                
+                                App.pin.showLockScreen('login');
+                            } else {
+                                // New cloud user. Migrate local PIN info.
+                                console.log("New cloud user. Migrating local PIN to cloud...");
+                                await setDoc(metaDocRef, { 
+                                    salt: App.state.pin.salt, 
+                                    hash: App.state.pin.hash 
+                                });
+                                
+                                // Now migrate local *data*
+                                await App.storage.migrateLocalToFirestore();
+                                App.pin.showLockScreen('login');
+                            }
+                            
+                        } else {
+                            // User is signed out. Show login view.
+                            App.state.userId = null;
+                            App.state.storageDriver = 'local';
+                            App.dom.app.style.display = 'none';
+                            App.dom.lock.screen.style.display = 'none';
+                            App.dom.login.view.style.display = 'flex';
+                        }
+                        this.updateSyncStatusUI();
+                    });
+                },
+                
+                showLogin: function() {
+                    App.dom.app.style.display = 'none';
+                    App.dom.lock.screen.style.display = 'none';
+                    App.dom.login.view.style.display = 'flex';
+                },
+
+                stayLocal: function() {
+                    App.dom.login.view.style.display = 'none';
+                    App.pin.showLockScreen('login'); // Show local PIN login
+                },
+                
+                updateSyncStatusUI: function() {
+                    const { settings } = App.dom;
+                    const user = App.state.fb.auth ? App.state.fb.auth.currentUser : null;
+                    
+                    settings.syncLoading.style.display = 'none';
+                    if (user) {
+                        settings.syncIn.style.display = 'block';
+                        settings.syncOut.style.display = 'none';
+                        settings.userEmail.textContent = user.email || (user.isAnonymous ? 'Anonymous User' : 'Signed In');
+                    } else {
+                        settings.syncIn.style.display = 'none';
+                        settings.syncOut.style.display = 'block';
+                    }
+                },
+                
+                showEmailLogin: function(show) {
+                    App.dom.login.emailLoginView.style.display = show ? 'block' : 'none';
+                },
+                
+                signInWithGoogle: async function() {
+                    this.showAuthError('');
+                    try {
+                        await signInWithPopup(App.state.fb.auth, App.state.fb.googleProvider);
+                        // onAuthStateChanged will handle the rest
+                    } catch (e) { this.showAuthError(e.message); }
+                },
+                
+                signInWithEmail: async function() {
+                    this.showAuthError('');
+                    try {
+                        const email = App.dom.login.emailInput.value;
+                        const pass = App.dom.login.passwordInput.value;
+                        await signInWithEmailAndPassword(App.state.fb.auth, email, pass);
+                        // onAuthStateChanged will handle the rest
+                    } catch (e) { this.showAuthError(e.message); }
+                },
+                
+                signUpWithEmail: async function() {
+                    this.showAuthError('');
+                    try {
+                        const email = App.dom.login.emailInput.value;
+                        const pass = App.dom.login.passwordInput.value;
+                        await createUserWithEmailAndPassword(App.state.fb.auth, email, pass);
+                        // onAuthStateChanged will handle the rest
+                    } catch (e) { this.showAuthError(e.message); }
+                },
+                
+                signOut: async function() {
+                    try {
+                        await signOut(App.state.fb.auth);
+                        // onAuthStateChanged will handle showing the login screen
+                    } catch (e) { this.showAuthError(e.message); }
+                },
+                
+                showAuthError: function(message) {
+                    App.dom.login.authError.textContent = message;
+                }
+            },
+            
+            pin: {
+                showLockScreen: function(mode) { // 'login', 'setup', 'change'
+                    const { lock } = App.dom;
+                    lock.screen.style.display = 'flex';
+                    App.dom.app.style.display = 'none';
+                    this.resetInput();
+                    
+                    if (mode === 'setup') {
+                        lock.title.textContent = "Create PIN";
+                        lock.subtitle.textContent = "Create a 4-digit PIN to secure your data.";
+                        App.state.pin.setupStep = 1;
+                    } else if (mode === 'change') {
+                        lock.title.textContent = "Change PIN";
+                        lock.subtitle.textContent = "First, enter your CURRENT PIN.";
+                        App.state.pin.setupStep = 0; // 0 = login
+                        App.state.pin.actionCallback = this.startChangePinFlow;
+                    } else { // 'login'
+                        lock.title.textContent = "Enter PIN";
+                        lock.subtitle.textContent = "Enter your 4-digit PIN to unlock.";
+                        App.state.pin.setupStep = 0; // 0 = login
+                    }
+                },
+                
+                onKeyPress: function(key) {
+                    let { input } = App.state.pin;
+                    if (key === 'del') {
+                        input = input.slice(0, -1);
+                    } else if (input.length < 4) {
+                        input += key;
+                    }
+                    
+                    App.state.pin.input = input;
+                    this.updateDots();
+                    
+                    if (input.length === 4) {
+                        this.processInput();
+                    }
+                },
+                
+                updateDots: function() {
+                    App.dom.lock.dots.forEach((dot, index) => {
+                        dot.classList.toggle('filled', index < App.state.pin.input.length);
+                    });
+                },
+                
+                resetInput: function(errorMsg = '') {
+                    App.state.pin.input = "";
+                    App.state.pin.actionCallback = null;
+                    App.dom.lock.error.textContent = errorMsg;
+                    if (errorMsg) {
+                        App.dom.lock.screen.classList.add('shake');
+                        setTimeout(() => App.dom.lock.screen.classList.remove('shake'), 500);
+                    }
+                    this.updateDots();
+                },
+                
+                processInput: async function() {
+                    const { setupStep } = App.state.pin;
+                    
+                    if (setupStep === 0) { // Login
+                        await this.handleLogin();
+                    } else { // Setup
+                        await this.handleSetup();
+                    }
+                },
+                
+                handleLogin: async function() {
+                    const { input, salt, hash, actionCallback } = App.state.pin;
+                    
+                    // 1. Derive key from input
+                    const key = await App.storage.deriveKey(input, salt);
+                    if (!key) {
+                        this.resetInput("PIN derivation failed.");
+                        return;
+                    }
+                    
+                    // 2. Hash input to verify
+                    const inputHash = App.util.bufferToHex(await window.crypto.subtle.digest('SHA-256', new TextEncoder().encode(input + salt)));
+
+                    if (inputHash === hash) {
+                        // Success!
+                        App.state.pin.encryptionKey = key;
+                        if (actionCallback) {
+                            actionCallback(); // Run "change pin" flow
+                        } else {
+                            this.unlock(); // Normal unlock
+                        }
+                    } else {
+                        // Fail
+                        setTimeout(() => this.resetInput("Invalid PIN. Please try again."), 200);
+                    }
+                },
+                
+                handleSetup: async function() {
+                    const { setupStep, input, confirmPin } = App.state.pin;
+                    
+                    if (setupStep === 1) { // Step 1: First PIN entry
+                        App.state.pin.confirmPin = input;
+                        setTimeout(() => {
+                            App.state.pin.input = "";
+                            App.dom.lock.title.textContent = "Confirm PIN";
+                            App.dom.lock.subtitle.textContent = "Please re-enter your 4-digit PIN.";
+                            this.updateDots();
+                            App.state.pin.setupStep = 2;
+                        }, 200);
+                    } else { // Step 2: Confirm PIN entry
+                        if (input === confirmPin) {
+                            // PINs match! Save and log in.
+                            await this.saveNewPin(input);
+                            this.unlock();
+                        } else {
+                            // PINs don't match. Reset.
+                            App.dom.lock.title.textContent = "Create PIN";
+                            App.dom.lock.subtitle.textContent = "PINs did not match. Please try again.";
+                            App.state.pin.setupStep = 1;
+                            App.state.pin.confirmPin = "";
+                            setTimeout(() => this.resetInput(""), 200);
+                        }
+                    }
+                },
+                
+                saveNewPin: async function(pin) {
+                    const newSalt = App.util.generateSalt();
+                    const newKey = await App.storage.deriveKey(pin, newSalt);
+                    const newHash = App.util.bufferToHex(await window.crypto.subtle.digest('SHA-256', new TextEncoder().encode(pin + newSalt)));
+                    
+                    // Save to local DB
+                    await App.state.db.put('appState', {id: 'securitySalt', data: newSalt});
+                    await App.state.db.put('appState', {id: 'securityHash', data: newHash});
+                    
+                    // Save to Firestore if signed in
+                    if (App.state.userId) {
+                        const metaDocRef = doc(App.state.fb.db, `artifacts/${App.state.appId}/users/${App.state.userId}`, 'meta');
+                        await setDoc(metaDocRef, { salt: newSalt, hash: newHash });
+                    }
+                    
+                    // Update runtime state
+                    App.state.pin.salt = newSalt;
+                    App.state.pin.hash = newHash;
+                    App.state.pin.encryptionKey = newKey;
+                    
+                    console.log("New PIN saved and key derived.");
+                },
+                
+                unlock: async function(targetView = 'welcomeView') {
+                    App.dom.lock.screen.style.display = 'none';
+                    App.dom.app.style.display = 'flex';
+                    
+                    try {
+                        await App.storage.loadAllHistory(); // Loads into App.state.data
+                        App.navigation.navigateTo(targetView);
+                        
+                        const hasOnboarded = localStorage.getItem('hauoraOnboardComplete');
+                        if (hasOnboarded !== 'true') {
+                            App.dom.onboarding.modal.style.display = 'flex'; // Use flex to center
+                            setTimeout(() => App.dom.onboarding.modal.classList.add('visible'), 10);
+                            App.ui.updateOnboardingStep(0); // Start at step 1
+                        }
+                    } catch (e) {
+                        console.error("Failed to load and decrypt data:", e);
+                        this.showLockScreen('login');
+                        this.resetInput("Decryption failed. Wrong PIN or corrupt data.");
+                    }
+                },
+                
+                startChangePin: function() {
+                    this.showLockScreen('change');
+                },
+                
+                startChangePinFlow: function() {
+                    // `this` is App.pin
+                    console.log("Current PIN verified. Starting change flow...");
+                    App.state.pin.setupStep = 1; // 1 = new
+                    App.state.pin.confirmPin = "";
+                    App.dom.lock.title.textContent = "Enter NEW PIN";
+                    App.dom.lock.subtitle.textContent = "Create a new 4-digit PIN.";
+                    
+                    const oldKey = App.state.pin.encryptionKey; // Keep the old key for re-encryption
+                    
+                    // Store original handler and override
+                    const originalSetupHandler = App.pin.handleSetup.bind(App.pin);
+                    
+                    App.pin.handleSetup = async function() {
+                        const { setupStep, input, confirmPin } = App.state.pin;
+                        
+                        if (setupStep === 1) {
+                            App.state.pin.confirmPin = input;
+                            setTimeout(() => {
+                                App.state.pin.input = "";
+                                App.dom.lock.title.textContent = "Confirm NEW PIN";
+                                App.dom.lock.subtitle.textContent = "Re-enter your new 4-digit PIN.";
+                                this.updateDots();
+                                App.state.pin.setupStep = 2;
+                            }, 200);
+                        } else { // Step 2
+                            if (input === confirmPin) {
+                                try {
+                                    App.dom.lock.title.textContent = "Re-encrypting...";
+                                    App.dom.lock.subtitle.textContent = "Please wait, this may take a moment.";
+                                    
+                                    const newSalt = App.util.generateSalt();
+                                    const newKey = await App.storage.deriveKey(input, newSalt);
+                                    const newHash = App.util.bufferToHex(await window.crypto.subtle.digest('SHA-256', new TextEncoder().encode(input + newSalt)));
+                                    
+                                    const allData = App.state.data;
+                                    App.state.pin.encryptionKey = newKey; // Set to new key for saving
+                                    
+                                    await App.storage.saveStore('checkinHistory', allData.checkinHistory);
+                                    await App.storage.saveStore('gratitudeHistory', allData.gratitudeHistory);
+                                    await App.storage.saveStore('sabbathHistory', allData.sabbathHistory);
+                                    await App.storage.saveStore('ruleOfLifeHistory', allData.ruleOfLifeHistory);
+                                    await App.storage.saveAppState('userResources', allData.userResources);
+                                    await App.storage.saveAppState('ruleOfLife', allData.ruleOfLife);
+
+                                    // Save new PIN info
+                                    await App.state.db.put('appState', {id: 'securitySalt', data: newSalt});
+                                    await App.state.db.put('appState', {id: 'securityHash', data: newHash});
+                                    
+                                    App.state.pin.salt = newSalt;
+                                    App.state.pin.hash = newHash;
+
+                                    if (App.state.storageDriver === 'firestore') {
+                                        const metaDocRef = doc(App.state.fb.db, `artifacts/${App.state.appId}/users/${App.state.userId}`, 'meta');
+                                        await setDoc(metaDocRef, { salt: newSalt, hash: newHash });
+                                        
+                                        // Re-encrypt cloud data
+                                        const batch = writeBatch(App.state.fb.db);
+                                        const basePath = `artifacts/${App.state.appId}/users/${App.state.userId}/data`;
+                                        for(const e of allData.checkinHistory) batch.set(doc(App.state.fb.db, basePath, `checkinHistory_${e.date}`), { data: await App.storage.encrypt(e) });
+                                        for(const e of allData.gratitudeHistory) batch.set(doc(App.state.fb.db, basePath, `gratitudeHistory_${e.date}`), { data: await App.storage.encrypt(e) });
+                                        for(const e of allData.sabbathHistory) batch.set(doc(App.state.fb.db, basePath, `sabbathHistory_${e.date}`), { data: await App.storage.encrypt(e) });
+                                        for(const e of allData.ruleOfLifeHistory) batch.set(doc(App.state.fb.db, basePath, `ruleOfLifeHistory_${e.date}`), { data: await App.storage.encrypt(e) });
+                                        batch.set(doc(App.state.fb.db, basePath, 'userResources'), { data: await App.storage.encrypt(allData.userResources) });
+                                        batch.set(doc(App.state.fb.db, basePath, 'ruleOfLife'), { data: await App.storage.encrypt(allData.ruleOfLife) });
+                                        await batch.commit();
+                                    }
+                                    
+                                    App.ui.showAlert("PIN Changed Successfully!", "success");
+                                    this.unlock('settingsView');
+                                    
+                                } catch (e) {
+                                    console.error("Failed to change PIN:", e);
+                                    App.state.pin.encryptionKey = oldKey; // Restore old key on fail
+                                    App.ui.showModal("Error", "Failed to change PIN. Your old PIN is still active.");
+                                    this.unlock('settingsView');
+                                } finally {
+                                    // Restore original setup handler
+                                    App.pin.handleSetup = originalSetupHandler;
+                                }
+                            } else {
+                                // PINs don't match
+                                App.dom.lock.title.textContent = "Enter NEW PIN";
+                                App.dom.lock.subtitle.textContent = "PINs did not match. Please try again.";
+                                App.state.pin.setupStep = 1;
+                                App.state.pin.confirmPin = "";
+                                setTimeout(() => this.resetInput(""), 200);
+                            }
+                        }
+                    }.bind(App.pin); // Bind the function to App.pin scope
+                }
+            },
+            
+            // --- Feature Modules ---
+            moduleCheckin: {
+                currentData: {},
+
+                start: function(type) { // 'warning' or 'positive'
+                    App.state.ui.currentWarningCategory = 0;
+                    App.state.ui.currentPositiveCategory = 0;
+                    
+                    const today = new Date().toISOString().split('T')[0];
+                    let entry = App.state.data.checkinHistory.find(e => e.date === today);
+                    
+                    if (!entry) {
+                        entry = { date: today, warningResponses: {}, positiveResponses: {}, notes: "" };
+                    }
+                    this.currentData = JSON.parse(JSON.stringify(entry)); // Deep copy to edit
+                    
+                    if (type === 'warning') {
+                        if (!this.currentData.warningResponses) this.currentData.warningResponses = {};
+                        this.renderQuestions('warning');
+                        App.navigation.navigateTo('checkinView');
+                    } else {
+                        if (!this.currentData.positiveResponses) this.currentData.positiveResponses = {};
+                        this.renderQuestions('positive');
+                        App.navigation.navigateTo('positiveCheckinView');
+                    }
+                },
