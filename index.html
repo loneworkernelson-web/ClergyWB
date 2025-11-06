@@ -1659,7 +1659,13 @@
     </script>
 
 //******************************************************************************************************************************************* PART3 *******************************
-// --- Storage & Crypto Module ---
+<!-- 
+            ================================================================
+            App Logic Part 3: Storage, Auth, and PIN Modules
+            ================================================================
+            -->
+
+            <!-- --- Storage & Crypto Module --- -->
             storage: {
                 initDB: async function() {
                     const { DB_NAME, DB_VERSION, STORES } = App.config;
@@ -1826,7 +1832,7 @@
                     const collectionRef = collection(App.state.fb.db, `artifacts/${App.state.appId}/users/${App.state.userId}/data`);
                     const q = query(collectionRef);
                     
-                    const docsSnap = await getDocs(q);
+                    const docsSnap = await App.Firebase.getDocs(q);
                     
                     data.checkinHistory = [];
                     data.gratitudeHistory = [];
@@ -2041,7 +2047,7 @@
                             // We need to delete all docs in the /data collection
                             const collectionRef = collection(App.state.fb.db, `artifacts/${App.state.appId}/users/${App.state.userId}/data`);
                             const q = query(collectionRef);
-                            const docsSnap = await getDocs(q);
+                            const docsSnap = await App.Firebase.getDocs(q);
                             
                             const batch = writeBatch(App.state.fb.db);
                             docsSnap.forEach(doc => batch.delete(doc.ref));
@@ -2088,6 +2094,7 @@
                 checkPinAndAuthState: async function() {
                     const { db } = App.state;
                     // FIX: Get PIN data from 'appState' store
+                    // And check for 'value' property, not 'data'
                     const saltEntry = await db.get(App.config.STORES.APP_STATE, 'securitySalt');
                     const hashEntry = await db.get(App.config.STORES.APP_STATE, 'securityHash');
 
@@ -2102,7 +2109,7 @@
                              // *** START FIX for Cross-Origin-Opener-Policy ***
                             // Check for a redirect result *before* setting up the listener
                             try {
-                                const result = await getRedirectResult(App.state.fb.auth);
+                                const result = await App.Firebase.getRedirectResult(App.state.fb.auth);
                                 if (result) {
                                     // This was a redirect login.
                                     console.log("Redirect result obtained:", result.user);
@@ -2125,7 +2132,7 @@
                 
                 setupAuthListener: function() {
                     const { auth } = App.state.fb;
-                    onAuthStateChanged(auth, async (user) => {
+                    App.Firebase.onAuthStateChanged(auth, async (user) => {
                         console.log("Auth state changed. User:", user ? user.uid : null);
                         if (user) {
                             // User is signed in
@@ -2134,7 +2141,7 @@
                             
                             // 1. Check for Firestore PIN meta
                             const metaDocRef = doc(App.state.fb.db, `artifacts/${App.state.appId}/users/${user.uid}`, 'meta');
-                            const metaDoc = await getDoc(metaDocRef);
+                            const metaDoc = await App.Firebase.getDoc(metaDocRef);
                             
                             if (metaDoc.exists()) {
                                 // Cloud user exists. Use cloud PIN info.
@@ -2211,7 +2218,7 @@
                     }
                     try {
                         // *** FIX: Use signInWithRedirect instead of signInWithPopup ***
-                        await signInWithRedirect(App.state.fb.auth, App.state.fb.googleProvider);
+                        await App.Firebase.signInWithRedirect(App.state.fb.auth, App.state.fb.googleProvider);
                         // The app will now reload. onAuthStateChanged and getRedirectResult will handle it.
                     } catch (e) { this.showAuthError(e.message); }
                 },
@@ -2225,7 +2232,7 @@
                     try {
                         const email = App.dom.login.emailInput.value;
                         const pass = App.dom.login.passwordInput.value;
-                        await signInWithEmailAndPassword(App.state.fb.auth, email, pass);
+                        await App.Firebase.signInWithEmailAndPassword(App.state.fb.auth, email, pass);
                         // onAuthStateChanged will handle the rest
                     } catch (e) { this.showAuthError(e.message); }
                 },
@@ -2239,7 +2246,7 @@
                     try {
                         const email = App.dom.login.emailInput.value;
                         const pass = App.dom.login.passwordInput.value;
-                        await createUserWithEmailAndPassword(App.state.fb.auth, email, pass);
+                        await App.Firebase.createUserWithEmailAndPassword(App.state.fb.auth, email, pass);
                         // onAuthStateChanged will handle the rest
                     } catch (e) { this.showAuthError(e.message); }
                 },
@@ -2247,7 +2254,7 @@
                 signOut: async function() {
                     if (!App.state.fb.auth) return;
                     try {
-                        await signOut(App.state.fb.auth);
+                        await App.Firebase.signOut(App.state.fb.auth);
                         // onAuthStateChanged will handle showing the login screen
                     } catch (e) { this.showAuthError(e.message); }
                 },
