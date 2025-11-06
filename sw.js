@@ -1,4 +1,4 @@
-const CACHE_NAME = 'hauora-cache-v5'; // Incremented version
+const CACHE_NAME = 'hauora-cache-v6'; // Incremented version
 // We now cache 'index.html' instead of the old name
 const URLS_TO_CACHE = [
     'index.html', // THIS IS THE CRITICAL CHANGE
