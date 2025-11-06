@@ -1,18 +1,12 @@
 {
   "name": "Tōku Hauora",
   "short_name": "Tōku Hauora",
-  "description": "A private, secure wellbeing app.",
-  "start_url": "./TokuHauora_Corrected.html",
+  "description": "A private, secure wellbeing journal.",
+  "start_url": "index.html",
   "display": "standalone",
   "background_color": "#ffffff",
-  "theme_color": "#4f46e5",
-  "orientation": "portrait-primary",
+  "theme_color": "#4F46E5",
   "icons": [
-    {
-      "src": "https://loneworkernelson-web.github.io/ClergyWB/Toku%20Haura.ico",
-      "type": "image/x-icon",
-      "sizes": "48x48"
-    },
     {
       "src": "https://loneworkernelson-web.github.io/ClergyWB/Toku%20Haura.png",
       "type": "image/png",
