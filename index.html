@@ -1576,7 +1576,7 @@
                         
                         if (App.state.storageDriver === 'firestore') {
                             const docRef = doc(App.state.fb.db, `artifacts/${App.state.appId}/users/${App.state.userId}/data`, `${storeName}_${entry.date}`);
-                            await setDoc(docRef, { data: encryptedData });
+                            await App.Firebase.setDoc(docRef, { data: encryptedData });
                         }
                     } catch (e) {
                         console.error(`Error saving ${storeName} entry:`, e);
@@ -1657,7 +1657,7 @@
                     App.ui.showModal("Migrating Data", "Please wait, we're securely moving your local data to the cloud...");
                     
                     const db = App.state.db;
-                    const batch = writeBatch(App.state.fb.db);
+                    const batch = App.Firebase.writeBatch(App.state.fb.db);
                     const basePath = `artifacts/${App.state.appId}/users/${App.state.userId}/data`;
 
                     try {
@@ -1792,7 +1792,7 @@
                                     await this.clearAllData(false); // Clear cloud only
                                     
                                     App.ui.showAlert("Importing... saving to cloud...", "info");
-                                    const batch = writeBatch(App.state.fb.db);
+                                    const batch = App.Firebase.writeBatch(App.state.fb.db);
                                     const basePath = `artifacts/${App.state.appId}/users/${App.state.userId}/data`;
                                     
                                     for(const e of checkinHistory) batch.set(doc(App.state.fb.db, basePath, `checkinHistory_${e.date}`), { data: await this.encrypt(e) });
@@ -1845,7 +1845,7 @@
                             const q = query(collectionRef);
                             const docsSnap = await App.Firebase.getDocs(q);
                             
-                            const batch = writeBatch(App.state.fb.db);
+                            const batch = App.Firebase.writeBatch(App.state.fb.db);
                             docsSnap.forEach(doc => batch.delete(doc.ref));
                             
                             // Delete the meta (PIN) doc
@@ -1913,7 +1913,11 @@
                                 }
                             } catch (error) {
                                 console.error("Error getting redirect result:", error);
-                                App.ui.showAlert(`Sign-in failed: ${error.message}`, "error");
+                                // Don't show an alert here, as it can fire on every page load
+                                // Only show if it's a specific type of error
+                                if (error.code !== 'auth/no-redirect-operation') {
+                                    App.ui.showAlert(`Sign-in failed: ${error.message}`, "error");
+                                }
                             }
                             // *** END FIX ***
                             this.setupAuthListener();
@@ -1954,7 +1958,7 @@
                             } else {
                                 // New cloud user. Migrate local PIN info.
                                 console.log("New cloud user. Migrating local PIN to cloud...");
-                                await setDoc(metaDocRef, { 
+                                await App.Firebase.setDoc(metaDocRef, { 
                                     salt: App.state.pin.salt, 
                                     hash: App.state.pin.hash 
                                 });
@@ -2124,7 +2128,8 @@
                     if (setupStep === 0) { // Login
                         await this.handleLogin();
                     } else { // Setup
-                        await this.handleSetup(this.startChangePinFlow_original); // Pass original setup handler
+                        // FIX: Pass the original bound function
+                        await this.handleSetup(this.startChangePinFlow_original); 
                     }
                 },
                 
@@ -2194,7 +2199,7 @@
                     // Save to Firestore if signed in
                     if (App.state.userId) {
                         const metaDocRef = doc(App.state.fb.db, `artifacts/${App.state.appId}/users/${App.state.userId}`, 'meta');
-                        await setDoc(metaDocRef, { salt: newSalt, hash: newHash });
+                        await App.Firebase.setDoc(metaDocRef, { salt: newSalt, hash: newHash });
                     }
                     
                     // Update runtime state
@@ -2287,10 +2292,10 @@
 
                                     if (App.state.storageDriver === 'firestore') {
                                         const metaDocRef = doc(App.state.fb.db, `artifacts/${App.state.appId}/users/${App.state.userId}`, 'meta');
-                                        await setDoc(metaDocRef, { salt: newSalt, hash: newHash });
+                                        await App.Firebase.setDoc(metaDocRef, { salt: newSalt, hash: newHash });
                                         
                                         // Re-encrypt cloud data
-                                        const batch = writeBatch(App.state.fb.db);
+                                        const batch = App.Firebase.writeBatch(App.state.fb.db);
                                         const basePath = `artifacts/${App.state.appId}/users/${App.state.userId}/data`;
                                         for(const e of allData.checkinHistory) batch.set(doc(App.state.fb.db, basePath, `checkinHistory_${e.date}`), { data: await App.storage.encrypt(e) });
                                         for(const e of allData.gratitudeHistory) batch.set(doc(App.state.fb.db, basePath, `gratitudeHistory_${e.date}`), { data: await App.storage.encrypt(e) });
