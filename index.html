@@ -2457,10 +2457,9 @@
                 }
             }, // End of App.pin module
 }
-            
-            // --- Feature Modules ---
+// --- Feature Modules ---
             moduleCheckin: {
-                currentData: {}
+                currentData: {},
 
                 start: function(type) { // 'warning' or 'positive'
                     App.state.ui.currentWarningCategory = 0;
@@ -2530,7 +2529,10 @@
                 
                 selectAnswer: function(e, key, q, value, type) {
                     const isWarning = type === 'warning';
-                    const responses = isWarning ? this.currentData.warningResponses : this.currentData.positiveResponses;
+                    // FIX: Select the correct data object based on type
+                    const dataObject = type === 'sabbath' ? App.moduleSabbath.currentData : this.currentData;
+                    const responses = isWarning ? dataObject.warningResponses : (type === 'positive' ? dataObject.positiveResponses : dataObject.responses);
+                    
                     responses[key][q] = value;
                     
                     const btn = e.currentTarget;
@@ -2570,13 +2572,12 @@
                 
                 navigateCategory: function(dir, type) {
                     if (dir === 1 && !this.allQuestionsAnswered(type)) {
-                        App.ui.showAlert("Please answer all questions.", "info");
+                        // allQuestionsAnswered shows the alert
                         return;
                     }
                     
                     const isWarning = type === 'warning';
                     const { config, state } = App;
-                    const order = isWarning ? config.categoryOrder : config.positiveCategoryOrder;
                     
                     if (isWarning) {
                         state.ui.currentWarningCategory += dir;
@@ -2591,14 +2592,22 @@
                     const isWarning = type === 'warning';
                     const { config, state } = App;
                     
-                    const index = isWarning ? state.ui.currentWarningCategory : state.ui.currentPositiveCategory;
-                    const order = isWarning ? config.categoryOrder : config.positiveCategoryOrder;
+                    const dataObject = type === 'sabbath' ? App.moduleSabbath.currentData : this.currentData;
+                    
+                    const index = isWarning ? state.ui.currentWarningCategory : (type === 'positive' ? state.ui.currentPositiveCategory : state.ui.currentSabbathCategory);
+                    const order = isWarning ? config.categoryOrder : (type === 'positive' ? config.positiveCategoryOrder : config.sabbathCategoryOrder);
                     const key = order[index];
-                    const questions = isWarning ? config.warningSigns[key] : config.positiveSigns[key];
-                    const responses = isWarning ? this.currentData.warningResponses : this.currentData.positiveResponses;
+                    const questions = isWarning ? config.warningSigns[key] : (type === 'positive' ? config.positiveSigns[key] : config.sabbathSigns[key]);
+                    const responses = isWarning ? dataObject.warningResponses : (type === 'positive' ? dataObject.positiveResponses : dataObject.responses);
+
+                    if (!responses[key]) { // Handle case where category hasn't been touched yet
+                         App.ui.showAlert("Please answer all questions.", "info");
+                         return false;
+                    }
 
                     for (const q of questions) {
                         if (typeof responses[key][q] === 'undefined') {
+                            App.ui.showAlert("Please answer all questions.", "info");
                             return false;
                         }
                     }
@@ -2607,8 +2616,7 @@
                 
                 finish: function(type) {
                     if (!this.allQuestionsAnswered(type)) {
-                        App.ui.showAlert("Please answer all questions.", "info");
-                        return;
+                        return; // allQuestionsAnswered shows the alert
                     }
                     
                     // Save to global state
@@ -2620,7 +2628,7 @@
                     }
                     
                     // Save to DB
-                    App.storage.saveEntry('checkinHistory', this.currentData);
+                    App.storage.saveEntry(App.config.STORES.CHECKIN, this.currentData);
                     
                     App.state.ui.currentSummaryIndex = App.state.data.checkinHistory.length - 1;
                     this.renderSummary(this.currentData);
@@ -2633,12 +2641,12 @@
                     
                     if (entry.warningResponses) {
                         Object.values(entry.warningResponses).forEach(cat => {
-                            warning += Object.values(cat).filter(Boolean).length;
+                            if(cat) warning += Object.values(cat).filter(Boolean).length;
                         });
                     }
                     if (entry.positiveResponses) {
                         Object.values(entry.positiveResponses).forEach(cat => {
-                            positive += Object.values(cat).filter(Boolean).length;
+                            if(cat) positive += Object.values(cat).filter(Boolean).length;
                         });
                     }
                     return { warning, positive };
@@ -2748,7 +2756,7 @@
                     const { state, dom } = App;
                     if (state.ui.currentNotesIndex !== -1 && state.data.checkinHistory[state.ui.currentNotesIndex]) {
                         state.data.checkinHistory[state.ui.currentNotesIndex].notes = dom.notes.notes.value;
-                        App.storage.saveEntry('checkinHistory', state.data.checkinHistory[state.ui.currentNotesIndex]);
+                        App.storage.saveEntry(App.config.STORES.CHECKIN, state.data.checkinHistory[state.ui.currentNotesIndex]);
                         App.ui.showAlert("Notes Saved!", "success");
                         this.backToSummary();
                     } else {
@@ -2777,18 +2785,18 @@
                     const date = sabbath.dateInput.value || new Date().toISOString().split('T')[0];
                     sabbath.dateInput.value = date; // Ensure it's set
                     
-                    this.currentData = data.sabbathHistory.find(e => e.date === date);
-                    if (!this.currentData) {
-                        this.currentData = {
+                    let entry = data.sabbathHistory.find(e => e.date === date);
+                    if (!entry) {
+                        entry = {
                             date,
                             responses: {},
                             notes: ""
                         };
-                        App.config.sabbathCategoryOrder.forEach(key => this.currentData.responses[key] = {});
+                        App.config.sabbathCategoryOrder.forEach(key => entry.responses[key] = {});
                     }
                     
                     // Create a deep copy to edit, so we don't modify state directly
-                    this.currentData = JSON.parse(JSON.stringify(this.currentData));
+                    this.currentData = JSON.parse(JSON.stringify(entry));
                     
                     sabbath.notes.value = this.currentData.notes || '';
                     App.state.ui.currentSabbathCategory = 0;
@@ -2824,6 +2832,7 @@
                             </div>
                         `;
                         
+                        // Use moduleCheckin.selectAnswer as it's the generic implementation
                         qDiv.querySelector('.checkin-btn-sab').onclick = (e) => App.moduleCheckin.selectAnswer(e, key, q, true, 'sabbath');
                         qDiv.querySelector('.checkin-btn-neg').onclick = (e) => App.moduleCheckin.selectAnswer(e, key, q, false, 'sabbath');
                         
@@ -2874,7 +2883,7 @@
                     this.currentData.date = reflectionDate;
                     this.currentData.notes = App.dom.sabbath.notes.value;
 
-                    App.storage.saveEntry('sabbathHistory', this.currentData);
+                    App.storage.saveEntry(App.config.STORES.SABBATH, this.currentData);
                     
                     const existingEntryIndex = App.state.data.sabbathHistory.findIndex(e => e.date === reflectionDate);
                     if (existingEntryIndex > -1) {
@@ -2946,7 +2955,7 @@
                             
                             const notesEl = document.createElement('p');
                             notesEl.className = "italic whitespace-pre-wrap text-slate-600";
-                            notesEl.textContent = entry.notes;
+                            notesEl.textContent = App.ui.escapeHTML(entry.notes);
                             summaryDiv.appendChild(notesEl);
                         }
                         
@@ -2978,7 +2987,7 @@
                         App.state.data.gratitudeHistory.push(entryToSave); // Add new to global state
                     }
                     
-                    App.storage.saveEntry('gratitudeHistory', entryToSave);
+                    App.storage.saveEntry(App.config.STORES.GRATITUDE, entryToSave);
                     App.ui.showAlert("Gratitude entry saved!", "success");
                 },
 
@@ -3120,7 +3129,7 @@
                         intentionsAtTime: [...intentions] // Snapshot intentions at time of check-in
                     };
                     
-                    App.storage.saveEntry('ruleOfLifeHistory', newEntry);
+                    App.storage.saveEntry(App.config.STORES.RULE_HISTORY, newEntry);
                     
                     const existingEntryIndex = App.state.data.ruleOfLifeHistory.findIndex(e => e.date === reflectionDate);
                     if (existingEntryIndex > -1) {
@@ -3432,10 +3441,14 @@
                                 if (!checkin) return;
                                 
                                 let totalSabbathQuestions = 0, totalSabbathMet = 0;
-                                Object.values(sabbathEntry.responses).forEach(cat => {
-                                    totalSabbathQuestions += Object.keys(cat).length;
-                                    totalSabbathMet += Object.values(cat).filter(Boolean).length;
-                                });
+                                if(sabbathEntry.responses) {
+                                    Object.values(sabbathEntry.responses).forEach(cat => {
+                                        if(cat) {
+                                            totalSabbathQuestions += Object.keys(cat).length;
+                                            totalSabbathMet += Object.values(cat).filter(Boolean).length;
+                                        }
+                                    });
+                                }
                                 if (totalSabbathQuestions === 0) return;
                                 
                                 const percentMet = totalSabbathMet / totalSabbathQuestions;
@@ -3465,7 +3478,7 @@
                 addInsightCard: function(title, text, bgColor, textColor) {
                     const card = document.createElement('div');
                     card.className = `p-4 rounded-xl shadow-sm border ${bgColor} ${textColor}`;
-                    card.innerHTML = `<h4 class="font-semibold mb-1">${title}</h4><p class="text-sm">${text}</p>`;
+                    card.innerHTML = `<h4 class="font-semibold mb-1">${App.ui.escapeHTML(title)}</h4><p class="text-sm">${text}</p>`; // text already has <strong>
                     App.dom.trends.correlationsContainer.appendChild(card);
                 }
             }, // End App.moduleTrends
