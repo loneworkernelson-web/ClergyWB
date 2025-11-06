@@ -20,5 +20,5 @@ const firebaseConfig = {
 };
 
 // This makes the config available to the main app script.
-// We check for this in TokuHauora_Corrected.html
+// We check for this in TokuHauora index.html
 window.firebaseConfig = firebaseConfig;
