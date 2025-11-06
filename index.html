@@ -820,9 +820,8 @@
             signInWithCustomToken, 
             onAuthStateChanged,
             GoogleAuthProvider,
-            // signInWithPopup, // <-- Removed
-            signInWithRedirect, // <-- ADDED for the fix
-            getRedirectResult,  // <-- ADDED for the fix
+            signInWithRedirect,
+            getRedirectResult,
             createUserWithEmailAndPassword,
             signInWithEmailAndPassword,
             signOut
@@ -841,7 +840,7 @@
             setLogLevel,
             enableNetwork,
             disableNetwork,
-            getDocs // Added getDocs
+            getDocs
         } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 
@@ -938,9 +937,8 @@
                 },
                 sabbathCategoryOrder: ["disengagement", "rest", "connection", "spiritual"],
                 
-                DB_NAME: 'TokuHauoraDB_v2', // New DB name for encrypted store
+                DB_NAME: 'TokuHauoraDB_v2',
                 DB_VERSION: 1,
-                // New, safer DB structure
                 STORES: {
                     APP_STATE: 'appState', // For PIN, rule, resources
                     CHECKIN: 'checkinHistory',
@@ -960,11 +958,7 @@
                 // 1. Cache DOM Elements
                 this.cacheDom();
                 
-                // 2. Attach Core Listeners
-                // This is now done *inside* the main app logic to avoid race conditions
-                // this.attachListeners();
-
-                // 3. Initialize Firebase (if config is present)
+                // 2. Initialize Firebase (if config is present)
                 this.state.appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
                 const fbConfig = window.firebaseConfig || null;
 
@@ -985,7 +979,7 @@
                     console.warn("Firebase config is not set or is still placeholder. App will run in local-only mode.");
                 }
 
-                // 4. Initialize Local DB (IndexedDB)
+                // 3. Initialize Local DB (IndexedDB)
                 try {
                     this.state.db = await this.storage.initDB();
                 } catch (e) {
@@ -995,10 +989,10 @@
                     return; // Stop initialization
                 }
 
-                // 5. Check PIN status and start Auth flow
+                // 4. Check PIN status and start Auth flow
                 await this.auth.checkPinAndAuthState();
 
-                // 6. Attach Listeners *after* DOM is cached
+                // 5. Attach Listeners *after* DOM is cached
                 this.attachListeners();
                 
                 console.log("App.init() complete.");
@@ -1209,7 +1203,6 @@
             // --- Attaches all event listeners ---
             attachListeners: function() {
                 // --- Navigation ---
-                // FIX: Attach listeners by ID, not onclick attributes
                 document.getElementById('navHomeBtn').onclick = () => this.navigation.navigateTo('welcomeView');
                 document.getElementById('navSummaryBtn').onclick = () => this.navigation.navigateTo('summaryViewLast');
                 document.getElementById('navTrendsBtn').onclick = () => this.navigation.navigateTo('trendsView');
@@ -1622,7 +1615,6 @@
             },
 
             // --- Expose Firebase modules to the App (used by Auth module) ---
-            // THIS IS THE FIX.
             Firebase: {
                 initializeApp, getAuth, signInAnonymously, signInWithCustomToken, 
                 onAuthStateChanged, GoogleAuthProvider, 
@@ -1631,33 +1623,6 @@
                 getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, onSnapshot, 
                 collection, query, writeBatch, setLogLevel, enableNetwork, disableNetwork, getDocs
             }
-        }; // End App object
-        
-        
-        // --- Start the app ---
-        // This is the fix for the race condition.
-        // We ensure the DOM is fully loaded *before* we try to init the app,
-        // which includes caching DOM elements.
-        document.addEventListener('DOMContentLoaded', () => {
-            // A simple check for `initializeApp` from the module
-            if (typeof initializeApp !== 'undefined' && typeof idb !== 'undefined') {
-                App.init();
-            } else {
-                // This is a fallback if scripts are slow.
-                console.warn("SDKs not yet loaded, waiting...");
-                setTimeout(() => {
-                    if (typeof initializeApp !== 'undefined' && typeof idb !== 'undefined') {
-                        App.init();
-                    } else {
-                        console.error("Failed to load critical SDKs. App cannot start.");
-                        document.body.innerHTML = "Error: Could not load app dependencies. Please check your internet connection and refresh.";
-                    }
-                }, 1000); 
-            }
-        });
-
-    </script>
-
 //******************************************************************************************************************************************* PART3 *******************************
 <!-- 
             ================================================================
@@ -2603,7 +2568,10 @@
                 
                 selectAnswer: function(e, key, q, value, type) {
                     const isWarning = type === 'warning';
-                    const responses = isWarning ? this.currentData.warningResponses : this.currentData.positiveResponses;
+                    // FIX: Select the correct data object based on type
+                    const dataObject = type === 'sabbath' ? App.moduleSabbath.currentData : this.currentData;
+                    const responses = isWarning ? dataObject.warningResponses : (type === 'positive' ? dataObject.positiveResponses : dataObject.responses);
+                    
                     if (!responses[key]) responses[key] = {}; // Ensure category object exists
                     responses[key][q] = value;
                     
@@ -2663,11 +2631,13 @@
                     const isWarning = type === 'warning';
                     const { config, state } = App;
                     
-                    const index = isWarning ? state.ui.currentWarningCategory : state.ui.currentPositiveCategory;
-                    const order = isWarning ? config.categoryOrder : config.positiveCategoryOrder;
+                    const dataObject = type === 'sabbath' ? App.moduleSabbath.currentData : this.currentData;
+                    
+                    const index = isWarning ? state.ui.currentWarningCategory : (type === 'positive' ? state.ui.currentPositiveCategory : state.ui.currentSabbathCategory);
+                    const order = isWarning ? config.categoryOrder : (type === 'positive' ? config.positiveCategoryOrder : config.sabbathCategoryOrder);
                     const key = order[index];
-                    const questions = isWarning ? config.warningSigns[key] : config.positiveSigns[key];
-                    const responses = isWarning ? this.currentData.warningResponses : this.currentData.positiveResponses;
+                    const questions = isWarning ? config.warningSigns[key] : (type === 'positive' ? config.positiveSigns[key] : config.sabbathSigns[key]);
+                    const responses = isWarning ? dataObject.warningResponses : (type === 'positive' ? dataObject.positiveResponses : dataObject.responses);
 
                     if (!responses[key]) { // Handle case where category hasn't been touched yet
                          App.ui.showAlert("Please answer all questions.", "info");
@@ -3154,7 +3124,7 @@
                         rule.saveBtn.style.display = 'none';
                     } else { // 'edit' mode
                         const currentIntentions = (App.state.data.ruleOfLife && App.state.data.ruleOfLife.intentions) ? App.state.data.ruleOfLife.intentions : [];
-                        rule.inputs.forEach((input, index) => {
+                        Array.from(rule.inputs).forEach((input, index) => {
                             input.value = currentIntentions[index] || '';
                         });
                         rule.readView.style.display = 'none';
@@ -3640,7 +3610,8 @@
         // Expose Firebase modules to be used by App
         window.Firebase = {
             initializeApp, getAuth, signInAnonymously, signInWithCustomToken, 
-            onAuthStateChanged, GoogleAuthProvider, signInWithRedirect, getRedirectResult, 
+            onAuthStateChanged, GoogleAuthProvider, 
+            signInWithRedirect, getRedirectResult, 
             createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut,
             getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, onSnapshot, 
             collection, query, writeBatch, setLogLevel, enableNetwork, disableNetwork, getDocs
