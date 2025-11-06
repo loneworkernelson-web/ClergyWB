@@ -820,8 +820,9 @@
             signInWithCustomToken, 
             onAuthStateChanged,
             GoogleAuthProvider,
-            signInWithPopup, // This will be changed to signInWithRedirect in Part 3
-            getRedirectResult, // <<< THIS IS THE FIX FOR THE ReferenceError
+            // signInWithPopup, // <-- Removed
+            signInWithRedirect, // <-- ADDED for the fix
+            getRedirectResult,  // <-- ADDED for the fix
             createUserWithEmailAndPassword,
             signInWithEmailAndPassword,
             signOut
