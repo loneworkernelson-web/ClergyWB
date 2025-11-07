@@ -26,7 +26,12 @@
     -->
     
     <!-- CryptoJS for Encryption -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
+    <!-- FIX: Load the full crypto-js library, not just the core -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/core.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/pbkdf2.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/aes.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/mode-gcm.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/enc-base64.min.js"></script>
 
     <!-- Dexie.js (IndexedDB Wrapper) -->
     <script src="https://unpkg.com/dexie@3/dist/dexie.js"></script>
