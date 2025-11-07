@@ -4,40 +4,34 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tōku Hauora</title>
-    <!-- FIX: Corrected favicon links per your 404 error -->
+    
+    <!-- FIX: Corrected favicon links -->
     <link rel="icon" type="image/png" href="https://loneworkernelson-web.github.io/ClergyWB/Toku_Hauora.png">
     <link rel="shortcut icon" href="https://loneworkernelson-web.github.io/ClergyWB/favicon.ico">
     <link rel="apple-touch-icon" href="https://loneworkernelson-web.github.io/ClergyWB/Toku_Hauora.png">
     
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#4a90e2">
+    <meta name="theme-color" content="#4F46E5"> <!-- Indigo 600 -->
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     
-    <!-- FIX 1: Load config.js file *before* the module that uses it -->
+    <!-- UI-FIX: Load Google Font "Inter" -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Config.js (Loaded first) -->
     <script src="config.js"></script>
     
-    <!-- Firebase JS SDKs -->
-    <!-- 
-        FIX: Removed the entire <script type="module"> from the <head>.
-        All Firebase logic is now in the main script at the end of the <body>
-        to prevent a race condition.
-    -->
-    
     <!-- CryptoJS for Encryption -->
-    <!--
-        FIX: Replaced the single 'crypto-js.min.js' file with the
-        complete, ordered list of components required for AES-GCM encryption
-        and PBKDF2 key derivation. This solves the 'createEncryptor' error.
-    -->
+    <!-- FIX: Load all necessary crypto components -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/core.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/enc-base64.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/pbkdf2.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/cipher-core.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/aes.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/mode-gcm.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/pad-nopad.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/mode-gcm.min.js"></script>
 
     <!-- Dexie.js (IndexedDB Wrapper) -->
     <script src="https://unpkg.com/dexie@3/dist/dexie.js"></script>
@@ -47,19 +41,12 @@
     
     <!-- Custom CSS -->
     <style>
-        :root {
-            --brand-primary: #3498db; /* Bright Blue */
-            --brand-secondary: #2ecc71; /* Green */
-            --brand-accent: #e74c3c; /* Red */
-            --brand-warn: #f39c12; /* Yellow */
-            --brand-light: #ecf0f1; /* Light Gray */
-            --brand-dark: #2c3e50; /* Dark Blue */
-            --brand-text: #34495e; /* Text Gray */
-        }
+        /* UI-FIX: Remove old :root variables. We will use Tailwind's `indigo` */
         
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            color: var(--brand-text);
+            /* UI-FIX: Use "Inter" font */
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            color: #374151; /* Tailwind gray-700 */
             overscroll-behavior: none;
         }
 
@@ -68,10 +55,11 @@
             height: 100vh;
             height: 100dvh; /* Dynamic viewport height */
             overflow-y: auto;
-            padding-bottom: 80px; /* Space for bottom nav */
+            padding-bottom: 90px; /* Space for bottom nav */
+            /* UI-FIX: Add more "air" to views */
+            @apply p-6;
         }
         
-        /* Make the default/welcome view visible */
         #welcomeView {
             display: block;
         }
@@ -84,7 +72,7 @@
             right: 0;
             height: 70px;
             z-index: 100;
-            border-top: 1px solid #ddd;
+            border-top: 1px solid #e5e7eb; /* gray-200 */
             background-color: white;
             display: flex;
             justify-content: space-around;
@@ -97,12 +85,29 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            color: #95a5a6;
+            color: #6b7280; /* gray-500 */
             font-size: 0.7rem;
             flex-grow: 1;
+            /* UI-FIX: Modern pill design */
+            @apply relative rounded-full transition-colors duration-200;
+            width: 56px;
+            height: 56px;
         }
         .nav-link.active {
-            color: var(--brand-primary);
+            color: #4338CA; /* indigo-700 */
+        }
+        /* UI-FIX: Add active "pill" background */
+        .nav-link.active::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 56px;
+            height: 32px;
+            background-color: #EEF2FF; /* indigo-50 */
+            border-radius: 99px;
+            z-index: -1;
         }
         .nav-link svg {
             width: 28px;
@@ -112,15 +117,18 @@
 
         /* Re-usable Card Component */
         .card {
-            @apply bg-white rounded-lg shadow-md p-4 mb-4;
+            /* UI-FIX: Softer shadow, more padding, larger radius */
+            @apply bg-white rounded-xl shadow-lg p-6 mb-5;
         }
         
         /* Re-usable Button Components */
         .btn {
-            @apply inline-block font-bold py-2 px-4 rounded-lg transition-transform transform active:scale-95 text-center;
+            /* UI-FIX: Add rounded-lg */
+            @apply inline-block font-semibold py-2 px-4 rounded-lg transition-transform transform active:scale-95 text-center;
         }
         .btn-primary {
-            @apply bg-blue-600 text-white shadow-md hover:bg-blue-700;
+            /* UI-FIX: Use indigo */
+            @apply bg-indigo-600 text-white shadow-md hover:bg-indigo-700;
         }
         .btn-secondary {
             @apply bg-gray-200 text-gray-800 hover:bg-gray-300;
@@ -132,10 +140,12 @@
             @apply bg-green-600 text-white shadow-md hover:bg-green-700;
         }
         .btn-outline {
-            @apply bg-white text-blue-600 border border-blue-600 hover:bg-blue-50;
+            /* UI-FIX: Use indigo */
+            @apply bg-white text-indigo-600 border border-indigo-600 hover:bg-indigo-50;
         }
         .btn-link {
-            @apply bg-transparent text-blue-600 hover:underline;
+            /* UI-FIX: Use indigo */
+            @apply bg-transparent text-indigo-600 hover:underline;
         }
         .btn-lg {
             @apply py-3 px-6 text-lg;
@@ -149,18 +159,23 @@
 
         /* Welcome View Big Buttons */
         .welcome-btn {
-            @apply w-full text-left p-6 rounded-xl shadow-lg mb-4 text-white font-semibold text-lg flex justify-between items-center transition-all;
-            background-image: linear-gradient(to right, var(--brand-primary), #4a90e2);
+            /* UI-FIX: Redesign as white cards */
+            @apply w-full text-left p-5 rounded-xl shadow-lg mb-4 text-gray-800 font-semibold text-lg flex justify-between items-center transition-all bg-white;
         }
         .welcome-btn:hover {
             transform: translateY(-2px);
-            box-shadow: 0 6px 12px rgba(0,0,0,0.1);
+            @apply shadow-xl;
         }
         .welcome-btn.complete {
-            background-image: linear-gradient(to right, var(--brand-secondary), #34d399);
+            /* UI-FIX: Add green border for completed */
+            @apply border-l-4 border-green-500;
         }
         .check-mark {
-            @apply text-2xl font-bold;
+            /* UI-FIX: Use indigo for checkmark */
+            @apply text-xl font-bold text-indigo-600;
+        }
+        .welcome-arrow {
+            @apply text-2xl text-indigo-500;
         }
 
         /* Check-in Sliders */
@@ -170,7 +185,7 @@
             width: 100%;
             height: 10px;
             border-radius: 5px;
-            background: #d3d3d3;
+            background: #e5e7eb; /* gray-200 */
             outline: none;
             opacity: 0.9;
             transition: opacity .2s;
@@ -181,7 +196,8 @@
             width: 24px;
             height: 24px;
             border-radius: 50%;
-            background: var(--brand-primary);
+            /* UI-FIX: Use indigo */
+            background: #4F46E5; /* indigo-600 */
             cursor: pointer;
             box-shadow: 0 0 5px rgba(0,0,0,0.2);
         }
@@ -189,7 +205,8 @@
             width: 24px;
             height: 24px;
             border-radius: 50%;
-            background: var(--brand-primary);
+            /* UI-FIX: Use indigo */
+            background: #4F46E5; /* indigo-600 */
             cursor: pointer;
             box-shadow: 0 0 5px rgba(0,0,0,0.2);
         }
@@ -199,22 +216,25 @@
             @apply border border-gray-300 rounded-full py-2 px-4 text-sm text-gray-700 cursor-pointer transition-colors;
         }
         .feeling-toggle.selected {
-            @apply bg-blue-600 text-white border-blue-600;
+            /* UI-FIX: Use indigo */
+            @apply bg-indigo-600 text-white border-indigo-600;
         }
 
         /* --- Modals & Alerts --- */
         
         /* General Modal */
         .modal {
-            /* FIX: z-50 was behind nav bar (z-100). Use z-[101]. */
+            /* FIX: z-[101] to appear over nav (z-100) */
             @apply fixed inset-0 z-[101] bg-black bg-opacity-50 flex items-center justify-center p-4 transition-opacity duration-300 opacity-0 pointer-events-none;
             display: none; /* FIX: Add display:none by default */
         }
         .modal.visible {
             @apply opacity-100 pointer-events-auto;
+            display: flex; /* Make visible */
         }
         .modal-content {
-            @apply bg-white rounded-lg shadow-xl p-6 w-full max-w-md transform scale-95 transition-transform;
+            /* UI-FIX: Larger radius */
+            @apply bg-white rounded-xl shadow-xl p-6 w-full max-w-md transform scale-95 transition-transform;
         }
         .modal.visible .modal-content {
             @apply scale-100;
@@ -235,7 +255,7 @@
             @apply opacity-100 translate-y-0;
         }
         .alert-box.info {
-            @apply bg-blue-500;
+            @apply bg-indigo-500;
         }
         .alert-box.success {
             @apply bg-green-500;
@@ -246,7 +266,7 @@
 
         /* Lock Screen */
         #lockScreen {
-            /* FIX (per Grok): Use z-[101] (standard Tailwind) instead of z-1000. */
+            /* FIX: z-[101] to appear over nav */
             @apply fixed inset-0 z-[101] bg-slate-100 flex-col items-center justify-center p-4;
             display: none; /* Controlled by JS */
         }
@@ -262,9 +282,9 @@
         
         /* Onboarding Modal */
         #onboardingModal {
-            /* FIX (per Grok): Use z-[101] */
+            /* FIX: z-[101] to appear over nav */
             @apply fixed inset-0 z-[101] bg-white p-6 flex-col;
-            display: none; /* Hidden by default, JS will show if needed */
+            display: none; /* Hidden by default */
         }
         .onboarding-step {
             display: none; /* Hidden by default */
@@ -276,21 +296,24 @@
             @apply w-3 h-3 rounded-full bg-gray-300 mx-1;
         }
         .indicator-dot.active {
-            @apply bg-blue-600;
+            /* UI-FIX: Use indigo */
+            @apply bg-indigo-600;
         }
         
         /* Splash Screen */
         #splashScreen {
-            /* FIX (per Grok): Use z-[101] */
+            /* FIX: z-[101] to appear over nav */
             @apply fixed inset-0 z-[101] bg-white flex flex-col items-center justify-center transition-opacity duration-300;
         }
         .spinner {
-            @apply w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin;
+            /* UI-FIX: Use indigo */
+            @apply w-12 h-12 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin;
         }
         
         /* History View */
         .history-entry {
-            @apply border-l-4 border-blue-500 pl-4;
+            /* UI-FIX: Use indigo */
+            @apply border-l-4 border-indigo-500 pl-4;
         }
 
         /* Shake animation for PIN error */
@@ -301,6 +324,19 @@
         }
         .animate-shake {
             animation: shake 0.5s ease-in-out;
+        }
+        
+        /* UI-FIX: Input field styles */
+        .form-input, .form-textarea {
+            @apply w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent;
+        }
+        textarea.form-textarea {
+            @apply leading-relaxed;
+        }
+        
+        /* UI-FIX: Resource card style */
+        .resource-card {
+            @apply flex flex-col;
         }
     </style>
 </head>
@@ -314,7 +350,8 @@
 
     <!-- --- Splash Screen (Visible on load) --- -->
     <div id="splashScreen">
-        <h1 class="text-3xl font-bold text-blue-600 mb-4">Tōku Hauora</h1>
+        <!-- UI-FIX: Use indigo -->
+        <h1 class="text-3xl font-bold text-indigo-600 mb-4">Tōku Hauora</h1>
         <div class="spinner"></div>
         <p id="splashMessage" class="text-gray-600 mt-4">Loading...</p>
     </div>
@@ -341,12 +378,10 @@
             <button class="numpad-btn" data-key="7">7</button>
             <button class="numpad-btn" data-key="8">8</button>
             <button class="numpad-btn" data-key="9">9</button>
-            <button id="lockScreenForgotBtn" class="numpad-btn !bg-transparent !shadow-none !text-sm !font-semibold !text-blue-600">Forgot?</button>
+            <!-- UI-FIX: Use indigo -->
+            <button id="lockScreenForgotBtn" class="numpad-btn !bg-transparent !shadow-none !text-sm !font-semibold !text-indigo-600">Forgot?</button>
             <button class="numpad-btn" data-key="0">0</button>
             <button id="numpadDelete" class="numpad-btn !bg-transparent !shadow-none !text-gray-700">
-                <!-- 
-                    FIX (per Grok): Replaced malformed SVG path with a standard backspace icon.
-                -->
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8 mx-auto pointer-events-none">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 9.75L14.25 12m0 0l2.25 2.25M14.25 12l2.25-2.25M14.25 12L12 14.25m-2.58 4.92l-6.375-6.375a1.125 1.125 0 010-1.59L9.42 4.83c.39-.39 1.023-.39 1.414 0l4.242 4.242a.375.375 0 00.53 0l4.242-4.242c.39-.39 1.023-.39 1.414 0l1.59 1.59a1.125 1.125 0 010 1.59l-6.375 6.375a.675.675 0 01-.954 0z" />
                 </svg>
@@ -355,13 +390,10 @@
     </div>
     
     <!-- --- Login View (for initial Firebase auth) --- -->
-    <!-- 
-        FIX (per Grok): Use z-[101] (standard Tailwind) instead of z-1000.
-    -->
-    <!-- FIX 1: Add style="display: none;" to hide this view on load. -->
-    <div id="loginView" class="view fixed inset-0 z-[101] bg-slate-50 flex items-center justify-center p-4" style="display: none;">
+    <div id="loginView" class="view fixed inset-0 z-[101] bg-slate-50 flex items-center justify-center" style="display: none;">
         <div class="card w-full max-w-sm text-center">
-            <h1 class="text-3xl font-bold text-blue-600 mb-4">Tōku Hauora</h1>
+            <!-- UI-FIX: Use indigo -->
+            <h1 class="text-3xl font-bold text-indigo-600 mb-4">Tōku Hauora</h1>
             <p class="text-gray-600 mb-6">Sign in to sync your encrypted data across devices.</p>
             <button id="googleSignInBtn" class="btn btn-primary w-full mb-4 flex items-center justify-center gap-2">
                 <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"></path><path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"></path><path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.1-11.383-7.231l-6.571,4.819C9.656,39.663,16.318,44,24,44z"></path><path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571c0.001-0.001,0.002-0.001,0.003-0.002l6.19,5.238C36.971,39.205,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z"></path></svg>
@@ -373,13 +405,15 @@
     </div>
     
     <!-- --- Onboarding Modal --- -->
-    <div id="onboardingModal"> <!-- JS will show if needed -->
+    <div id="onboardingModal" class="visible"> <!-- Start visible, JS will hide if needed -->
         <div class="flex-grow flex flex-col justify-center">
             
             <!-- Step 1 -->
             <div class="onboarding-step text-center">
-                <h1 class="text-3xl font-bold text-blue-600 mb-4">Tōku Hauora - Clergy Wellbeing Space</h1>
-                <p class="text-lg text-gray-700 mb-8">Your private, encrypted space for reflection.</p>
+                <!-- UI-FIX: Use indigo -->
+                <h1 class="text-3xl font-bold text-indigo-600 mb-4">Welcome to Tōku Hauora</h1>
+                <p class="text-lg text-gray-700 mb-8">Your private, encrypted space for health and reflection.</p>
+                <!-- FIX: Use real image -->
                 <img src="https://loneworkernelson-web.github.io/ClergyWB/Toku_Hauora.png" alt="Tōku Hauora App Logo" class="w-full max-w-xs mx-auto rounded-lg shadow-md mb-8">
                 <p class="text-gray-600">Let's quickly set up your app.</p>
             </div>
@@ -390,7 +424,8 @@
                 <p class="text-gray-600 mb-6">Your data is always encrypted. This 4-digit PIN is the **only** key. It is **never** stored online.</p>
                 <p class="text-red-600 font-semibold mb-6">If you forget this PIN, your data cannot be recovered.</p>
                 <div id="onboardingPinContainer">
-                    <p id="onboardingPinPrompt" class="text-lg font-medium text-center mb-4 text-blue-600">Enter a 4-digit PIN</p>
+                    <!-- UI-FIX: Use indigo -->
+                    <p id="onboardingPinPrompt" class="text-lg font-medium text-center mb-4 text-indigo-600">Enter a 4-digit PIN</p>
                     <div id="onboardingPinDisplay" class="flex justify-center mb-8">
                         <div class="pin-dot"></div>
                         <div class="pin-dot"></div>
@@ -405,6 +440,7 @@
             <div class="onboarding-step text-center">
                 <h2 class="text-2xl font-semibold mb-4 text-gray-800">You're All Set!</h2>
                 <p class="text-gray-600 mb-8">You can now start your journey of reflection and hauora.</p>
+                <!-- FIX: Use real image -->
                 <img src="https://loneworkernelson-web.github.io/ClergyWB/Toku_Hauora.png" alt="Tōku Hauora App Logo" class="w-full max-w-xs mx-auto rounded-lg shadow-md mb-8">
             </div>
 
@@ -447,9 +483,9 @@
     <main id="appWrapper" class="relative">
 
         <!-- --- Welcome View (Home) --- -->
-        <div id="welcomeView" class="view p-4">
-            <h1 class="text-3xl font-bold mb-1">Kia ora,</h1>
-            <p class="text-lg text-gray-600 mb-6">How are you feeling today?</p>
+        <div id="welcomeView" class="view">
+            <h1 class="text-4xl font-bold mb-1">Kia ora,</h1>
+            <p class="text-xl text-gray-600 mb-8">How are you feeling today?</p>
             
             <div class="card">
                 <h2 class="text-xl font-semibold mb-2">Today's Dashboard</h2>
@@ -461,22 +497,22 @@
             
             <button id="welcomeCheckinBtn" class="welcome-btn">
                 <span>Daily Check-in</span>
-                <span class="text-3xl">&rarr;</span>
+                <span class="welcome-arrow">&rarr;</span>
             </button>
             
             <button id="welcomeGratitudeBtn" class="welcome-btn">
                 <span>Gratitude Journal</span>
-                <span class="text-3xl">&rarr;</span>
+                <span class="welcome-arrow">&rarr;</span>
             </button>
             
             <button id="welcomeSabbathBtn" class="welcome-btn">
                 <span>Sabbath Reflection</span>
-                <span class="text-3xl">&rarr;</span>
+                <span class="welcome-arrow">&rarr;</span>
             </button>
         </div>
 
         <!-- --- Daily Check-in View --- -->
-        <div id="checkinView" class="view p-4">
+        <div id="checkinView" class="view">
             <button class="btn-back btn btn-link !p-0 mb-2">&larr; Back</button>
             <h1 class="text-3xl font-bold mb-4">Daily Check-in</h1>
             
@@ -508,17 +544,15 @@
                 <div class="card">
                     <label for="checkinNote" class="block text-xl font-semibold mb-2">Today's Note</label>
                     <p class="text-sm text-gray-500 mb-4">A private space for any thoughts.</p>
-                    <textarea id="checkinNote" rows="4" class="w-full p-2 border rounded-lg"></textarea>
+                    <textarea id="checkinNote" rows="4" class="form-textarea"></textarea>
                 </div>
                 
                 <button type="submit" class="btn btn-primary btn-lg w-full">Save Check-in</button>
             </form>
             
-            <!-- Burnout Check Prompt -->
-            <!-- 
-                FIX (per Grok): Replaced style="display:none" with "hidden" class
-            -->
             <button id="finishCheckinBtn" class="btn btn-success btn-lg w-full mt-4 hidden">Finish Check-in</button>
+            
+            <!-- Burnout Prompt Modal -->
             <div id="burnoutPromptModal" class="modal">
                 <div class="modal-content">
                     <h2 class="text-xl font-semibold mb-4">Check-in Complete</h2>
@@ -536,9 +570,6 @@
                 <div class="modal-content !max-w-3xl h-[90vh]">
                     <div class="modal-header">
                         <h2 class="text-xl font-semibold">Burnout Self-Check</h2>
-                        <!-- 
-                            FIX (per Grok): Removed invalid 'class_commented_out' attribute
-                        -->
                         <button id="closeBurnoutModalBtn" class="close-button">&times;</button>
                     </div>
                     <div class="h-[calc(80vh-100px)] overflow-y-auto pr-2">
@@ -575,7 +606,7 @@
         </div>
 
         <!-- --- Gratitude Journal View --- -->
-        <div id="gratitudeView" class="view p-4">
+        <div id="gratitudeView" class="view">
             <button class="btn-back btn btn-link !p-0 mb-2">&larr; Back</button>
             <h1 class="text-3xl font-bold mb-4">Gratitude Journal</h1>
             
@@ -583,15 +614,15 @@
                 <div class="card">
                     <h2 class="text-xl font-semibold mb-2">Today I am grateful for...</h2>
                     <p class="text-sm text-gray-500 mb-4">List three things, big or small.</p>
-                    <input type="text" id="gratitudeItem1" class="w-full p-2 border rounded-lg mb-3" placeholder="1.">
-                    <input type="text" id="gratitudeItem2" class="w-full p-2 border rounded-lg mb-3" placeholder="2.">
-                    <input type="text" id="gratitudeItem3" class="w-full p-2 border rounded-lg" placeholder="3.">
+                    <input type="text" id="gratitudeItem1" class="form-input mb-3" placeholder="1.">
+                    <input type="text" id="gratitudeItem2" class="form-input mb-3" placeholder="2.">
+                    <input type="text" id="gratitudeItem3" class="form-input" placeholder="3.">
                 </div>
                 
                 <div class="card">
                     <label for="gratitudeNote" class="block text-xl font-semibold mb-2">Reflection</label>
                     <p class="text-sm text-gray-500 mb-4">Any extra thoughts on why you're grateful today.</p>
-                    <textarea id="gratitudeNote" rows="4" class="w-full p-2 border rounded-lg"></textarea>
+                    <textarea id="gratitudeNote" rows="4" class="form-textarea"></textarea>
                 </div>
                 
                 <button type="submit" class="btn btn-primary btn-lg w-full">Save Gratitude</button>
@@ -599,7 +630,7 @@
         </div>
 
         <!-- --- Sabbath Reflection View --- -->
-        <div id="sabbathView" class="view p-4">
+        <div id="sabbathView" class="view">
             <button class="btn-back btn btn-link !p-0 mb-2">&larr; Back</button>
             <h1 class="text-3xl font-bold mb-4">Sabbath Reflection</h1>
             
@@ -607,13 +638,13 @@
                 <div class="card">
                     <label for="sabbathNote" class="block text-xl font-semibold mb-2">Sabbath Practice</label>
                     <p class="text-sm text-gray-500 mb-4">How did you practice Sabbath today? (e.g., rest, worship, nature, family time)</p>
-                    <textarea id="sabbathNote" rows="3" class="w-full p-2 border rounded-lg"></textarea>
+                    <textarea id="sabbathNote" rows="3" class="form-textarea"></textarea>
                 </div>
                 
                 <div class="card">
                     <label for="sabbathReflection" class="block text-xl font-semibold mb-2">Reflection</label>
                     <p class="text-sm text-gray-500 mb-4">How did this time of rest and connection impact you?</p>
-                    <textarea id="sabbathReflection" rows="5" class="w-full p-2 border rounded-lg"></textarea>
+                    <textarea id="sabbathReflection" rows="5" class="form-textarea"></textarea>
                 </div>
                 
                 <button type="submit" class="btn btn-primary btn-lg w-full">Save Reflection</button>
@@ -621,7 +652,7 @@
         </div>
         
         <!-- --- History View --- -->
-        <div id="historyView" class="view p-4">
+        <div id="historyView" class="view">
             <h1 class="text-3xl font-bold mb-4">My History</h1>
             <div id="historyContainer" class="space-y-6">
                 <!-- History entries will be injected here by JS -->
@@ -629,11 +660,12 @@
         </div>
 
         <!-- --- Rule of Life View --- -->
-        <div id="ruleView" class="view p-4">
+        <div id="ruleView" class="view">
             <h1 class="text-3xl font-bold mb-4">Rule of Life</h1>
             
             <div class="flex border-b mb-4">
-                <button id="ruleTabEdit" class="flex-1 py-2 text-center font-semibold border-b-2 border-blue-600 text-blue-600">Edit</button>
+                <!-- UI-FIX: Use indigo -->
+                <button id="ruleTabEdit" class="flex-1 py-2 text-center font-semibold border-b-2 border-indigo-600 text-indigo-600">Edit</button>
                 <button id="ruleTabReflect" class="flex-1 py-2 text-center font-semibold text-gray-500">Reflect</button>
             </div>
             
@@ -643,22 +675,22 @@
                     <div class="card">
                         <label for="ruleVision" class="block text-xl font-semibold mb-2">My Vision</label>
                         <p class="text-sm text-gray-500 mb-4">What is your core calling or purpose? (e.g., "To love God and neighbor")</p>
-                        <textarea id="ruleVision" rows="3" class="w-full p-2 border rounded-lg"></textarea>
+                        <textarea id="ruleVision" rows="3" class="form-textarea"></textarea>
                     </div>
                     <div class="card">
                         <label for="ruleCommitments" class="block text-xl font-semibold mb-2">Commitments</label>
                         <p class="text-sm text-gray-500 mb-4">What are your key roles and relationships? (e.g., "Partner, Parent, Pastor, Friend")</p>
-                        <textarea id="ruleCommitments" rows="3" class="w-full p-2 border rounded-lg"></textarea>
+                        <textarea id="ruleCommitments" rows="3" class="form-textarea"></textarea>
                     </div>
                     <div class="card">
                         <label for="rulePractices" class="block text-xl font-semibold mb-2">Practices</label>
                         <p class="text-sm text-gray-500 mb-4">What regular rhythms support your vision? (e.g., "Daily prayer, weekly Sabbath, monthly retreat")</p>
-                        <textarea id="rulePractices" rows="3" class="w-full p-2 border rounded-lg"></textarea>
+                        <textarea id="rulePractices" rows="3" class="form-textarea"></textarea>
                     </div>
                     <div class="card">
                         <label for="ruleCommunity" class="block text-xl font-semibold mb-2">Community</label>
                         <p class="text-sm text-gray-500 mb-4">Who keeps you accountable? (e.g., "My spiritual director, small group")</p>
-                        <textarea id="ruleCommunity" rows="3" class="w-full p-2 border rounded-lg"></textarea>
+                        <textarea id="ruleCommunity" rows="3" class="form-textarea"></textarea>
                     </div>
                     <button type="submit" class="btn btn-primary btn-lg w-full">Save Rule of Life</button>
                 </form>
@@ -687,7 +719,7 @@
                     <form id="ruleReflectionForm">
                         <label for="ruleReflection" class="block text-xl font-semibold mb-2">Weekly Reflection</label>
                         <p class="text-sm text-gray-500 mb-4">How have you lived by this rule in the past week?</p>
-                        <textarea id="ruleReflection" rows="4" class="w-full p-2 border rounded-lg"></textarea>
+                        <textarea id="ruleReflection" rows="4" class="form-textarea"></textarea>
                         <button type="submit" class="btn btn-secondary w-full mt-4">Save Reflection to History</button>
                     </form>
                 </div>
@@ -696,7 +728,7 @@
         </div>
         
         <!-- --- Resources View --- -->
-        <div id="resourcesView" class="view p-4">
+        <div id="resourcesView" class="view">
             <div class="flex justify-between items-center mb-4">
                 <h1 class="text-3xl font-bold">Resources</h1>
                 <button id="addResourceBtn" class="btn btn-primary btn-sm">Add New</button>
@@ -707,7 +739,7 @@
         </div>
 
         <!-- --- Settings View --- -->
-        <div id="settingsView" class="view p-4 space-y-6">
+        <div id="settingsView" class="view space-y-6">
             <h1 class="text-3xl font-bold mb-4">Settings</h1>
             
             <!-- Account Sync Card -->
@@ -800,15 +832,15 @@
                 <input type="hidden" id="resourceId">
                 <div class="mb-4">
                     <label for="resourceTitle" class="block font-medium mb-1">Title</label>
-                    <input type="text" id="resourceTitle" class="w-full p-2 border rounded-lg" required>
+                    <input type="text" id="resourceTitle" class="form-input" required>
                 </div>
                 <div class="mb-4">
                     <label for="resourceLink" class="block font-medium mb-1">Link (URL)</label>
-                    <input type="url" id="resourceLink" class="w-full p-2 border rounded-lg" placeholder="https://..." required>
+                    <input type="url" id="resourceLink" class="form-input" placeholder="https://..." required>
                 </div>
                 <div class="mb-4">
                     <label for="resourceDescription" class="block font-medium mb-1">Description</label>
-                    <textarea id="resourceDescription" rows="3" class="w-full p-2 border rounded-lg"></textarea>
+                    <textarea id="resourceDescription" rows="3" class="form-textarea"></textarea>
                 </div>
                 <div class="flex justify-between gap-3">
                     <button type="button" id="resourceDeleteBtn" class="btn btn-danger">Delete</button>
@@ -842,7 +874,7 @@
             <span>Resources</span>
         </a>
         <a href="#" class="nav-link" data-view="settingsView">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-1.003 1.11-1.226.55-.223 1.156-.223 1.706 0 .55.223 1.02.684 1.11 1.226M10.344 18.06c.09.542.56 1.003 1.11 1.226.55.223 1.156-.223 1.706 0 .55-.223 1.02-.684 1.11-1.226m-4.662-5.748c.09-.542.56-1.003 1.11-1.226.55-.223 1.156-.223 1.706 0 .55.223 1.02-.684 1.11-1.226M18 10.344c.09.542.56 1.003 1.11 1.226.55.223 1.156-.223 1.706 0 .55-.223 1.02-.684 1.11-1.226M10.344 6c.09-.542.56-1.003 1.11-1.226.55-.223 1.156-.223 1.706 0 .55.223 1.02-.684 1.11-1.226M6 10.344c.09.542.56 1.003 1.11 1.226.55.223 1.156-.223 1.706 0 .55.223 1.02-.684 1.11-1.226M12 6.75a2.25 2.25 0 100 4.5 2.25 2.25 0 000-4.5zM12 12.75a2.25 2.25 0 100 4.5 2.25 2.25 0 000-4.5z" /></svg>
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-1.003 1.11-1.226.55-.223 1.156-.223 1.706 0 .55.223 1.02.684 1.11-1.226M10.344 18.06c.09.542.56 1.003 1.11 1.226.55.223 1.156-.223 1.706 0 .55-.223 1.02-.684 1.11-1.226m-4.662-5.748c.09-.542.56-1.003 1.11-1.226.55-.223 1.156-.223 1.706 0 .55.223 1.02-.684 1.11-1.226M18 10.344c.09.542.56 1.003 1.11 1.226.55.223 1.156-.223 1.706 0 .55-.223 1.02-.684 1.11-1.226M10.344 6c.09-.542.56-1.003 1.11-1.226.55-.223 1.156-.223 1.706 0 .55.223 1.02-.684 1.11-1.226M6 10.344c.09.542.56 1.003 1.11 1.226.55.223 1.156-.223 1.706 0 .55.223 1.02-.684 1.11-1.226M12 6.75a2.25 2.25 0 100 4.5 2.25 2.25 0 000-4.5zM12 12.75a2.25 2.25 0 100 4.5 2.25 2.25 0 000-4.5z" /></svg>
             <span>Settings</span>
         </a>
     </nav>
@@ -855,45 +887,39 @@
     <script type="module">
         /*
         ================================================================
-        APP JAVASCRIPT - Complete & Merged (All Parts)
+        APP JAVASCRIPT - Complete & Merged
         ================================================================
         */
 
-        // --- FIX: All Firebase Init logic moved here, to top of main module ---
+        // --- Firebase Modules ---
+        // FIX: Load Firebase modules at the top, synchronously, before App init.
+        let AppFirebase = null;
         try {
-            let firebaseConfig = null;
-            if (typeof window.firebaseConfig !== 'undefined' && Object.keys(window.firebaseConfig).length > 0) {
-                firebaseConfig = window.firebaseConfig;
-                console.log("Firebase config loaded from config.js");
-            } else if (typeof __firebase_config !== 'undefined' && __firebase_config) {
-                firebaseConfig = JSON.parse(__firebase_config);
-                console.log("Firebase config loaded from env variable.");
-            }
-
-            if (firebaseConfig) {
+            const config = window.firebaseConfig || JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+            
+            if (Object.keys(config).length > 0) {
+                if(window.firebaseConfig) console.log("Firebase config loaded from config.js");
                 console.log("Firebase config found, initializing...");
+                
                 const { initializeApp } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js");
                 const { getAuth, setPersistence, browserLocalPersistence, GoogleAuthProvider, onAuthStateChanged, signInWithRedirect, getRedirectResult, signOut, linkWithRedirect, unlink } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js");
                 const { getFirestore, doc, setDoc, getDoc, runTransaction, writeBatch, collection, onSnapshot, query, where, getDocs, deleteDoc } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
                 
-                const fbApp = initializeApp(firebaseConfig);
+                const app = initializeApp(config);
 
-                window.AppFirebase = {
-                    app: fbApp,
-                    initializeApp,
+                // Make Firebase modules available on the global object
+                AppFirebase = {
+                    app, // Store the app instance
                     getAuth, setPersistence, browserLocalPersistence, GoogleAuthProvider, onAuthStateChanged, signInWithRedirect, getRedirectResult, signOut, linkWithRedirect, unlink,
                     getFirestore, doc, setDoc, getDoc, runTransaction, writeBatch, collection, onSnapshot, query, where, getDocs, deleteDoc
                 };
                 console.log("Firebase modules and app instance attached to window.AppFirebase");
             } else {
-                console.warn("Firebase config (from config.js or env) is empty or undefined. Firebase will not be initialized.");
-                window.AppFirebase = null;
+                console.warn("Firebase config is empty or undefined. Firebase will not be initialized.");
             }
         } catch (e) {
             console.error("Error loading or initializing Firebase:", e);
-            window.AppFirebase = null;
         }
-        // --- End of Firebase Init ---
 
 
         // --- App Namespace ---
@@ -904,11 +930,8 @@
         
             /* ================================================================
             App Logic Part 2: Storage & Auth
-            (from TokuHauora_Part2.html)
             ================================================================
             */
-
-            /* --- Storage Module (handles IndexedDB & Encryption) --- */
             storage: {
                 
                 initDB: async function() {
@@ -923,51 +946,29 @@
                         console.log("IndexedDB (Dexie) opened successfully.");
                     } catch (e) {
                         console.error("Failed to open IndexedDB:", e);
-                        // App.ui.showAlert will be available when all parts are merged
-                        // App.ui.showAlert("Error: Could not open local database. App may not work correctly.", "error", 10000);
                         return null;
                     }
                     return db;
                 },
 
                 // --- Encryption/Decryption ---
-                
-                /**
-                 * Derives a key from the user's PIN using PBKDF2.
-                 * @param {string} pin - The user's 4-digit PIN.
-                 * @param {CryptoJS.lib.WordArray} salt - The salt.
-                 * @returns {CryptoJS.lib.WordArray} The derived key.
-                 */
                 deriveKey: function(pin, salt) {
                     return CryptoJS.PBKDF2(pin, salt, {
                         keySize: 256 / 32, // 256 bits
                         iterations: 10000 // A reasonable number of iterations
                     });
                 },
-
-                /**
-                 * Encrypts data using AES-GCM.
-                 * @param {string} textData - The JSON string to encrypt.
-                 * @param {string} pin - The user's 4-digit PIN.
-                 * @returns {object} An object containing {ciphertext, salt, iv}
-                 */
                 encryptData: function(textData, pin) {
                     try {
                         const salt = CryptoJS.lib.WordArray.random(128 / 8); // 16 bytes
                         const iv = CryptoJS.lib.WordArray.random(96 / 8);     // 12 bytes (GCM recommended)
-                        
                         const key = this.deriveKey(pin, salt);
-                        
                         const encrypted = CryptoJS.AES.encrypt(textData, key, {
                             iv: iv,
                             mode: CryptoJS.mode.GCM,
                             padding: CryptoJS.pad.NoPadding
                         });
-                        
-                        // We need to get the auth tag from GCM
                         const authTag = encrypted.authTag; // This is a WordArray
-                        
-                        // Combine ciphertext and auth tag
                         const ciphertextWithTag = encrypted.ciphertext.clone().concat(authTag);
                         
                         return {
@@ -980,52 +981,28 @@
                         return null;
                     }
                 },
-
-                /**
-                 * Decrypts data using AES-GCM.
-                 * @param {string} b64Ciphertext - Base64 ciphertext (with auth tag appended).
-                 * @param {string} pin - The user's 4-digit PIN.
-                 * @param {string} b64Salt - Base64 salt.
-                 * @param {string} b64Iv - Base64 IV.
-                 * @returns {string|null} The decrypted JSON string, or null if decryption fails.
-                 */
                 decryptData: function(b64Ciphertext, pin, b64Salt, b64Iv) {
                     try {
                         const salt = CryptoJS.enc.Base64.parse(b64Salt);
                         const iv = CryptoJS.enc.Base64.parse(b64Iv);
-                        
                         const key = this.deriveKey(pin, salt);
-                        
-                        // Ciphertext from DB includes the 16-byte auth tag at the end
                         const combinedCiphertext = CryptoJS.enc.Base64.parse(b64Ciphertext);
-                        
-                        // Extract the auth tag (last 16 bytes)
                         const authTag = combinedCiphertext.clone();
                         authTag.sigBytes = 16;
                         authTag.words = combinedCiphertext.words.slice((combinedCiphertext.sigBytes - 16) / 4);
-                        
-                        // Extract the actual ciphertext
                         const ciphertext = combinedCiphertext.clone();
                         ciphertext.sigBytes = combinedCiphertext.sigBytes - 16;
-                        
-                        // Pass the ciphertext (as a WordArray) and key to decrypt
                         const decrypted = CryptoJS.AES.decrypt({ ciphertext: ciphertext }, key, {
                             iv: iv,
                             mode: CryptoJS.mode.GCM,
                             padding: CryptoJS.pad.NoPadding
                         });
-                        
-                        // Manually set the authTag we extracted
                         decrypted.authTag = authTag;
-
-                        // Convert to UTF-8 string
                         const decryptedText = decrypted.toString(CryptoJS.enc.Utf8);
                         
                         if (!decryptedText) {
-                            // This often happens if the auth tag (i.e., PIN) is wrong
                             throw new Error("Decryption failed: Empty output. Wrong PIN?");
                         }
-
                         return decryptedText;
                     } catch (e) {
                         console.error("Decryption failed:", e);
@@ -1034,18 +1011,11 @@
                 },
 
                 // --- Local DB Operations ---
-
-                /**
-                 * Saves the entire app data blob to IndexedDB.
-                 * Encrypts the data first.
-                 */
                 localSaveAll: async function() {
-                    if (!App.state.db) return;
-                    if (!App.state.pin) {
-                        console.error("Cannot save: PIN is not set.");
+                    if (!App.state.db || !App.state.pin) {
+                        console.error("Cannot save: DB or PIN not set.");
                         return;
                     }
-                    
                     console.log("Encrypting and saving data to IndexedDB...");
                     const dataString = JSON.stringify(App.state.data);
                     const encrypted = this.encryptData(dataString, App.state.pin);
@@ -1054,7 +1024,6 @@
                         App.ui.showAlert("Critical: Failed to encrypt data. Data not saved.", "error");
                         return;
                     }
-                    
                     try {
                         await App.state.db.userData.put({ key: 'data', ...encrypted });
                         await App.state.db.appState.put({ key: 'hasData', value: true });
@@ -1064,27 +1033,18 @@
                         App.ui.showAlert("Error saving data locally.", "error");
                     }
                 },
-
-                /**
-                 * Loads and decrypts the app data blob from IndexedDB.
-                 * @returns {boolean} True on success, false on failure.
-                 */
                 localLoadAll: async function() {
-                    if (!App.state.db) return false;
-                    if (!App.state.pin) {
-                        console.error("Cannot load: PIN is not set.");
+                    if (!App.state.db || !App.state.pin) {
+                        console.error("Cannot load: DB or PIN not set.");
                         return false;
                     }
-                    
                     console.log("Loading and decrypting data from IndexedDB...");
                     try {
                         const encryptedData = await App.state.db.userData.get('data');
-                        
                         if (!encryptedData) {
                             console.log("No encrypted data found in IndexedDB.");
                             return false; // No data to load
                         }
-                        
                         const { ciphertext, salt, iv } = encryptedData;
                         const decryptedString = this.decryptData(ciphertext, App.state.pin, salt, iv);
                         
@@ -1092,22 +1052,15 @@
                             console.error("Decryption failed. Wrong PIN or corrupt data.");
                             return false; // Decryption failure
                         }
-                        
                         App.state.data = JSON.parse(decryptedString);
                         App.util.mergeWithDefaultData(); // Ensure new fields are added
-                        
                         console.log("Data loaded and decrypted from IndexedDB.");
                         return true;
-                        
                     } catch (e) {
                         console.error("Failed to load from IndexedDB:", e);
                         return false;
                     }
                 },
-                
-                /**
-                 * Checks if encrypted data exists in IndexedDB.
-                 */
                 localDataExists: async function() {
                     if (!App.state.db) return false;
                     try {
@@ -1118,10 +1071,6 @@
                         return false;
                     }
                 },
-                
-                /**
-                 * Saves a simple, unencrypted key-value pair to appState table.
-                 */
                 localSaveState: async function(key, value) {
                     if (!App.state.db) return;
                     try {
@@ -1130,10 +1079,6 @@
                         console.error(`Failed to save state key '${key}':`, e);
                     }
                 },
-                
-                /**
-                 * Loads an unencrypted key-value pair from appState table.
-                 */
                 localLoadState: async function(key) {
                     if (!App.state.db) return undefined;
                     try {
@@ -1144,10 +1089,6 @@
                         return undefined;
                     }
                 },
-                
-                /**
-                 * Deletes all data from the IndexedDB tables.
-                 */
                 localDeleteAll: async function() {
                     if (!App.state.db) return;
                     try {
@@ -1161,10 +1102,6 @@
                 },
 
                 // --- Firestore Operations ---
-
-                /**
-                 * Gets the paths for user-specific and public app data.
-                 */
                 getFirestorePaths: function() {
                     if (!App.state.fb || !App.state.fb.auth || !App.state.fb.auth.currentUser) {
                         console.error("getFirestorePaths: No user logged in.");
@@ -1173,33 +1110,22 @@
                     const user = App.state.fb.auth.currentUser;
                     const appId = App.state.appId;
                     const userId = user.uid;
-                    
-                    // Private, encrypted data blob
                     const userDocRef = AppFirebase.doc(App.state.fb.db, `artifacts/${appId}/users/${userId}/appData/data`);
-                    // Public, unencrypted PIN check value
                     const pinCheckRef = AppFirebase.doc(App.state.fb.db, `artifacts/${appId}/users/${userId}/appData/pinCheck`);
-                    
                     return { userDocRef, pinCheckRef };
                 },
-
-                /**
-                 * Saves the encrypted data blob to Firestore.
-                 */
                 firestoreSaveAll: async function() {
                     const paths = this.getFirestorePaths();
                     if (!paths) {
                         App.ui.showAlert("Not signed in. Cannot save to cloud.", "error");
                         return;
                     }
-                    
                     if (!App.state.pin) {
                         console.error("Cannot save to cloud: PIN is not set.");
                         return;
                     }
-                    
                     console.log("Encrypting and saving data to Firestore...");
                     App.auth.updateSyncStatusUI("Syncing...");
-                    
                     const dataString = JSON.stringify(App.state.data);
                     const encrypted = this.encryptData(dataString, App.state.pin);
                     
@@ -1208,7 +1134,6 @@
                         App.auth.updateSyncStatusUI("Encryption Failed!");
                         return;
                     }
-                    
                     try {
                         await AppFirebase.setDoc(paths.userDocRef, encrypted);
                         await this.localSaveState('lastSync', new Date().toISOString());
@@ -1220,35 +1145,25 @@
                         App.auth.updateSyncStatusUI(`Error: ${e.message}`);
                     }
                 },
-
-                /**
-                 * Loads and decrypts the app data blob from Firestore.
-                 * @returns {object|null} The decrypted data object, or null on failure.
-                 */
                 firestoreLoadAll: async function() {
                     const paths = this.getFirestorePaths();
                     if (!paths) {
                         console.error("Cannot load from cloud: Not signed in.");
                         return null;
                     }
-                    
                     if (!App.state.pin) {
                         console.error("Cannot load from cloud: PIN is not set.");
                         return null;
                     }
-                    
                     console.log("Loading and decrypting data from Firestore...");
                     App.auth.updateSyncStatusUI("Downloading...");
-                    
                     try {
                         const docSnap = await AppFirebase.getDoc(paths.userDocRef);
-                        
                         if (!docSnap.exists()) {
                             console.log("No data found in Firestore for this user.");
                             App.auth.updateSyncStatusUI("No cloud data found.");
                             return null; // No data
                         }
-                        
                         const encryptedData = docSnap.data();
                         const { ciphertext, salt, iv } = encryptedData;
                         const decryptedString = this.decryptData(ciphertext, App.state.pin, salt, iv);
@@ -1258,39 +1173,29 @@
                             App.auth.updateSyncStatusUI("Decryption Failed!");
                             return null; // Decryption failure
                         }
-                        
                         const cloudData = JSON.parse(decryptedString);
                         console.log("Data loaded and decrypted from Firestore.");
                         App.auth.updateSyncStatusUI("Downloaded.");
-                        
                         return cloudData;
-                        
                     } catch (e) {
                         console.error("Failed to load from Firestore:", e);
                         App.auth.updateSyncStatusUI(`Error: ${e.message}`);
                         return null;
                     }
                 },
-                
-                /**
-                 * Deletes the user's data from Firestore.
-                 */
                 firestoreDeleteAll: async function() {
                     const paths = this.getFirestorePaths();
                     if (!paths) {
                         App.ui.showAlert("Not signed in. Cannot delete cloud data.", "error");
                         return;
                     }
-                    
                     console.log("Deleting all data from Firestore...");
                     App.auth.updateSyncStatusUI("Deleting cloud data...");
-                    
                     try {
                         const batch = AppFirebase.writeBatch(App.state.fb.db);
                         batch.delete(paths.userDocRef);
                         batch.delete(paths.pinCheckRef);
                         await batch.commit();
-                        
                         await this.localSaveState('lastSync', null);
                         App.auth.updateSyncStatusUI("Cloud data deleted.");
                         console.log("Firestore data deleted.");
@@ -1303,61 +1208,39 @@
                 },
                 
                 // --- Data Sync Logic ---
-                
-                /**
-                 * Main sync function. Compares local and cloud data and merges.
-                 * This is a simple "last-write-wins" based on App.state.data.lastModified.
-                 * A real app would need a more robust 3-way merge.
-                 */
                 syncData: async function() {
                     console.log("Starting data sync...");
                     App.auth.updateSyncStatusUI("Syncing...");
-                    
                     const cloudData = await this.firestoreLoadAll();
                     const localData = App.state.data;
                     
                     if (!cloudData) {
-                        // No cloud data exists. Upload local.
                         console.log("No cloud data. Uploading local data.");
                         await this.firestoreSaveAll();
                         return;
                     }
                     
-                    // Simple merge: Last modified wins.
-                    // This is naive and can cause data loss, but complex merging is out of scope.
                     const localModified = new Date(localData.lastModified || 0);
                     const cloudModified = new Date(cloudData.lastModified || 0);
-
                     console.log(`Local last modified: ${localModified.toISOString()}`);
                     console.log(`Cloud last modified: ${cloudModified.toISOString()}`);
                     
                     if (localModified > cloudModified) {
-                        // Local is newer. Upload.
                         console.log("Local data is newer. Uploading to cloud.");
                         await this.firestoreSaveAll();
                     } else if (cloudModified > localModified) {
-                        // Cloud is newer. Download and overwrite local.
                         console.log("Cloud data is newer. Downloading and saving locally.");
                         App.state.data = cloudData;
                         App.util.mergeWithDefaultData(); // Ensure schema is up to date
                         await this.localSaveAll(); // Save merged data locally
-                        
-                        // After saving, we must reload the UI to show new data
                         App.navigation.updateViewContent(App.state.ui.currentView);
-                        
                         App.auth.updateSyncStatusUI("Up to date");
                     } else {
-                        // Data is identical.
                         console.log("Data is already in sync.");
                         App.auth.updateSyncStatusUI("Up to date");
                     }
-                    
                     await this.localSaveState('lastSync', new Date().toISOString());
                 },
-                
-                /**
-                 * Wipes local data and replaces it with cloud data.
-                 */
                 forceDownload: async function() {
                     console.log("Forcing download from cloud...");
                     const cloudData = await this.firestoreLoadAll();
@@ -1371,96 +1254,67 @@
                         App.ui.showAlert("Could not download cloud data. Wrong PIN or no data found.", "error");
                     }
                 }
-                
             }, // End of App.storage
 
-
-            /* --- Auth Module (handles Firebase Auth) --- */
+            /* ================================================================
+            App Logic Part 2: Auth
+            ================================================================
+            */
             auth: {
-                
                 init: function() {
                     if (!App.state.fb.auth) return;
-                    
-                    // This listener is the core of the auth flow
                     AppFirebase.onAuthStateChanged(App.state.fb.auth, (user) => {
                         App.state.ui.authLoading = false;
                         if (user) {
                             console.log("Auth listener: User is signed in.", user.uid);
                             App.state.ui.isLoggedIn = true;
-                            if (App.dom.settings.userEmail) { // Check if DOM is cached
+                            if (App.dom.settings.userEmail) {
                                 App.dom.settings.userEmail.textContent = user.email || 'No email';
                             }
-                            // Don't sync yet. Wait for PIN.
                         } else {
                             console.log("Auth listener: User is signed out.");
                             App.state.ui.isLoggedIn = false;
-                            // Reset PIN if user logs out, as it's tied to the user's cloud data
                             App.state.pin = null; 
                         }
-                        
-                        if (App.dom.settings.syncLoading) { // Check if DOM is cached
+                        if (App.dom.settings.syncLoading) {
                             this.updateSyncStatusUI();
                         }
                     });
                 },
-                
-                /**
-                 * This is the main entry point after init.
-                 * It decides whether to show Onboarding, Login, or PIN screen.
-                 */
                 checkPinAndAuthState: async function() {
                     App.util.setSplashMessage("Checking local data...");
                     const hasLocalPinHash = await App.pin.localPinExists();
                     
                     if (!hasLocalPinHash) {
-                        // --- 1. First time user (no local PIN) ---
                         console.log("No local PIN found. Starting onboarding.");
                         App.util.hideSplash();
                         App.pin.startOnboarding();
-                        // Onboarding will handle auth/login choice
                     } else {
-                        // --- 2. Returning user (has local PIN) ---
                         console.log("Local PIN found. Checking auth state...");
                         App.util.setSplashMessage("Checking account...");
                         
-                        // Check for redirect result (e.g., from Google sign-in)
-                        // This fixes the COOP/redirect issue Grok mentioned.
-                        if (App.state.fb.auth) { // Only if Firebase is initialized
+                        if (App.state.fb.auth) {
                             try {
                                 const result = await AppFirebase.getRedirectResult(App.state.fb.auth);
                                 if (result && result.user) {
                                     console.log("Handled redirect sign-in.", result.user.uid);
                                     App.state.ui.isLoggedIn = true;
-                                    // This auth state will be confirmed by the listener shortly
                                 }
                             } catch (error) {
                                 console.error("Error getting redirect result:", error);
-                                // We'll show alerts once UI is ready
-                                // if (error.code === 'auth/credential-already-in-use') {
-                                //     App.ui.showAlert("This Google account is already linked to another user.", "error");
-                                // } else {
-                                //     App.ui.showAlert(`Sign-in failed: ${error.message}`, "error");
-                                // }
                             }
                         }
                         
-                        // Wait for the onAuthStateChanged listener to settle
                         await this.waitForAuthInit();
                         
                         if (App.state.ui.isLoggedIn) {
-                            // --- 2a. Logged IN ---
                             App.util.setSplashMessage("Checking cloud data...");
                             const hasCloudPin = await App.pin.cloudPinCheckExists();
-                            
                             if (hasCloudPin) {
-                                // Standard login: has local PIN, logged in, has cloud PIN
                                 console.log("User logged in, cloud PIN exists. Showing PIN login.");
                                 App.util.hideSplash();
                                 App.pin.showLockScreen("Enter PIN to unlock and sync.");
-                                // App.pin.handlePinLogin will handle sync
                             } else {
-                                // New device login: has local PIN, logged in, but NO cloud PIN
-                                // This means local data is from a *different* user.
                                 console.warn("Local data/PIN found, but no cloud PIN for this user. Data mismatch!");
                                 App.util.hideSplash();
                                 App.ui.showModal("Account Mismatch", 
@@ -1472,19 +1326,13 @@
                                 );
                             }
                         } else {
-                            // --- 2b. Logged OUT (Local-only mode) ---
                             console.log("User not logged in. Showing PIN login for local data.");
                             App.state.storageDriver = 'local';
                             App.util.hideSplash();
                             App.pin.showLockScreen("Enter PIN to unlock local data.");
-                            // App.pin.handlePinLogin will load local data
                         }
                     }
                 },
-                
-                /**
-                 * Helper to wait for the onAuthStateChanged listener to fire at least once.
-                 */
                 waitForAuthInit: function() {
                     return new Promise((resolve) => {
                         if (!App.state.ui.authLoading) {
@@ -1499,23 +1347,16 @@
                         }
                     });
                 },
-
-                /**
-                 * Starts the Google Sign-In (or link) flow via redirect.
-                 */
                 signInWithGoogle: async function(isLink = false) {
                     if (!App.state.fb.auth) return;
                     App.util.setSplashMessage("Redirecting to Google...");
                     const provider = App.state.fb.googleProvider;
-                    
                     try {
                         if (isLink) {
-                            // Link existing anonymous/local user to Google account
                             const user = App.state.fb.auth.currentUser;
                             if (!user) throw new Error("No user to link.");
                             await AppFirebase.linkWithRedirect(user, provider);
                         } else {
-                            // Standard sign-in
                             await AppFirebase.signInWithRedirect(App.state.fb.auth, provider);
                         }
                     } catch (error) {
@@ -1524,70 +1365,45 @@
                         App.util.hideSplash();
                     }
                 },
-
-                /**
-                 * Signs the user out of Firebase.
-                 */
                 signOut: async function() {
                     if (!App.state.fb.auth) return;
-                    
                     try {
                         await AppFirebase.signOut(App.state.fb.auth);
                         App.state.pin = null; // Clear PIN on logout
                         App.state.data = App.util.getDefaultData(); // Clear data
                         App.state.storageDriver = 'local';
-                        
-                        // Navigate to login view
                         App.dom.views.forEach(v => v.style.display = 'none');
                         App.dom.loginView.style.display = 'flex';
-                        
                         console.log("User signed out.");
                     } catch (error) {
                         console.error("Sign out error:", error);
                         App.ui.showAlert(`Sign out failed: ${error.message}`, "error");
                     }
                 },
-                
-                /**
-                 * Wipes local DB and restarts the app.
-                 * Used when there's a data mismatch.
-                 */
                 wipeAndRestart: async function() {
                     console.warn("Wiping all local data and restarting...");
                     await App.storage.localDeleteAll();
                     localStorage.removeItem('hauoraPinHash');
-                    localStorage.removeItem('hauoraOnboardComplete');
-                    // Reload the app to start fresh
+localStorage.removeItem('hauoraOnboardComplete');
                     window.location.reload();
                 },
-
-                /**
-                 * Updates the Settings view based on auth state.
-                 */
                 updateSyncStatusUI: function(syncStatusText = null) {
                     const { settings } = App.dom;
-                    
-                    // Ensure DOM is cached
                     if (!settings.syncLoading) return;
-                    
-                    // Hide all sections first
                     settings.syncLoading.style.display = 'none';
                     settings.syncLoggedOut.style.display = 'none';
                     settings.syncLoggedIn.style.display = 'none';
                     settings.syncLocal.style.display = 'none';
-
                     if (App.state.ui.authLoading) {
                         settings.syncLoading.style.display = 'block';
                         return;
                     }
-                    
                     if (App.state.storageDriver === 'firebase') {
                         if (App.state.ui.isLoggedIn) {
                             settings.syncLoggedIn.style.display = 'block';
                             if (syncStatusText) {
                                 settings.syncStatus.textContent = `Sync status: ${syncStatusText}`;
                             } else {
-                                // Get last sync time
                                 App.storage.localLoadState('lastSync').then(lastSync => {
                                     let status = "Not synced yet.";
                                     if (lastSync) {
@@ -1596,25 +1412,17 @@
                                     settings.syncStatus.textContent = `Sync status: ${status}`;
                                 });
                             }
-                            // Update email
-                            if(App.state.fb.auth.currentUser) {
-                                App.dom.settings.userEmail.textContent = App.state.fb.auth.currentUser.email || 'No email';
-                            }
                         } else {
-                            // Should not happen if driver is 'firebase', but handle anyway
                             settings.syncLoggedOut.style.display = 'block';
                         }
                     } else {
-                        // storageDriver is 'local'
                         settings.syncLocal.style.display = 'block';
                     }
                 }
-                
             }, // End of App.auth
             
             /* ================================================================
             App Logic Part 3: State, Config, DOM, Utils, PIN
-            (from TokuHauora_Part3.html)
             ================================================================
             */
 
@@ -1643,6 +1451,7 @@
                     pinInput: '',
                     pinMode: 'login', // 'login', 'create', 'confirm', 'change'
                     tempPin: '',
+                    hauoraChartInstance: null, // For Chart.js
                 },
                 
                 // --- Main Application Data (this is what gets encrypted) ---
@@ -1710,7 +1519,6 @@
             
             /* --- DOM Cache --- */
             dom: {
-                // This object will be populated by util.cacheDOM()
                 splash: {},
                 lockScreen: {},
                 loginView: {},
@@ -1732,9 +1540,6 @@
             /* --- Utility Module --- */
             util: {
                 
-                /**
-                 * Caches all necessary DOM elements into App.dom
-                 */
                 cacheDOM: function() {
                     const d = App.dom;
                     
@@ -1870,9 +1675,6 @@
                     d.modal.buttonContainer = document.getElementById('modalButtons');
                 },
 
-                /**
-                 * Gets today's date as YYYY-MM-DD string
-                 */
                 getTodayDate: function() {
                     const d = new Date();
                     const year = d.getFullYear();
@@ -1881,12 +1683,8 @@
                     return `${year}-${month}-${day}`;
                 },
                 
-                /**
-                 * Formats a YYYY-MM-DD date string for display.
-                 */
                 formatDate: function(dateString) {
                     try {
-                        // FIX (per Grok): Use replace to make it Safari-compatible
                         const safeDateString = dateString.replace(/-/g, '/');
                         const d = new Date(safeDateString);
                         return d.toLocaleDateString(undefined, {
@@ -1899,9 +1697,6 @@
                     }
                 },
                 
-                /**
-                 * Hides the splash screen.
-                 */
                 hideSplash: function() {
                     App.dom.splash.screen.style.opacity = 0;
                     setTimeout(() => {
@@ -1909,16 +1704,10 @@
                     }, 300); // Match CSS transition
                 },
                 
-                /**
-                 * Sets the message on the splash screen.
-                 */
                 setSplashMessage: function(message) {
                     App.dom.splash.message.textContent = message;
                 },
                 
-                /**
-                 * Returns the default data structure.
-                 */
                 getDefaultData: function() {
                     return {
                         lastModified: new Date().toISOString(),
@@ -1933,19 +1722,12 @@
                     };
                 },
                 
-                /**
-                 * Merges loaded data with default data to add new fields.
-                 */
                 mergeWithDefaultData: function() {
                     const defaults = this.getDefaultData();
                     App.state.data = { ...defaults, ...App.state.data };
-                    // Ensure nested objects are also merged
                     App.state.data.ruleOfLife = { ...defaults.ruleOfLife, ...App.state.data.ruleOfLife };
                 },
                 
-                /**
-                 * Basic HTML escaping
-                 */
                 escapeHTML: function(str) {
                     if (!str) return '';
                     return str.replace(/[&<>"']/g, function(m) {
@@ -1964,55 +1746,36 @@
             /* --- PIN Module --- */
             pin: {
                 
-                /**
-                 * Hashes the PIN for storage (local or cloud check)
-                 */
                 hashPin: function(pin) {
-                    // Using PBKDF2 for the hash as well, but with a *static* salt.
-                    // This is a "pepper" and is fine for a non-recoverable check.
-                    // DO NOT use this for encryption.
                     const staticSalt = "TokuHauora.PIN.Check.v1";
                     return CryptoJS.PBKDF2(pin, staticSalt, {
                         keySize: 256 / 32,
-                        iterations: 5000 // Faster, as it's just for verification
+                        iterations: 5000 
                     }).toString(CryptoJS.enc.Base64);
                 },
                 
-                /**
-                 * Saves the hashed PIN to localStorage.
-                 */
                 savePinHashLocally: function(pin) {
                     const hash = this.hashPin(pin);
                     localStorage.setItem('hauoraPinHash', hash);
                 },
 
-                /**
-                 * Checks if a PIN hash exists in localStorage.
-                 */
                 localPinExists: async function() {
                     return !!localStorage.getItem('hauoraPinHash');
                 },
                 
-                /**
-                 * Verifies the entered PIN against the locally stored hash.
-                 */
                 verifyLocalPin: function(pin) {
                     const hash = localStorage.getItem('hauoraPinHash');
                     if (!hash) return false;
                     return this.hashPin(pin) === hash;
                 },
                 
-                /**
-                 * Saves a non-recoverable PIN hash to Firestore.
-                 * This is only used to check if a PIN is set on a new device.
-                 */
                 savePinCheckToCloud: async function(pin) {
-                    const { pinCheckRef } = App.storage.getFirestorePaths();
-                    if (!pinCheckRef) return;
+                    const paths = App.storage.getFirestorePaths();
+                    if (!paths || !paths.pinCheckRef) return;
                     
                     const hash = this.hashPin(pin);
                     try {
-                        await AppFirebase.setDoc(pinCheckRef, { hash: hash, version: 1 });
+                        await AppFirebase.setDoc(paths.pinCheckRef, { hash: hash, version: 1 });
                         console.log("PIN check saved to cloud.");
                     } catch (e) {
                         console.error("Failed to save PIN check to cloud:", e);
@@ -2020,15 +1783,12 @@
                     }
                 },
                 
-                /**
-                 * Checks if a PIN hash exists in Firestore for the current user.
-                 */
                 cloudPinCheckExists: async function() {
-                    const { pinCheckRef } = App.storage.getFirestorePaths();
-                    if (!pinCheckRef) return false;
+                    const paths = App.storage.getFirestorePaths();
+                    if (!paths || !paths.pinCheckRef) return false;
                     
                     try {
-                        const docSnap = await AppFirebase.getDoc(pinCheckRef);
+                        const docSnap = await AppFirebase.getDoc(paths.pinCheckRef);
                         return docSnap.exists();
                     } catch (e) {
                         console.error("Error checking for cloud PIN:", e);
@@ -2038,9 +1798,6 @@
 
                 // --- PIN UI Flow ---
                 
-                /**
-                 * Resets the PIN input state.
-                 */
                 resetPinInput: function(pinDisplayEl) {
                     App.state.ui.pinInput = '';
                     const dots = pinDisplayEl ? pinDisplayEl.children : App.dom.lockScreen.pinDisplay.children;
@@ -2049,9 +1806,6 @@
                     }
                 },
 
-                /**
-                 * Updates the PIN display dots.
-                 */
                 updatePinDisplay: function(pinDisplayEl) {
                     const dots = pinDisplayEl ? pinDisplayEl.children : App.dom.lockScreen.pinDisplay.children;
                     for (let i = 0; i < 4; i++) {
@@ -2059,21 +1813,15 @@
                     }
                 },
                 
-                /**
-                 * Animates the PIN display for an error.
-                 */
                 showPinError: function(pinDisplayEl) {
                     pinDisplayEl = pinDisplayEl || App.dom.lockScreen.pinDisplay;
-                    pinDisplayEl.classList.add('animate-shake'); // Requires a 'shake' animation in CSS
+                    pinDisplayEl.classList.add('animate-shake'); 
                     setTimeout(() => {
                         pinDisplayEl.classList.remove('animate-shake');
                         this.resetPinInput(pinDisplayEl);
                     }, 500);
                 },
 
-                /**
-                 * Shows the main lock screen.
-                 */
                 showLockScreen: function(message = "Enter your 4-digit PIN.") {
                     App.state.ui.pinMode = 'login';
                     this.resetPinInput(App.dom.lockScreen.pinDisplay);
@@ -2082,19 +1830,16 @@
                     App.dom.lockScreen.screen.style.display = 'flex';
                 },
                 
-                /**
-                 * Starts the onboarding PIN creation flow.
-                 */
                 startOnboarding: function() {
                     App.dom.onboarding.modal.style.display = 'flex';
-                    // We're at step 1. Listen for "Next"
+                    App.dom.onboarding.modal.classList.add('visible'); // Make it visible
+                    
                     App.dom.onboarding.nextBtn.onclick = () => {
-                        // At step 1, "Next" moves to step 2 (PIN create)
                         if (App.state.ui.currentOnboardingStep === 1) {
                             App.ui.updateOnboardingStep(1); // Go to step 2
                             App.dom.onboarding.numpad.style.display = 'grid';
                             App.state.ui.pinMode = 'create';
-                            App.dom.onboarding.nextBtn.style.display = 'none'; // Hide 'Next' on PIN screen
+                            App.dom.onboarding.nextBtn.style.display = 'none'; 
                         }
                     };
                     
@@ -2107,7 +1852,6 @@
                         }
                     };
                     
-                    // Handle numpad presses for onboarding
                     App.dom.onboarding.numpad.addEventListener('click', (e) => {
                         const btn = e.target.closest('.numpad-btn');
                         if (btn && btn.dataset.key) {
@@ -2119,9 +1863,6 @@
                     });
                 },
                 
-                /**
-                 * Handles a key press (0-9 or delete) for any PIN entry.
-                 */
                 handlePinKey: function(key, pinDisplayEl) {
                     const ui = App.state.ui;
                     
@@ -2134,20 +1875,13 @@
                     this.updatePinDisplay(pinDisplayEl);
                     
                     if (ui.pinInput.length === 4) {
-                        // PIN entry complete, handle based on mode
                         this.handlePinEntryComplete(pinDisplayEl);
                     }
                 },
                 
-                /**
-                 * Called when 4 digits are entered.
-                 */
                 handlePinEntryComplete: async function(pinDisplayEl) {
                     const ui = App.state.ui;
                     const pin = ui.pinInput;
-
-                    // Disable numpad
-                    // ... (add logic to disable numpad during check)
                     
                     switch (ui.pinMode) {
                         case 'login':
@@ -2157,58 +1891,44 @@
                             this.handlePinCreate(pin, pinDisplayEl);
                             break;
                         case 'confirm':
-                            await this.handlePinConfirm(pin, pinDisplayEl);
+                            this.handlePinConfirm(pin, pinDisplayEl);
                             break;
                         case 'change':
-                            // await this.handlePinChange(pin, pinDisplayEl); // This function needs to be written
+                            await this.handlePinChange(pin, pinDisplayEl);
                             break;
                     }
                 },
                 
-                /**
-                 * Logic for 'login' mode.
-                 */
                 handlePinLogin: async function(pin, pinDisplayEl) {
                     if (this.verifyLocalPin(pin)) {
                         console.log("PIN verified.");
                         App.state.pin = pin; // Store in memory
                         
-                        // Show success (e.g., green dots)
                         App.dom.lockScreen.screen.style.display = 'none';
                         App.util.setSplashMessage("Loading your data...");
                         App.dom.splash.screen.style.display = 'flex';
                         
-                        // Load local data
                         const localSuccess = await App.storage.localLoadAll();
                         if (!localSuccess) {
-                            console.warn("Local data load failed. This shouldn't happen if PIN was verified.");
-                            // This could mean data is corrupt.
-                            // For now, we'll proceed with default data.
                             App.state.data = App.util.getDefaultData();
                         }
                         
-                        // If logged in, sync with cloud
                         if (App.state.ui.isLoggedIn) {
                             App.state.storageDriver = 'firebase';
                             App.util.setSplashMessage("Syncing with cloud...");
                             await App.storage.syncData();
                         }
                         
-                        // Finish loading
                         App.util.hideSplash();
-                        App.ui.updateWelcomeView(); // Update welcome view with loaded data
+                        App.navigation.navigateTo('welcomeView'); // Go home
 
                     } else {
-                        // Wrong PIN
                         console.log("Wrong PIN.");
                         this.showPinError(pinDisplayEl);
                         App.dom.lockScreen.message.textContent = "Wrong PIN. Try again.";
                     }
                 },
                 
-                /**
-                 * Logic for 'create' mode (Onboarding)
-                 */
                 handlePinCreate: function(pin, pinDisplayEl) {
                     App.state.tempPin = pin;
                     App.state.ui.pinMode = 'confirm';
@@ -2217,38 +1937,30 @@
                     App.dom.onboarding.pinError.textContent = "";
                 },
                 
-                /**
-                 * Logic for 'confirm' mode (Onboarding)
-                 */
                 handlePinConfirm: async function(pin, pinDisplayEl) {
                     if (pin === App.state.tempPin) {
-                        // --- PIN Create Success ---
                         App.state.pin = pin;
-                        this.savePinHashLocally(pin); // Save hash to localStorage
+                        this.savePinHashLocally(pin); 
                         
-                        // Save default data locally
                         App.state.data = App.util.getDefaultData();
                         await App.storage.localSaveAll();
                         
-                        // Ask user to sign in to sync
                         App.ui.showModal("Enable Sync?", 
                             "Would you like to sign in with Google to securely sync your encrypted data? Your PIN will be required on new devices.",
                             [
                                 { text: "Not Now", type: "secondary", callback: () => this.finishOnboarding(false) },
-                                { text: "Sign In", type: "primary", callback: () => App.auth.signInWithGoogle(false) }
-                                // Note: The redirect will interrupt this flow.
-                                // The `checkPinAndAuthState` will handle the return.
-                                // We need a way to know onboarding was completed.
+                                { text: "Sign In", type: "primary", autoClose: false, callback: () => {
+                                    App.auth.signInWithGoogle(false);
+                                    // Don't hide modal, redirect will happen
+                                }}
                             ]
                         );
                         
-                        // Optimistically move to next step in case they choose "Not Now"
                         App.state.ui.pinMode = 'login'; // Reset mode
                         App.dom.onboarding.numpad.style.display = 'none';
                         App.ui.updateOnboardingStep(1); // Go to step 3
                         
                     } else {
-                        // Mismatch
                         this.showPinError(pinDisplayEl);
                         App.state.ui.pinMode = 'create';
                         App.state.tempPin = '';
@@ -2257,15 +1969,10 @@
                     }
                 },
                 
-                /**
-                 * Called after user chooses sync option OR returns from redirect.
-                 */
                 finishOnboarding: async function(didSignIn) {
-                    if (didSignIn && App.state.fb.auth) {
+                    if (didSignIn) {
                         App.state.storageDriver = 'firebase';
-                        // Save PIN check to cloud
                         await this.savePinCheckToCloud(App.state.pin);
-                        // Save data to cloud
                         await App.storage.firestoreSaveAll();
                     } else {
                         App.state.storageDriver = 'local';
@@ -2273,365 +1980,481 @@
                     
                     localStorage.setItem('hauoraOnboardComplete', 'true');
                     App.dom.onboarding.modal.style.display = 'none';
+                    App.dom.onboarding.modal.classList.remove('visible');
                     App.util.hideSplash();
-                    App.ui.updateWelcomeView();
+                    App.navigation.navigateTo('welcomeView');
+                },
+
+                handlePinChange: async function(pin, pinDisplayEl) {
+                    // This logic is for when a user is *changing* their PIN
+                    const d = App.dom.lockScreen;
+                    const ui = App.state.ui;
+
+                    if (ui.tempPin === '') {
+                        // Step 1: Verify old PIN
+                        if (this.verifyLocalPin(pin)) {
+                            ui.tempPin = 'verified'; // Mark old PIN as verified
+                            this.resetPinInput(pinDisplayEl);
+                            d.title.textContent = "Enter New PIN";
+                            d.message.textContent = "Enter a new 4-digit PIN.";
+                        } else {
+                            this.showPinError(pinDisplayEl);
+                            d.message.textContent = "Wrong PIN. Try again.";
+                        }
+                    } else if (ui.tempPin === 'verified') {
+                        // Step 2: Get new PIN
+                        ui.tempPin = pin; // Store new PIN temporarily
+                        this.resetPinInput(pinDisplayEl);
+                        d.title.textContent = "Confirm New PIN";
+                        d.message.textContent = "Re-enter your new 4-digit PIN.";
+                    } else {
+                        // Step 3: Confirm new PIN
+                        if (pin === ui.tempPin) {
+                            // --- Success ---
+                            App.state.pin = pin; // Set new PIN in memory
+                            this.savePinHashLocally(pin); // Save new hash
+                            
+                            // Re-encrypt all data with new PIN
+                            d.screen.style.display = 'none';
+                            App.util.setSplashMessage("Re-encrypting data...");
+                            App.dom.splash.screen.style.display = 'flex';
+
+                            await App.storage.localSaveAll();
+                            if (App.state.storageDriver === 'firebase') {
+                                await this.savePinCheckToCloud(pin);
+                                await App.storage.firestoreSaveAll();
+                            }
+                            
+                            App.util.hideSplash();
+                            App.ui.showAlert("PIN changed successfully!", "success");
+                            ui.tempPin = '';
+                            
+                        } else {
+                            // Mismatch
+                            this.showPinError(pinDisplayEl);
+                            ui.tempPin = 'verified'; // Go back to step 2
+                            d.title.textContent = "Enter New PIN";
+                            d.message.textContent = "PINs didn't match. Enter a new 4-digit PIN.";
+                        }
+                    }
                 }
                 
-                // ... (handlePinChange logic would go here)
-                
             }, // End of App.pin
-
+            
             /* ================================================================
-            App Logic Part 4: NEW/MISSING Modules
-            (moduleCheckin, handlers)
+            NEW MODULE: moduleCheckin
+            (Written from scratch based on Grok's analysis)
             ================================================================
             */
-
-            /* --- Check-in Module (Grok: was missing) --- */
             moduleCheckin: {
                 
-                init: function() {
-                    // Populate feelings toggles
-                    const container = App.dom.checkin.feelingsContainer;
-                    container.innerHTML = '';
-                    App.config.feelings.forEach(feeling => {
-                        const btn = document.createElement('button');
-                        btn.type = 'button';
-                        btn.className = 'feeling-toggle';
-                        btn.textContent = feeling.name;
-                        btn.dataset.feeling = feeling.name;
-                        btn.dataset.type = feeling.type;
-                        container.appendChild(btn);
-                    });
-                },
-
-                /**
-                 * Gathers data from the check-in form.
-                 * @returns {object} The check-in entry.
-                 */
-                getFormData: function() {
-                    const { checkin } = App.dom;
-                    const today = App.util.getTodayDate();
+                calculateTotals: function(entry) {
+                    let positive = 0;
+                    let warning = 0;
                     
-                    const feelings = [];
-                    checkin.feelingsContainer.querySelectorAll('.feeling-toggle.selected').forEach(btn => {
-                        feelings.push(btn.dataset.feeling);
-                    });
-                    
-                    const ratings = {};
-                    checkin.sliders.forEach(slider => {
-                        const key = slider.id.split('-')[1]; // e.g., 'physical'
-                        ratings[key] = slider.value;
-                    });
-                    
-                    const note = checkin.note.value;
-                    
-                    return { date: today, feelings, ratings, note };
-                },
-
-                /**
-                 * Checks if the user selected any "warning" feelings.
-                 */
-                checkBurnoutTriggers: function(feelings) {
-                    const warningFeelings = App.config.feelings
-                        .filter(f => f.type === 'warning')
-                        .map(f => f.name);
-                    
-                    return feelings.some(f => warningFeelings.includes(f));
-                },
-
-                /**
-                 * Populates the burnout checklist modal.
-                 */
-                populateBurnoutChecklist: function() {
-                    const { burnoutChecklist } = App.dom.checkin;
-                    const { burnoutChecklist: categories } = App.config;
-                    burnoutChecklist.innerHTML = ''; // Clear
-                    
-                    Object.entries(categories).forEach(([key, items]) => {
-                        let categoryName = key.replace(/([A-Z])/g, ' $1'); // "physicalEmotional" -> "physical Emotional"
-                        categoryName = categoryName.charAt(0).toUpperCase() + categoryName.slice(1);
-                        
-                        const itemsHTML = items.map((item, index) => `
-                            <div class="flex items-start space-x-3 mb-3">
-                                <input id="burnout-${key}-${index}" type="checkbox" class="h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 mt-1" data-item="${App.util.escapeHTML(item)}">
-                                <label for="burnout-${key}-${index}" class="text-gray-700">
-                                    ${App.util.escapeHTML(item)}
-                                </label>
-                            </div>
-                        `).join('');
-                        
-                        burnoutChecklist.innerHTML += `
-                            <div class="mb-6">
-                                <h3 class="text-lg font-semibold text-blue-600 mb-3">${categoryName}</h3>
-                                ${itemsHTML}
-                            </div>
-                        `;
-                    });
-                },
-
-                /**
-                 * Gathers and shows the results from the burnout checklist.
-                 */
-                showBurnoutResults: function() {
-                    const { burnoutChecklist, burnoutResultsContainer } = App.dom.checkin;
-                    const checkedItems = [];
-                    
-                    burnoutChecklist.querySelectorAll('input[type="checkbox"]:checked').forEach(input => {
-                        checkedItems.push(input.dataset.item);
-                    });
-                    
-                    if (checkedItems.length === 0) {
-                        burnoutResultsContainer.innerHTML = '<p class="text-gray-600">You didn\'t flag any specific items. That\'s great! Remember to keep listening to your body and mind.</p>';
-                    } else {
-                        burnoutResultsContainer.innerHTML = `
-                            <p class="text-gray-600 mb-4">You identified with the following:</p>
-                            <ul class="list-disc list-inside space-y-2">
-                                ${checkedItems.map(item => `<li class="text-gray-700">${App.util.escapeHTML(item)}</li>`).join('')}
-                            </ul>
-                        `;
+                    // 1. Tally feelings
+                    for (const feelingName of entry.feelings) {
+                        const feeling = App.config.feelings.find(f => f.name === feelingName);
+                        if (feeling) {
+                            if (feeling.type === 'positive') positive++;
+                            if (feeling.type === 'warning') warning++;
+                        }
                     }
                     
-                    // Hide check modal, show results modal
-                    App.dom.checkin.burnoutCheckModal.classList.remove('visible');
-                    App.dom.checkin.burnoutResultsModal.style.display = 'flex';
-                    setTimeout(() => App.dom.checkin.burnoutResultsModal.classList.add('visible'), 10);
+                    // 2. Tally slider ratings
+                    const ratings = entry.ratings || {};
+                    for (const key in ratings) {
+                        const value = ratings[key];
+                        if (value > 6) positive++;
+                        if (value < 4) warning++;
+                    }
+                    
+                    return { positive, warning, total: positive + warning };
                 },
 
-                /**
-                 * Calculates totals for the dashboard (Grok: was missing)
-                 */
-                calculateTotals: function(lastEntry) {
-                    if (!lastEntry) return { warnings: 0, positives: 0 };
-                    
-                    const warningFeelings = App.config.feelings
-                        .filter(f => f.type === 'warning')
-                        .map(f => f.name);
-                    const positiveFeelings = App.config.feelings
-                        .filter(f => f.type === 'positive')
-                        .map(f => f.name);
+                getFeelingsAsMap: function(entry) {
+                    const map = {};
+                    for (const feelingName of entry.feelings) {
+                        map[feelingName] = 1;
+                    }
+                    return map;
+                },
 
-                    const warnings = lastEntry.feelings.filter(f => warningFeelings.includes(f)).length;
-                    const positives = lastEntry.feelings.filter(f => positiveFeelings.includes(f)).length;
+                getLast7DaysRatings: function() {
+                    const history = App.state.data.checkinHistory;
+                    if (history.length === 0) return [];
                     
-                    return { warnings, positives };
+                    // Get last 7 entries
+                    const last7 = history.slice(-7);
+                    
+                    return last7.map(entry => {
+                        return {
+                            date: entry.date,
+                            physical: entry.ratings.physical || 0,
+                            mental: entry.ratings.mental || 0,
+                            social: entry.ratings.social || 0,
+                            spiritual: entry.ratings.spiritual || 0,
+                        };
+                    });
                 }
 
             }, // End of App.moduleCheckin
-            
-            /* --- Handlers Module (Grok: was missing) --- */
+
+            /* ================================================================
+            NEW MODULE: handlers
+            (Written from scratch based on Grok's analysis)
+            ================================================================
+            */
             handlers: {
                 
                 init: function() {
                     console.log("Initializing handlers...");
+                    const d = App.dom;
                     
                     // --- Lock Screen ---
-                    App.dom.lockScreen.numpad.addEventListener('click', (e) => {
+                    d.lockScreen.numpad.addEventListener('click', (e) => {
                         const btn = e.target.closest('.numpad-btn');
                         if (btn && btn.dataset.key) {
-                            App.pin.handlePinKey(btn.dataset.key, App.dom.lockScreen.pinDisplay);
+                            App.pin.handlePinKey(btn.dataset.key, d.lockScreen.pinDisplay);
                         }
                     });
-                    App.dom.lockScreen.numpadDelete.addEventListener('click', () => {
-                        App.pin.handlePinKey('delete', App.dom.lockScreen.pinDisplay);
+                    d.lockScreen.numpadDelete.addEventListener('click', () => {
+                        App.pin.handlePinKey('delete', d.lockScreen.pinDisplay);
                     });
-                    App.dom.lockScreen.forgotBtn.addEventListener('click', this.handleForgotPin);
+                    d.lockScreen.forgotBtn.addEventListener('click', this.handleForgotPin);
 
                     // --- Login View ---
                     document.getElementById('googleSignInBtn').addEventListener('click', () => App.auth.signInWithGoogle(false));
                     document.getElementById('skipSignInBtn').addEventListener('click', () => {
-                        App.ui.showModal("Use Locally?", 
-                            "This is great for trying out the app, but you won't be able to sync or recover data if you lose this device. Are you sure?",
-                            [
-                                { text: "Cancel", type: "secondary" },
-                                { text: "Yes, use locally", type: "primary", callback: () => App.pin.finishOnboarding(false) }
-                            ]
-                        );
+                        d.loginView.style.display = 'none';
+                        App.pin.startOnboarding(); // Start onboarding if they skip
                     });
-                    
-                    // --- Onboarding ---
-                    App.dom.onboarding.finishBtn.addEventListener('click', () => App.pin.finishOnboarding(false));
 
-                    // --- Check-in ---
-                    App.dom.checkin.form.addEventListener('submit', this.saveCheckin);
-                    App.dom.checkin.feelingsContainer.addEventListener('click', (e) => {
+                    // --- Onboarding ---
+                    d.onboarding.finishBtn.addEventListener('click', () => App.pin.finishOnboarding(false));
+
+                    // --- Form Submissions ---
+                    d.checkin.form.addEventListener('submit', this.saveCheckin);
+                    d.gratitude.form.addEventListener('submit', this.saveGratitude);
+                    d.sabbath.form.addEventListener('submit', this.saveSabbath);
+                    d.rule.form.addEventListener('submit', this.saveRuleOfLife);
+                    d.rule.reflectionForm.addEventListener('submit', this.saveRuleReflection);
+
+                    // --- Check-in Feelings ---
+                    d.checkin.feelingsContainer.addEventListener('click', (e) => {
                         const btn = e.target.closest('.feeling-toggle');
                         if (btn) {
                             btn.classList.toggle('selected');
                         }
                     });
-                    // Burnout flow
-                    App.dom.checkin.finishBtn.addEventListener('click', () => App.navigation.goBack());
-                    App.dom.checkin.skipBurnoutBtn.addEventListener('click', () => {
-                        App.dom.checkin.burnoutPromptModal.classList.remove('visible');
-                        App.dom.checkin.finishBtn.style.display = 'block';
-                    });
-                    App.dom.checkin.startBurnoutBtn.addEventListener('click', this.startBurnoutCheck);
-                    App.dom.checkin.closeBurnoutModalBtn.addEventListener('click', () => App.dom.checkin.burnoutCheckModal.classList.remove('visible'));
-                    App.dom.checkin.finishBurnoutCheckBtn.addEventListener('click', this.finishBurnoutCheck);
-                    App.dom.checkin.closeBurnoutResultsBtn.addEventListener('click', () => {
-                        App.dom.checkin.burnoutResultsModal.classList.remove('visible');
-                        App.dom.checkin.finishBtn.style.display = 'block';
-                    });
-                    App.dom.checkin.closeBurnoutResultsBtn2.addEventListener('click', () => {
-                        App.dom.checkin.burnoutResultsModal.classList.remove('visible');
-                        App.dom.checkin.finishBtn.style.display = 'block';
-                    });
                     
-                    // --- Gratitude ---
-                    App.dom.gratitude.form.addEventListener('submit', this.saveGratitude);
-                    
-                    // --- Sabbath ---
-                    App.dom.sabbath.form.addEventListener('submit', this.saveSabbath);
-                    
-                    // --- Rule of Life ---
-                    App.dom.rule.tabEdit.addEventListener('click', () => App.ui.toggleRuleTab(true));
-                    App.dom.rule.tabReflect.addEventListener('click', () => App.ui.toggleRuleTab(false));
-                    App.dom.rule.form.addEventListener('submit', this.saveRuleOfLife);
-                    App.dom.rule.reflectionForm.addEventListener('submit', this.saveRuleReflection);
+                    // --- Check-in Burnout Flow ---
+                    d.checkin.skipBurnoutBtn.addEventListener('click', this.finishCheckin);
+                    d.checkin.startBurnoutBtn.addEventListener('click', this.startBurnoutCheck);
+                    d.checkin.closeBurnoutModalBtn.addEventListener('click', this.closeBurnoutCheck);
+                    d.checkin.finishBurnoutCheckBtn.addEventListener('click', this.showBurnoutResults);
+                    d.checkin.closeBurnoutResultsBtn.addEventListener('click', this.finishCheckin);
+                    d.checkin.closeBurnoutResultsBtn2.addEventListener('click', this.finishCheckin);
+                    d.checkin.finishBtn.addEventListener('click', this.finishCheckin);
+
+                    // --- Rule of Life Tabs ---
+                    d.rule.tabEdit.addEventListener('click', () => this.toggleRuleTabs('edit'));
+                    d.rule.tabReflect.addEventListener('click', () => this.toggleRuleTabs('reflect'));
 
                     // --- Resources ---
-                    App.dom.resources.addBtn.addEventListener('click', () => App.ui.showResourceModal(null));
-                    
+                    d.resources.addBtn.addEventListener('click', () => App.ui.showResourceModal(null));
+
                     // --- Settings ---
-                    App.dom.settings.loginBtn.addEventListener('click', () => App.auth.signInWithGoogle(false));
-                    App.dom.settings.loginFromLocalBtn.addEventListener('click', () => {
-                        App.ui.showModal("Link to Google?", 
-                            "This will link your local data to a Google account, allowing you to sync. You will be redirected to sign in.",
-                            [
-                                { text: "Cancel", type: "secondary" },
-                                { text: "Sign In & Link", type: "primary", callback: () => App.auth.signInWithGoogle(true) }
-                            ]
-                        );
-                    });
-                    App.dom.settings.logoutBtn.addEventListener('click', this.handleSignOut);
-                    App.dom.settings.forceSyncBtn.addEventListener('click', this.handleForceSync);
-                    App.dom.settings.exportBtn.addEventListener('click', this.exportData);
-                    App.dom.settings.importBtn.addEventListener('click', () => App.dom.settings.importFile.click());
-                    App.dom.settings.importFile.addEventListener('change', this.importData);
-                    App.dom.settings.changePinBtn.addEventListener('click', this.handleChangePin);
+                    d.settings.loginBtn.addEventListener('click', () => App.auth.signInWithGoogle(false));
+                    d.settings.loginFromLocalBtn.addEventListener('click', () => App.auth.signInWithGoogle(true)); // Link account
+                    d.settings.logoutBtn.addEventListener('click', this.handleLogout);
+                    d.settings.forceSyncBtn.addEventListener('click', this.handleForceSync);
                     
-                    // Danger Zone
-                    App.dom.settings.dangerZoneBtn.addEventListener('click', () => App.dom.settings.dangerZoneModal.classList.add('visible'));
-                    App.dom.settings.dangerZoneModal.querySelector('.close-button').addEventListener('click', () => App.dom.settings.dangerZoneModal.classList.remove('visible'));
-                    App.dom.settings.deleteLocalBtn.addEventListener('click', this.handleDeleteLocal);
-                    App.dom.settings.deleteCloudBtn.addEventListener('click', this.handleDeleteCloud);
-                    App.dom.settings.deleteAllBtn.addEventListener('click', this.handleDeleteAll);
+                    d.settings.exportBtn.addEventListener('click', this.exportData);
+                    d.settings.importBtn.addEventListener('click', () => d.settings.importFile.click());
+                    d.settings.importFile.addEventListener('change', this.importData);
+                    
+                    d.settings.changePinBtn.addEventListener('click', this.handleChangePin);
+                    d.settings.dangerZoneBtn.addEventListener('click', () => {
+                        d.settings.dangerZoneModal.style.display = 'flex';
+                        d.settings.dangerZoneModal.classList.add('visible');
+                        // Add close listener
+                        d.settings.dangerZoneModal.querySelector('.close-button').onclick = () => {
+                            d.settings.dangerZoneModal.classList.remove('visible');
+                            setTimeout(() => d.settings.dangerZoneModal.style.display = 'none', 300);
+                        };
+                    });
+                    d.settings.deleteLocalBtn.addEventListener('click', this.handleDeleteLocal);
+                    d.settings.deleteCloudBtn.addEventListener('click', this.handleDeleteCloud);
+                    d.settings.deleteAllBtn.addEventListener('click', this.handleDeleteAll);
+
+                    // --- Init Dynamic Content ---
+                    this.populateCheckinFeelings();
+                    this.populateBurnoutChecklist();
                 },
 
-                // --- Form Handlers ---
+                populateCheckinFeelings: function() {
+                    const container = App.dom.checkin.feelingsContainer;
+                    container.innerHTML = App.config.feelings.map(f => 
+                        `<button type="button" class="feeling-toggle" data-feeling="${f.name}">${f.name}</button>`
+                    ).join('');
+                },
                 
-                saveCheckin: async function(e) {
+                populateBurnoutChecklist: function() {
+                    const container = App.dom.checkin.burnoutChecklist;
+                    const { physicalEmotional, mentalCognitive, relational } = App.config.burnoutChecklist;
+                    
+                    let html = `<h3 class="font-semibold text-lg mb-2 text-indigo-700">Physical & Emotional</h3>`;
+                    html += physicalEmotional.map((item, i) => `
+                        <label class="flex items-start p-2 rounded-lg hover:bg-gray-50">
+                            <input type="checkbox" class="form-checkbox h-5 w-5 text-indigo-600 mt-1" data-section="physical" data-index="${i}">
+                            <span class="ml-3 text-gray-700">${item}</span>
+                        </label>
+                    `).join('');
+                    
+                    html += `<h3 class="font-semibold text-lg mb-2 mt-6 text-indigo-700">Mental & Cognitive</h3>`;
+                    html += mentalCognitive.map((item, i) => `
+                        <label class="flex items-start p-2 rounded-lg hover:bg-gray-50">
+                            <input type="checkbox" class="form-checkbox h-5 w-5 text-indigo-600 mt-1" data-section="mental" data-index="${i}">
+                            <span class="ml-3 text-gray-700">${item}</span>
+                        </label>
+                    `).join('');
+
+                    html += `<h3 class="font-semibold text-lg mb-2 mt-6 text-indigo-700">Relational</h3>`;
+                    html += relational.map((item, i) => `
+                        <label class="flex items-start p-2 rounded-lg hover:bg-gray-50">
+                            <input type="checkbox" class="form-checkbox h-5 w-5 text-indigo-600 mt-1" data-section="relational" data-index="${i}">
+                            <span class="ml-3 text-gray-700">${item}</span>
+                        </label>
+                    `).join('');
+                    
+                    container.innerHTML = html;
+                },
+
+                // --- Form Save Handlers ---
+                
+                saveCheckin: function(e) {
                     e.preventDefault();
-                    const entry = App.moduleCheckin.getFormData();
+                    const d = App.dom.checkin;
+                    const today = App.util.getTodayDate();
                     
-                    // Find and replace today's entry
-                    const history = App.state.data.checkinHistory.filter(e => e.date !== entry.date);
-                    history.push(entry);
-                    App.state.data.checkinHistory = history;
+                    // Get selected feelings
+                    const feelings = [];
+                    d.feelingsContainer.querySelectorAll('.feeling-toggle.selected').forEach(btn => {
+                        feelings.push(btn.dataset.feeling);
+                    });
                     
-                    App.state.data.lastModified = new Date().toISOString();
-                    await App.storage.localSaveAll();
-                    if (App.state.storageDriver === 'firebase') {
-                        await App.storage.firestoreSaveAll();
+                    // Get ratings
+                    const ratings = {};
+                    d.sliders.forEach(slider => {
+                        const key = slider.id.split('-')[1]; // e.g., 'physical'
+                        ratings[key] = slider.value;
+                    });
+                    
+                    const entry = {
+                        date: today,
+                        feelings: feelings,
+                        ratings: ratings,
+                        note: d.note.value.trim()
+                    };
+                    
+                    // Save to state
+                    const index = App.state.data.checkinHistory.findIndex(e => e.date === today);
+                    if (index > -1) {
+                        App.state.data.checkinHistory[index] = entry;
+                    } else {
+                        App.state.data.checkinHistory.push(entry);
                     }
+                    App.state.data.lastModified = new Date().toISOString();
+                    
+                    // --- Burnout Check Logic ---
+                    const hasWarningFeelings = feelings.some(f => {
+                        const feeling = App.config.feelings.find(fl => fl.name === f);
+                        return feeling && feeling.type === 'warning';
+                    });
+
+                    if (hasWarningFeelings) {
+                        // Show prompt
+                        d.burnoutPromptModal.style.display = 'flex';
+                        d.burnoutPromptModal.classList.add('visible');
+                    } else {
+                        // No warnings, just finish
+                        App.handlers.finishCheckin();
+                    }
+                },
+                
+                finishCheckin: function() {
+                    // Hide all modals
+                    App.dom.checkin.burnoutPromptModal.classList.remove('visible');
+                    App.dom.checkin.burnoutCheckModal.classList.remove('visible');
+                    App.dom.checkin.burnoutResultsModal.classList.remove('visible');
+                    
+                    setTimeout(() => {
+                        App.dom.checkin.burnoutPromptModal.style.display = 'none';
+                        App.dom.checkin.burnoutCheckModal.style.display = 'none';
+                        App.dom.checkin.burnoutResultsModal.style.display = 'none';
+                    }, 300);
+                    
+                    // Save and navigate
+                    App.storage.localSaveAll();
+                    if (App.state.storageDriver === 'firebase') App.storage.firestoreSaveAll();
                     
                     App.ui.showAlert("Check-in saved!", "success");
-                    
-                    // Check for burnout triggers
-                    if (App.moduleCheckin.checkBurnoutTriggers(entry.feelings)) {
-                        App.dom.checkin.burnoutPromptModal.style.display = 'flex';
-                        setTimeout(() => App.dom.checkin.burnoutPromptModal.classList.add('visible'), 10);
-                    } else {
-                        App.navigation.goBack();
-                    }
+                    App.navigation.navigateTo('welcomeView');
                 },
                 
                 startBurnoutCheck: function() {
-                    App.moduleCheckin.populateBurnoutChecklist();
                     App.dom.checkin.burnoutPromptModal.classList.remove('visible');
+                    setTimeout(() => App.dom.checkin.burnoutPromptModal.style.display = 'none', 300);
+                    
+                    // Reset checklist
+                    App.dom.checkin.burnoutChecklist.querySelectorAll('input[type="checkbox"]').forEach(chk => chk.checked = false);
+                    
                     App.dom.checkin.burnoutCheckModal.style.display = 'flex';
-                    setTimeout(() => App.dom.checkin.burnoutCheckModal.classList.add('visible'), 10);
+                    App.dom.checkin.burnoutCheckModal.classList.add('visible');
                 },
                 
-                finishBurnoutCheck: function() {
-                    App.moduleCheckin.showBurnoutResults();
+                closeBurnoutCheck: function() {
+                    App.ui.showModal("Are you sure?", "You haven't finished the self-check. Are you sure you want to close?", [
+                        { text: "Cancel", type: "secondary" },
+                        { text: "Yes, Close", type: "primary", callback: () => App.handlers.finishCheckin() }
+                    ]);
+                },
+                
+                showBurnoutResults: function() {
+                    const container = App.dom.checkin.burnoutResultsContainer;
+                    const checklist = App.config.burnoutChecklist;
+                    
+                    const checkedItems = App.dom.checkin.burnoutChecklist.querySelectorAll('input:checked');
+                    
+                    if (checkedItems.length === 0) {
+                        container.innerHTML = '<p>You didn\'t select any items. That\'s great! Remember to keep an eye on your wellbeing.</p>';
+                    } else {
+                        let html = '';
+                        const results = {
+                            physicalEmotional: [],
+                            mentalCognitive: [],
+                            relational: []
+                        };
+                        
+                        checkedItems.forEach(chk => {
+                            const section = chk.dataset.section;
+                            const index = chk.dataset.index;
+                            if (section === 'physical') {
+                                results.physicalEmotional.push(checklist.physicalEmotional[index]);
+                            } else if (section === 'mental') {
+                                results.mentalCognitive.push(checklist.mentalCognitive[index]);
+                            } else if (section === 'relational') {
+                                results.relational.push(checklist.relational[index]);
+                            }
+                        });
+                        
+                        if(results.physicalEmotional.length > 0) {
+                            html += `<h3 class="font-semibold text-lg mb-2 text-indigo-700">Physical & Emotional</h3><ul class="list-disc list-inside mb-4">`;
+                            html += results.physicalEmotional.map(item => `<li>${item}</li>`).join('');
+                            html += `</ul>`;
+                        }
+                        if(results.mentalCognitive.length > 0) {
+                            html += `<h3 class="font-semibold text-lg mb-2 text-indigo-700">Mental & Cognitive</h3><ul class="list-disc list-inside mb-4">`;
+                            html += results.mentalCognitive.map(item => `<li>${item}</li>`).join('');
+                            html += `</ul>`;
+                        }
+                        if(results.relational.length > 0) {
+                            html += `<h3 class="font-semibold text-lg mb-2 text-indigo-700">Relational</h3><ul class="list-disc list-inside mb-4">`;
+                            html += results.relational.map(item => `<li>${item}</li>`).join('');
+                            html += `</ul>`;
+                        }
+                        container.innerHTML = html;
+                    }
+
+                    App.dom.checkin.burnoutCheckModal.classList.remove('visible');
+                    setTimeout(() => App.dom.checkin.burnoutCheckModal.style.display = 'none', 300);
+                    
+                    App.dom.checkin.burnoutResultsModal.style.display = 'flex';
+                    App.dom.checkin.burnoutResultsModal.classList.add('visible');
                 },
 
-                saveGratitude: async function(e) {
+                saveGratitude: function(e) {
                     e.preventDefault();
-                    const { gratitude } = App.dom;
+                    const d = App.dom.gratitude;
+                    const today = App.util.getTodayDate();
+                    
                     const entry = {
-                        date: App.util.getTodayDate(),
+                        date: today,
                         items: [
-                            gratitude.items[0].value,
-                            gratitude.items[1].value,
-                            gratitude.items[2].value
+                            d.items[0].value.trim(),
+                            d.items[1].value.trim(),
+                            d.items[2].value.trim()
                         ],
-                        note: gratitude.note.value
+                        note: d.note.value.trim()
                     };
                     
-                    const history = App.state.data.gratitudeHistory.filter(e => e.date !== entry.date);
-                    history.push(entry);
-                    App.state.data.gratitudeHistory = history;
-                    
-                    App.state.data.lastModified = new Date().toISOString();
-                    await App.storage.localSaveAll();
-                    if (App.state.storageDriver === 'firebase') {
-                        await App.storage.firestoreSaveAll();
+                    const index = App.state.data.gratitudeHistory.findIndex(e => e.date === today);
+                    if (index > -1) {
+                        App.state.data.gratitudeHistory[index] = entry;
+                    } else {
+                        App.state.data.gratitudeHistory.push(entry);
                     }
+                    App.state.data.lastModified = new Date().toISOString();
+                    
+                    App.storage.localSaveAll();
+                    if (App.state.storageDriver === 'firebase') App.storage.firestoreSaveAll();
                     
                     App.ui.showAlert("Gratitude saved!", "success");
-                    App.navigation.goBack();
+                    App.navigation.navigateTo('welcomeView');
                 },
-
-                saveSabbath: async function(e) {
+                
+                saveSabbath: function(e) {
                     e.preventDefault();
-                    const { sabbath } = App.dom;
+                    const d = App.dom.sabbath;
+                    const today = App.util.getTodayDate();
+                    
                     const entry = {
-                        date: App.util.getTodayDate(),
-                        note: sabbath.note.value,
-                        reflection: sabbath.reflection.value
+                        date: today,
+                        note: d.note.value.trim(),
+                        reflection: d.reflection.value.trim()
                     };
                     
-                    const history = App.state.data.sabbathHistory.filter(e => e.date !== entry.date);
-                    history.push(entry);
-                    App.state.data.sabbathHistory = history;
-                    
-                    App.state.data.lastModified = new Date().toISOString();
-                    await App.storage.localSaveAll();
-                    if (App.state.storageDriver === 'firebase') {
-                        await App.storage.firestoreSaveAll();
+                    const index = App.state.data.sabbathHistory.findIndex(e => e.date === today);
+                    if (index > -1) {
+                        App.state.data.sabbathHistory[index] = entry;
+                    } else {
+                        App.state.data.sabbathHistory.push(entry);
                     }
+                    App.state.data.lastModified = new Date().toISOString();
+                    
+                    App.storage.localSaveAll();
+                    if (App.state.storageDriver === 'firebase') App.storage.firestoreSaveAll();
                     
                     App.ui.showAlert("Sabbath reflection saved!", "success");
-                    App.navigation.goBack();
+                    App.navigation.navigateTo('welcomeView');
                 },
-
-                saveRuleOfLife: async function(e) {
+                
+                saveRuleOfLife: function(e) {
                     e.preventDefault();
-                    App.state.data.ruleOfLife = {
-                        vision: App.dom.rule.inputs.vision.value,
-                        commitments: App.dom.rule.inputs.commitments.value,
-                        practices: App.dom.rule.inputs.practices.value,
-                        community: App.dom.rule.inputs.community.value
-                    };
+                    const d = App.dom.rule.inputs;
                     
+                    App.state.data.ruleOfLife = {
+                        vision: d.vision.value.trim(),
+                        commitments: d.commitments.value.trim(),
+                        practices: d.practices.value.trim(),
+                        community: d.community.value.trim()
+                    };
                     App.state.data.lastModified = new Date().toISOString();
-                    await App.storage.localSaveAll();
-                    if (App.state.storageDriver === 'firebase') {
-                        await App.storage.firestoreSaveAll();
-                    }
+                    
+                    App.storage.localSaveAll();
+                    if (App.state.storageDriver === 'firebase') App.storage.firestoreSaveAll();
                     
                     App.ui.showAlert("Rule of Life saved!", "success");
                     App.ui.updateRuleOfLifeView(); // Update reflect tab
                 },
                 
-                saveRuleReflection: async function(e) {
+                saveRuleReflection: function(e) {
                     e.preventDefault();
-                    const reflection = App.dom.rule.reflectionInput.value;
+                    const d = App.dom.rule;
+                    const reflection = d.reflectionInput.value.trim();
                     if (!reflection) {
-                        App.ui.showAlert("Reflection cannot be empty.", "error");
+                        App.ui.showAlert("Please write a reflection first.", "error");
                         return;
                     }
                     
@@ -2641,95 +2464,103 @@
                     };
                     
                     App.state.data.ruleOfLifeHistory.push(entry);
-                    
                     App.state.data.lastModified = new Date().toISOString();
-                    await App.storage.localSaveAll();
-                    if (App.state.storageDriver === 'firebase') {
-                        await App.storage.firestoreSaveAll();
-                    }
+                    
+                    App.storage.localSaveAll();
+                    if (App.state.storageDriver === 'firebase') App.storage.firestoreSaveAll();
                     
                     App.ui.showAlert("Reflection saved to history!", "success");
-                    App.dom.rule.reflectionForm.reset();
+                    d.reflectionInput.value = '';
                 },
                 
-                saveResource: async function() {
-                    const { form, idInput, titleInput, linkInput, descriptionInput } = App.dom.resources;
-                    
-                    const id = idInput.value;
+                saveResource: function() {
+                    const d = App.dom.resources;
+                    const id = d.idInput.value;
                     const resource = {
                         id: id,
-                        title: titleInput.value,
-                        link: linkInput.value,
-                        description: descriptionInput.value
+                        title: d.titleInput.value.trim(),
+                        link: d.linkInput.value.trim(),
+                        description: d.descriptionInput.value.trim()
                     };
                     
-                    App.state.data.userResources[id] = resource;
-                    
-                    App.state.data.lastModified = new Date().toISOString();
-                    await App.storage.localSaveAll();
-                    if (App.state.storageDriver === 'firebase') {
-                        await App.storage.firestoreSaveAll();
+                    if (!resource.title || !resource.link) {
+                        App.ui.showAlert("Title and Link are required.", "error");
+                        return;
                     }
+                    
+                    App.state.data.userResources[id] = resource;
+                    App.state.data.lastModified = new Date().toISOString();
+                    
+                    App.storage.localSaveAll();
+                    if (App.state.storageDriver === 'firebase') App.storage.firestoreSaveAll();
                     
                     App.ui.showAlert("Resource saved!", "success");
                     App.ui.hideResourceModal();
                     App.ui.updateResourcesView();
                 },
                 
-                deleteResource: async function(id) {
+                deleteResource: function(id) {
                     App.ui.showModal("Delete Resource?", "Are you sure you want to delete this resource?", [
                         { text: "Cancel", type: "secondary" },
-                        { text: "Delete", type: "danger", callback: async () => {
+                        { text: "Delete", type: "danger", callback: () => {
                             delete App.state.data.userResources[id];
-                            
                             App.state.data.lastModified = new Date().toISOString();
-                            await App.storage.localSaveAll();
-                            if (App.state.storageDriver === 'firebase') {
-                                await App.storage.firestoreSaveAll();
-                            }
                             
-                            App.ui.showAlert("Resource deleted!", "success");
+                            App.storage.localSaveAll();
+                            if (App.state.storageDriver === 'firebase') App.storage.firestoreSaveAll();
+                            
+                            App.ui.showAlert("Resource deleted.", "success");
                             App.ui.hideResourceModal();
                             App.ui.updateResourcesView();
                         }}
                     ]);
                 },
-
+                
+                toggleRuleTabs: function(tab) {
+                    const d = App.dom.rule;
+                    if (tab === 'edit') {
+                        d.contentEdit.style.display = 'block';
+                        d.contentReflect.style.display = 'none';
+                        d.tabEdit.classList.add('border-indigo-600', 'text-indigo-600');
+                        d.tabEdit.classList.remove('text-gray-500');
+                        d.tabReflect.classList.remove('border-indigo-600', 'text-indigo-600');
+                        d.tabReflect.classList.add('text-gray-500');
+                    } else {
+                        d.contentEdit.style.display = 'none';
+                        d.contentReflect.style.display = 'block';
+                        d.tabEdit.classList.remove('border-indigo-600', 'text-indigo-600');
+                        d.tabEdit.classList.add('text-gray-500');
+                        d.tabReflect.classList.add('border-indigo-600', 'text-indigo-600');
+                        d.tabReflect.classList.remove('text-gray-500');
+                        // Update reflect tab content
+                        App.ui.updateRuleOfLifeView();
+                    }
+                },
+                
                 // --- Settings Handlers ---
                 
-                handleSignOut: function() {
-                    App.ui.showModal("Sign Out?", "Are you sure you want to sign out? You will need to sign in again to sync.", [
+                handleLogout: function() {
+                    App.ui.showModal("Sign Out?", "Are you sure you want to sign out? Your data will remain encrypted in the cloud, but you will be logged out on this device.", [
                         { text: "Cancel", type: "secondary" },
                         { text: "Sign Out", type: "danger", callback: () => App.auth.signOut() }
                     ]);
                 },
                 
                 handleForceSync: function() {
-                    App.ui.showModal("Force Sync?", "This will compare local and cloud data. The most recently modified version will be kept. Do you want to check for cloud data (Download) or upload your current data (Upload)?", [
+                    App.ui.showModal("Force Sync?", "This will compare local and cloud data. The most recently modified version will be kept. Do you want to continue?", [
                         { text: "Cancel", type: "secondary" },
-                        { text: "Download from Cloud", type: "primary", callback: () => App.storage.forceDownload() },
-                        { text: "Upload to Cloud", type: "primary", callback: () => App.storage.firestoreSaveAll() }
+                        { text: "Force Sync", type: "primary", callback: () => App.storage.syncData() }
                     ]);
                 },
                 
-                handleForgotPin: function() {
-                    App.ui.showModal("Forgot PIN?", 
-                        "PINs are not recoverable. If you are signed in, you can delete your cloud data and start over. If you are in local-only mode, you must delete your local data.",
-                        [
-                            { text: "Cancel", type: "secondary" },
-                            { text: "Delete & Restart", type: "danger", callback: () => {
-                                if (App.state.ui.isLoggedIn) {
-                                    App.handlers.handleDeleteAll();
-                                } else {
-                                    App.handlers.handleDeleteLocal();
-                                }
-                            }}
-                        ]
-                    );
-                },
-
                 exportData: function() {
-                    const dataString = JSON.stringify(App.state.data);
+                    if (!App.state.pin) {
+                        App.ui.showAlert("PIN not set. Cannot export data.", "error");
+                        return;
+                    }
+                    // We export the *unencrypted* data for portability.
+                    // This is a security consideration, but necessary for user data ownership.
+                    const dataString = JSON.stringify(App.state.data, null, 2);
                     const blob = new Blob([dataString], { type: 'application/json' });
                     const url = URL.createObjectURL(blob);
                     const a = document.createElement('a');
@@ -2737,75 +2568,108 @@
                     a.download = `TokuHauora_Export_${App.util.getTodayDate()}.json`;
                     a.click();
                     URL.revokeObjectURL(url);
-                    App.ui.showAlert("Data exported!", "success");
+                    App.ui.showAlert("Data exported.", "success");
                 },
                 
-                importData: function(e) {
-                    const file = e.target.files[0];
+                importData: function(event) {
+                    const file = event.target.files[0];
                     if (!file) return;
                     
                     const reader = new FileReader();
-                    reader.onload = (event) => {
+                    reader.onload = (e) => {
                         try {
-                            const importedData = JSON.parse(event.target.result);
-                            App.ui.showModal("Import Data?", "This will overwrite your current data. This action cannot be undone. Are you sure?", [
+                            const importedData = JSON.parse(e.target.result);
+                            App.ui.showModal("Import Data?", "This will overwrite your current local data. This cannot be undone. Are you sure?", [
                                 { text: "Cancel", type: "secondary" },
-                                { text: "Import & Overwrite", type: "danger", callback: async () => {
+                                { text: "Import", type: "danger", callback: () => {
                                     App.state.data = importedData;
-                                    App.util.mergeWithDefaultData(); // Ensure schema is good
                                     App.state.data.lastModified = new Date().toISOString();
-                                    await App.storage.localSaveAll();
-                                    if (App.state.storageDriver === 'firebase') {
-                                        await App.storage.firestoreSaveAll();
-                                    }
+                                    App.storage.localSaveAll();
+                                    if (App.state.storageDriver === 'firebase') App.storage.firestoreSaveAll();
                                     App.ui.showAlert("Data imported successfully!", "success");
-                                    App.navigation.updateViewContent('welcomeView');
+                                    App.navigation.navigateTo('welcomeView');
                                 }}
                             ]);
                         } catch (err) {
-                            App.ui.showAlert(`Import failed: ${err.message}`, "error");
+                            App.ui.showAlert("Import failed: Invalid JSON file.", "error");
                         }
                     };
                     reader.readAsText(file);
-                    e.target.value = null; // Reset file input
+                    // Reset file input
+                    event.target.value = null;
                 },
-                
+
                 handleChangePin: function() {
-                    // This is complex. Needs a multi-step modal flow.
-                    // 1. Enter old PIN.
-                    // 2. Enter new PIN.
-                    // 3. Confirm new PIN.
-                    // 4. Re-encrypt all data with new PIN.
-                    // 5. Save new PIN hash.
-                    App.ui.showAlert("This feature is not yet implemented.", "info");
+                    App.state.ui.pinMode = 'change';
+                    App.state.ui.tempPin = ''; // Reset temp pin
+                    App.pin.resetPinInput(App.dom.lockScreen.pinDisplay);
+                    App.dom.lockScreen.title.textContent = "Change PIN";
+                    App.dom.lockScreen.message.textContent = "Enter your CURRENT 4-digit PIN.";
+                    App.dom.lockScreen.screen.style.display = 'flex';
                 },
                 
-                handleDeleteLocal: function() {
-                    App.ui.showModal("Delete Local Data?", "This will delete all data on THIS device. This cannot be undone. Are you sure?", [
+                handleForgotPin: function() {
+                    if (App.state.storageDriver === 'firebase') {
+                        App.ui.showModal("Forgot PIN?", 
+                            "Your PIN is the only key to your encrypted data. It cannot be reset.\n\nYour only option is to delete all your data (local and cloud) and start over. Are you sure?",
+                            [
+                                { text: "Cancel", type: "secondary" },
+                                { text: "Delete Everything", type: "danger", callback: () => App.handlers.handleDeleteAll(true) }
+                            ]
+                        );
+                    } else {
+                        App.ui.showModal("Forgot PIN?", 
+                            "Your PIN is the only key to your encrypted data. It cannot be reset.\n\nYour only option is to delete your local data and start over. Are you sure?",
+                            [
+                                { text: "Cancel", type: "secondary" },
+                                { text: "Delete Local Data", type: "danger", callback: () => App.handlers.handleDeleteLocal(true) }
+                            ]
+                        );
+                    }
+                },
+                
+                handleDeleteLocal: function(isForgotPin = false) {
+                    const message = isForgotPin ? 
+                        "This will delete all local data and restart the app. Are you sure?" :
+                        "Are you sure you want to delete all local data? This cannot be undone.";
+                    
+                    App.ui.showModal("Delete Local Data?", message, [
                         { text: "Cancel", type: "secondary" },
-                        { text: "Delete Local Data", type: "danger", callback: () => App.auth.wipeAndRestart() }
+                        { text: "Delete Local", type: "danger", callback: () => {
+                            App.storage.localDeleteAll();
+                            localStorage.removeItem('hauoraPinHash');
+localStorage.removeItem('hauoraOnboardComplete');
+                            App.ui.showAlert("Local data deleted. Restarting...", "success");
+                            setTimeout(() => window.location.reload(), 2000);
+                        }}
                     ]);
                 },
                 
                 handleDeleteCloud: function() {
-                    if (!App.state.ui.isLoggedIn) {
-                        App.ui.showAlert("You are not signed in.", "error");
-                        return;
-                    }
-                    App.ui.showModal("Delete Cloud Data?", "This will delete all data in the CLOUD. This cannot be undone. Are you sure?", [
+                    App.ui.showModal("Delete Cloud Data?", "Are you sure you want to delete all cloud data? This will not affect your local data. This cannot be undone.", [
                         { text: "Cancel", type: "secondary" },
-                        { text: "Delete Cloud Data", type: "danger", callback: () => App.storage.firestoreDeleteAll() }
+                        { text: "Delete Cloud", type: "danger", callback: () => {
+                            App.storage.firestoreDeleteAll();
+                        }}
                     ]);
                 },
                 
-                handleDeleteAll: function() {
-                    App.ui.showModal("Delete ALL Data?", "This will delete all data on this device AND in the cloud. This is permanent. Are you sure?", [
+                handleDeleteAll: function(isForgotPin = false) {
+                    const message = isForgotPin ?
+                        "This will delete all local AND cloud data for this user. You will be logged out and the app will restart. Are you sure?" :
+                        "Are you sure you want to delete ALL local and cloud data? This cannot be undone.";
+
+                    App.ui.showModal("Delete ALL Data?", message, [
                         { text: "Cancel", type: "secondary" },
-                        { text: "Delete ALL", type: "danger", callback: async () => {
-                            if (App.state.ui.isLoggedIn) {
-                                await App.storage.firestoreDeleteAll();
+                        { text: "Delete All", type: "danger", callback: () => {
+                            App.storage.localDeleteAll();
+                            localStorage.removeItem('hauoraPinHash');
+localStorage.removeItem('hauoraOnboardComplete');
+                            if (App.state.storageDriver === 'firebase') {
+                                App.storage.firestoreDeleteAll();
                             }
-                            await App.auth.wipeAndRestart();
+                            App.ui.showAlert("All data deleted. Restarting...", "success");
+                            setTimeout(() => App.auth.signOut().then(() => window.location.reload()), 2000);
                         }}
                     ]);
                 }
@@ -2814,74 +2678,25 @@
 
             /* ================================================================
             App Logic Part 4: UI, Navigation, and Init
-            (from TokuHauora_Part4h.html)
             ================================================================
             */
 
             /* --- UI Module --- */
             ui: {
-                
                 init: function() {
                     this.initModals();
-                    // Onboarding is started by pin.startOnboarding()
-                    // this.initOnboarding(); 
-                    this.initChart();
-                },
-                
-                initChart: function() {
-                    // Create a persistent chart instance
-                    const ctx = App.dom.welcome.hauoraChart.getContext('2d');
-                    if (window.hauoraChartInstance) {
-                        window.hauoraChartInstance.destroy();
-                    }
-                    window.hauoraChartInstance = new Chart(ctx, {
-                        type: 'radar',
-                        data: {
-                            labels: ['Physical', 'Mental', 'Social', 'Spiritual'],
-                            datasets: [{
-                                label: 'My Hauora',
-                                data: [5, 5, 5, 5], // Default data
-                                backgroundColor: 'rgba(52, 152, 219, 0.2)',
-                                borderColor: 'rgb(52, 152, 219)',
-                                pointBackgroundColor: 'rgb(52, 152, 219)',
-                            }]
-                        },
-                        options: {
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            scales: {
-                                r: {
-                                    angleLines: {
-                                        display: true
-                                    },
-                                    suggestedMin: 0,
-                                    suggestedMax: 10,
-                                    ticks: {
-                                        stepSize: 2
-                                    }
-                                }
-                            },
-                            plugins: {
-                                legend: {
-                                    display: false
-                                }
-                            }
-                        }
-                    });
+                    this.initOnboarding();
                 },
 
                 initModals: function() {
-                    // --- General Modal ---
                     const modal = App.dom.modal.modal;
                     const closeBtn = modal.querySelector('.close-button');
-                    // const content = modal.querySelector('.modal-content');
                     
                     closeBtn.addEventListener('click', () => this.hideModal());
                     modal.addEventListener('click', (e) => {
                         if (e.target === modal) this.hideModal();
                     });
                     
-                    // --- Resource Modal ---
                     const resModal = App.dom.resources.modal;
                     const resClose = resModal.querySelector('.close-button');
                     resClose.addEventListener('click', () => this.hideResourceModal());
@@ -2893,14 +2708,10 @@
                         e.preventDefault();
                         App.handlers.saveResource();
                     });
-                    
-                    // --- Danger Zone Modal ---
-                    const dzModal = App.dom.settings.dangerZoneModal;
-                    const dzClose = dzModal.querySelector('.close-button');
-                    dzClose.addEventListener('click', () => dzModal.classList.remove('visible'));
-                    dzModal.addEventListener('click', (e) => {
-                        if (e.target === dzModal) dzModal.classList.remove('visible');
-                    });
+                },
+                
+                initOnboarding: function() {
+                    // This is now handled in App.pin.startOnboarding
                 },
 
                 updateOnboardingStep: function(direction) {
@@ -2913,36 +2724,38 @@
                         return;
                     }
 
-                    // Update current step
                     App.state.ui.currentOnboardingStep = newStep;
-                    currentOnboardingStep = newStep; // Use new value
+                    currentOnboardingStep = newStep; 
 
-                    // Hide all steps
                     steps.forEach(step => step.style.display = 'none');
-                    // Show current step
                     steps[currentOnboardingStep - 1].style.display = 'block';
 
-                    // Update indicators
                     indicatorDots.forEach((dot, index) => {
                         dot.classList.toggle('active', index === currentOnboardingStep - 1);
                     });
 
-                    // Update button visibility
                     prevBtn.style.display = currentOnboardingStep > 1 ? 'inline-block' : 'none';
                     nextBtn.style.display = currentOnboardingStep < steps.length ? 'inline-block' : 'none';
                     finishBtn.style.display = currentOnboardingStep === steps.length ? 'inline-block' : 'none';
                 },
+                
+                finishOnboarding: function() {
+                    // This is handled by App.pin.finishOnboarding
+                    localStorage.setItem('hauoraOnboardComplete', 'true');
+                    App.dom.onboarding.modal.classList.remove('visible');
+                    setTimeout(() => App.dom.onboarding.modal.style.display = 'none', 300);
+                },
 
                 showAlert: function(message, type = 'info', duration = 3000) {
                     const alertBox = App.dom.alert;
-                    if (!alertBox) return; // Fail safe if DOM not ready
+                    if (!alertBox) return; 
                     alertBox.textContent = message;
                     alertBox.className = 'alert-box'; // Reset classes
                     alertBox.classList.add(type); // 'info', 'success', 'error'
                     
                     // Make visible
-                    alertBox.style.display = 'block'; // FIX: Set display block
-                    setTimeout(() => alertBox.classList.add('visible'), 10); // Small delay for transition
+                    alertBox.style.display = 'block';
+                    setTimeout(() => alertBox.classList.add('visible'), 10); 
 
                     // Clear any existing timer
                     if (App.state.ui.alertTimer) {
@@ -2952,7 +2765,7 @@
                     // Auto-hide
                     App.state.ui.alertTimer = setTimeout(() => {
                         alertBox.classList.remove('visible');
-                        setTimeout(() => alertBox.style.display = 'none', 300); // FIX: Set display none after transition
+                        setTimeout(() => alertBox.style.display = 'none', 300); // Set display none after transition
                     }, duration);
                 },
 
@@ -2962,15 +2775,13 @@
                     titleEl.textContent = title;
                     messageEl.textContent = message;
                     
-                    // Clear old buttons
                     buttonContainer.innerHTML = '';
                     
-                    // Add new buttons if provided
                     if (buttons.length > 0) {
                         buttons.forEach(btn => {
                             const button = document.createElement('button');
                             button.textContent = btn.text;
-                            button.className = `btn btn-${btn.type || 'primary'}`; // 'primary', 'danger', 'secondary'
+                            button.className = `btn btn-${btn.type || 'primary'}`; 
                             button.addEventListener('click', (e) => {
                                 e.stopPropagation();
                                 if(btn.callback) btn.callback();
@@ -2980,7 +2791,6 @@
                         });
                         buttonContainer.style.display = 'flex';
                     } else {
-                        // Add a default "OK" button if no buttons are specified
                         const okButton = document.createElement('button');
                         okButton.textContent = "OK";
                         okButton.className = "btn btn-primary";
@@ -3001,7 +2811,6 @@
                     modal.classList.remove('visible');
                     setTimeout(() => {
                         modal.style.display = 'none';
-                        // Clear modal content to prevent flash
                         App.dom.modal.titleEl.textContent = '';
                         App.dom.modal.messageEl.textContent = '';
                         App.dom.modal.buttonContainer.innerHTML = '';
@@ -3041,48 +2850,62 @@
                     const { welcome } = App.dom;
                     const today = App.util.getTodayDate();
                     
-                    // Check for today's entries
                     const hasCheckedIn = App.state.data.checkinHistory.some(e => e.date === today);
                     const hasGratitude = App.state.data.gratitudeHistory.some(e => e.date === today);
                     const hasSabbath = App.state.data.sabbathHistory.some(e => e.date === today);
                     
-                    welcome.checkinBtn.innerHTML = hasCheckedIn ? 'View Today\'s Check-in <span class="check-mark">&#10003;</span>' : 'Daily Check-in <span class="text-3xl">&rarr;</span>';
+                    welcome.checkinBtn.innerHTML = `<span>Daily Check-in</span> ${hasCheckedIn ? '<span class="check-mark">&#10003;</span>' : '<span class="welcome-arrow">&rarr;</span>'}`;
                     welcome.checkinBtn.classList.toggle('complete', hasCheckedIn);
                     
-                    welcome.gratitudeBtn.innerHTML = hasGratitude ? 'View Today\'s Gratitude <span class="check-mark">&#10003;</span>' : 'Gratitude Journal <span class="text-3xl">&rarr;</span>';
+                    welcome.gratitudeBtn.innerHTML = `<span>Gratitude Journal</span> ${hasGratitude ? '<span class="check-mark">&#10003;</span>' : '<span class="welcome-arrow">&rarr;</span>'}`;
                     welcome.gratitudeBtn.classList.toggle('complete', hasGratitude);
                     
-                    welcome.sabbathBtn.innerHTML = hasSabbath ? 'View Today\'s Sabbath <span class="check-mark">&#10003;</span>' : 'Sabbath Reflection <span class="text-3xl">&rarr;</span>';
+                    welcome.sabbathBtn.innerHTML = `<span>Sabbath Reflection</span> ${hasSabbath ? '<span class="check-mark">&#10003;</span>' : '<span class="welcome-arrow">&rarr;</span>'}`;
                     welcome.sabbathBtn.classList.toggle('complete', hasSabbath);
                     
-                    // --- Dashboard Preview (FIX per Grok) ---
-                    const lastEntry = App.state.data.checkinHistory[App.state.data.checkinHistory.length - 1];
-                    
-                    if (lastEntry) {
-                        // Use the (now existing) moduleCheckin to calculate totals
-                        const totals = App.moduleCheckin.calculateTotals(lastEntry);
-                        
-                        // Update Chart
-                        if (window.hauoraChartInstance) {
-                            const ratings = lastEntry.ratings || {};
-                            window.hauoraChartInstance.data.datasets[0].data = [
-                                ratings.physical || 5,
-                                ratings.mental || 5,
-                                ratings.social || 5,
-                                ratings.spiritual || 5
-                            ];
-                            window.hauoraChartInstance.update();
-                        }
-                        
-                        welcome.dashboardPreview.style.display = 'none';
-                        welcome.hauoraChart.style.display = 'block';
-                        
-                    } else {
-                        welcome.dashboardPreview.style.display = 'block';
-                        welcome.hauoraChart.style.display = 'none';
-                    }
+                    this.renderDashboardPreview();
                 },
                 
+                renderDashboardPreview: function() {
+                    const { dashboardPreview, hauoraChart } = App.dom.welcome;
+                    const history = App.state.data.checkinHistory;
+                    
+                    if (history.length === 0) {
+                        dashboardPreview.style.display = 'block';
+                        hauoraChart.style.display = 'none';
+                        return;
+                    }
+                    
+                    // --- Render Chart ---
+                    dashboardPreview.style.display = 'none';
+                    hauoraChart.style.display = 'block';
+                    
+                    const last7Days = App.moduleCheckin.getLast7DaysRatings();
+                    const labels = last7Days.map(d => App.util.formatDate(d.date).slice(0, -5)); // Shorten date
+                    const datasets = [
+                        { label: 'Physical', data: last7Days.map(d => d.physical), borderColor: '#EF4444', tension: 0.1 },
+                        { label: 'Mental', data: last7Days.map(d => d.mental), borderColor: '#3B82F6', tension: 0.1 },
+                        { label: 'Social', data: last7Days.map(d => d.social), borderColor: '#10B981', tension: 0.1 },
+                        { label: 'Spiritual', data: last7Days.map(d => d.spiritual), borderColor: '#8B5CF6', tension: 0.1 }
+                    ];
+
+                    const ctx = hauoraChart.getContext('2d');
+                    
+                    if (App.state.ui.hauoraChartInstance) {
+                        App.state.ui.hauoraChartInstance.destroy();
+                    }
+                    
+                    App.state.ui.hauoraChartInstance = new Chart(ctx, {
+                        type: 'line',
+                        data: { labels, datasets },
+                        options: {
+                            responsive: true,
+                            scales: { y: { min: 0, max: 10 } },
+                            plugins: { legend: { position: 'bottom', labels: { font: { size: 10 } } } }
+                        }
+                    });
+                },
+
                 updateCheckinView: function() {
                     const today = App.util.getTodayDate();
                     const { checkin } = App.dom;
@@ -3094,22 +2917,14 @@
                     checkin.form.reset();
                     checkin.note.value = entry.note;
                     
-                    // Update feeling toggles
                     checkin.feelingsContainer.querySelectorAll('.feeling-toggle').forEach(btn => {
                         btn.classList.toggle('selected', entry.feelings.includes(btn.dataset.feeling));
                     });
                     
-                    // Update sliders
                     checkin.sliders.forEach(slider => {
                         const key = slider.id.split('-')[1]; // e.g., 'physical'
                         slider.value = entry.ratings[key] || 5; // Default to 5
                     });
-                    
-                    // Hide burnout flow elements
-                    checkin.finishBtn.style.display = 'none';
-                    checkin.burnoutPromptModal.classList.remove('visible');
-                    checkin.burnoutCheckModal.classList.remove('visible');
-                    checkin.burnoutResultsModal.classList.remove('visible');
                 },
                 
                 updateGratitudeView: function() {
@@ -3144,7 +2959,6 @@
                     const { history } = App.dom;
                     history.container.innerHTML = 'Loading history...';
                     
-                    // Combine and sort all history data
                     const allEntries = [
                         ...App.state.data.checkinHistory.map(e => ({...e, type: 'Check-in'})),
                         ...App.state.data.gratitudeHistory.map(e => ({...e, type: 'Gratitude'})),
@@ -3152,7 +2966,6 @@
                         ...App.state.data.ruleOfLifeHistory.map(e => ({...e, type: 'Rule of Life'}))
                     ];
                     
-                    // Sort descending by date
                     allEntries.sort((a, b) => b.date.localeCompare(a.date));
                     
                     if (allEntries.length === 0) {
@@ -3218,25 +3031,6 @@
                     rule.reflectCommunity.textContent = data.community || '...';
                 },
                 
-                toggleRuleTab: function(showEdit) {
-                    const { rule } = App.dom;
-                    if (showEdit) {
-                        rule.tabEdit.classList.add('border-blue-600', 'text-blue-600');
-                        rule.tabEdit.classList.remove('text-gray-500');
-                        rule.tabReflect.classList.add('text-gray-500');
-                        rule.tabReflect.classList.remove('border-blue-600', 'text-blue-600');
-                        rule.contentEdit.style.display = 'block';
-                        rule.contentReflect.style.display = 'none';
-                    } else {
-                        rule.tabReflect.classList.add('border-blue-600', 'text-blue-600');
-                        rule.tabReflect.classList.remove('text-gray-500');
-                        rule.tabEdit.classList.add('text-gray-500');
-                        rule.tabEdit.classList.remove('border-blue-600', 'text-blue-600');
-                        rule.contentEdit.style.display = 'none';
-                        rule.contentReflect.style.display = 'block';
-                    }
-                },
-                
                 updateResourcesView: function() {
                     const { resources } = App.dom;
                     const data = App.state.data.userResources || {};
@@ -3259,7 +3053,6 @@
                         </div>
                     `).join('');
                     
-                    // Add event listeners for edit buttons
                     resources.container.querySelectorAll('.btn-outline').forEach(btn => {
                         btn.addEventListener('click', () => {
                             const res = App.state.data.userResources[btn.dataset.id];
@@ -3271,15 +3064,12 @@
                 updateSettingsView: function() {
                     App.auth.updateSyncStatusUI();
                 }
-
             }, // End of App.ui
             
             
             /* --- Navigation Module --- */
             navigation: {
-                
                 init: function() {
-                    // --- Bottom Nav Bar ---
                     App.dom.nav.links.forEach(link => {
                         link.addEventListener('click', (e) => {
                             e.preventDefault();
@@ -3288,12 +3078,10 @@
                         });
                     });
                     
-                    // --- Welcome View Buttons ---
                     App.dom.welcome.checkinBtn.addEventListener('click', () => this.navigateTo('checkinView'));
                     App.dom.welcome.gratitudeBtn.addEventListener('click', () => this.navigateTo('gratitudeView'));
                     App.dom.welcome.sabbathBtn.addEventListener('click', () => this.navigateTo('sabbathView'));
                     
-                    // --- "Go Back" Buttons ---
                     document.querySelectorAll('.btn-back').forEach(btn => {
                         btn.addEventListener('click', (e) => {
                             e.preventDefault();
@@ -3306,30 +3094,21 @@
                 navigateTo: function(viewId) {
                     console.log(`Navigating to: ${viewId}`);
                     
-                    // Hide all views
                     App.dom.views.forEach(view => {
                         view.style.display = 'none';
                     });
                     
-                    // Show target view
                     const targetView = document.getElementById(viewId);
                     if (targetView) {
                         targetView.style.display = 'block';
                         App.state.ui.currentView = viewId;
                         
-                        // Push to history
                         if (App.state.ui.viewHistory[App.state.ui.viewHistory.length - 1] !== viewId) {
                             App.state.ui.viewHistory.push(viewId);
                         }
                         
-                        // Run view-specific update logic
                         this.updateViewContent(viewId);
-                        
-                        // Update nav link active state
                         this.updateNavActiveState(viewId);
-                        
-                        // Scroll to top
-                        targetView.scrollTop = 0;
                         
                     } else {
                         console.error(`View not found: ${viewId}`);
@@ -3379,10 +3158,11 @@
                 
                 updateNavActiveState: function(viewId) {
                     App.dom.nav.links.forEach(link => {
-                        link.classList.toggle('active', link.dataset.view === viewId);
+                        // UI-FIX: Update active class logic for new pill design
+                        const isActive = link.dataset.view === viewId;
+                        link.classList.toggle('active', isActive);
                     });
                 }
-
             }, // End of App.navigation
 
             
@@ -3395,78 +3175,57 @@
                 try {
                     console.log("App.init started...");
                     
-                    /* --- 1. DOM Caching --- */
+                    // 1. DOM Caching
                     this.util.cacheDOM();
                     
-                    /* --- 2. Initialize UI (modals, etc.) --- */
+                    // 2. Initialize UI (modals, etc.)
                     this.ui.init();
                     
-                    /* --- 3. Initialize Check-in Module (e.g., populate feelings) --- */
-                    this.moduleCheckin.init();
-                    
-                    /* --- 4. Initialize Firebase --- */
-                    /*
-                    FIX 3: Use the app instance from window.AppFirebase, DO NOT re-initialize.
-                    The <head> script already called initializeApp.
-                    */
-                    if (window.AppFirebase && window.AppFirebase.app) {
+                    // 3. Initialize Firebase
+                    // FIX: Correctly check AppFirebase and set up state
+                    if (AppFirebase) {
                         try {
-                            // Get the *already initialized* app
-                            const fbApp = window.AppFirebase.app; 
+                            App.state.fb.db = AppFirebase.getFirestore(AppFirebase.app);
+                            App.state.fb.auth = AppFirebase.getAuth(AppFirebase.app);
+                            App.state.fb.googleProvider = new AppFirebase.GoogleAuthProvider();
                             
-                            this.state.fb.db = AppFirebase.getFirestore(fbApp);
-                            this.state.fb.auth = AppFirebase.getAuth(fbApp);
-                            this.state.fb.googleProvider = new AppFirebase.GoogleAuthProvider();
-                            
-                            // Set persistence for redirects
-                            await AppFirebase.setPersistence(this.state.fb.auth, AppFirebase.browserLocalPersistence);
+                            await AppFirebase.setPersistence(App.state.fb.auth, AppFirebase.browserLocalPersistence);
 
-                            // Get appId from the config we loaded
-                            if (typeof window.firebaseConfig !== 'undefined' && window.firebaseConfig.appId) {
-                                this.state.appId = window.firebaseConfig.appId;
-                            } else if (typeof __app_id !== 'undefined') {
-                                this.state.appId = __app_id;
-                            } else {
-                                this.state.appId = 'default-app-id';
-                            }
-                            
+                            App.state.appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
                         } catch (e) {
                             console.error("Firebase state initialization error:", e);
                             console.warn("Firebase services (Firestore/Auth) could not be set. App will run in local-only mode.");
-                            this.state.storageDriver = 'local';
+                            App.state.storageDriver = 'local';
                             if(App.dom.settings.syncSection) App.dom.settings.syncSection.style.display = 'none';
                         }
                     } else {
                         console.warn("Firebase modules not loaded. App will run in local-only mode.");
-                        this.state.storageDriver = 'local';
-                        if (App.dom.settings.syncSection) {
-                            App.dom.settings.syncSection.style.display = 'none';
-                        }
+                        App.state.storageDriver = 'local';
+                        if(App.dom.settings.syncSection) App.dom.settings.syncSection.style.display = 'none';
                     }
                     
-                    /* --- 5. Initialize Local DB (IndexedDB) --- */
+                    // 4. Initialize Local DB (IndexedDB)
                     this.state.db = await this.storage.initDB();
                     console.log("IndexedDB initialized.");
 
-                    /* --- 6. Initialize Event Handlers --- */
-                    this.handlers.init();
-                    
-                    /* --- 7. Initialize Navigation --- */
-                    this.navigation.init();
-                    
-                    /* --- 8. Initialize Auth Listener --- */
-                    if (this.state.fb.auth) {
+                    // 5. Initialize Auth Listener
+                    if (App.state.fb.auth) {
                         this.auth.init();
                     }
                     
-                    /* --- 9. Check PIN & Auth State (Main entry point) --- */
+                    // 6. Initialize Event Handlers
+                    this.handlers.init();
+                    
+                    // 7. Initialize Navigation
+                    this.navigation.init();
+                    
+                    // 8. Check PIN & Auth State
                     await this.auth.checkPinAndAuthState();
                     
                     console.log("App.init finished.");
                     
                 } catch (error) {
                     console.error("Critical error during App.init:", error);
-                    // Display a full-screen, non-closable error
                     const body = document.querySelector('body');
                     body.innerHTML = `
                         <div style="padding: 20px; text-align: center; color: red;">
@@ -3478,18 +3237,10 @@
                     `;
                 }
             }
+        }); // End of App object
         
-        }); // End of Object.assign
-        
-        
-        /* ================================================================
-        Start the App
-        ================================================================
-        */
-        /* FIX 2: Call App.init() directly.
-        Do not use 'DOMContentLoaded' inside a <script type="module">
-        at the end of the body, as the event has already fired.
-        */
+        // --- Start the App ---
+        // FIX: Call init directly. Module scripts are deferred by default.
         App.init();
 
     </script>
