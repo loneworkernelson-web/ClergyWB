@@ -208,6 +208,7 @@
         .modal {
             /* FIX: z-50 was behind nav bar (z-100). Use z-[101]. */
             @apply fixed inset-0 z-[101] bg-black bg-opacity-50 flex items-center justify-center p-4 transition-opacity duration-300 opacity-0 pointer-events-none;
+            display: none; /* FIX: Add display:none by default */
         }
         .modal.visible {
             @apply opacity-100 pointer-events-auto;
@@ -228,6 +229,7 @@
         /* Alert Box */
         .alert-box {
             @apply fixed top-5 left-1/2 -translate-x-1/2 z-[1001] py-3 px-6 rounded-lg shadow-lg text-white font-semibold transition-all duration-300 opacity-0 -translate-y-10;
+            display: none; /* FIX: Add display:none by default */
         }
         .alert-box.visible {
             @apply opacity-100 translate-y-0;
@@ -2939,7 +2941,8 @@
                     alertBox.classList.add(type); // 'info', 'success', 'error'
                     
                     // Make visible
-                    alertBox.classList.add('visible');
+                    alertBox.style.display = 'block'; // FIX: Set display block
+                    setTimeout(() => alertBox.classList.add('visible'), 10); // Small delay for transition
 
                     // Clear any existing timer
                     if (App.state.ui.alertTimer) {
@@ -2949,6 +2952,7 @@
                     // Auto-hide
                     App.state.ui.alertTimer = setTimeout(() => {
                         alertBox.classList.remove('visible');
+                        setTimeout(() => alertBox.style.display = 'none', 300); // FIX: Set display none after transition
                     }, duration);
                 },
 
