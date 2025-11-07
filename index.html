@@ -1161,9 +1161,9 @@
                     const userId = user.uid;
                     
                     // Private, encrypted data blob
-                    const userDocRef = App.Firebase.doc(App.state.fb.db, `artifacts/${appId}/users/${userId}/appData/data`);
+                    const userDocRef = AppFirebase.doc(App.state.fb.db, `artifacts/${appId}/users/${userId}/appData/data`);
                     // Public, unencrypted PIN check value
-                    const pinCheckRef = App.Firebase.doc(App.state.fb.db, `artifacts/${appId}/users/${userId}/appData/pinCheck`);
+                    const pinCheckRef = AppFirebase.doc(App.state.fb.db, `artifacts/${appId}/users/${userId}/appData/pinCheck`);
                     
                     return { userDocRef, pinCheckRef };
                 },
@@ -1196,7 +1196,7 @@
                     }
                     
                     try {
-                        await App.Firebase.setDoc(paths.userDocRef, encrypted);
+                        await AppFirebase.setDoc(paths.userDocRef, encrypted);
                         await this.localSaveState('lastSync', new Date().toISOString());
                         App.auth.updateSyncStatusUI("Up to date");
                         console.log("Data saved to Firestore.");
@@ -1227,7 +1227,7 @@
                     App.auth.updateSyncStatusUI("Downloading...");
                     
                     try {
-                        const docSnap = await App.Firebase.getDoc(paths.userDocRef);
+                        const docSnap = await AppFirebase.getDoc(paths.userDocRef);
                         
                         if (!docSnap.exists()) {
                             console.log("No data found in Firestore for this user.");
@@ -1272,7 +1272,7 @@
                     App.auth.updateSyncStatusUI("Deleting cloud data...");
                     
                     try {
-                        const batch = App.Firebase.writeBatch(App.state.fb.db);
+                        const batch = AppFirebase.writeBatch(App.state.fb.db);
                         batch.delete(paths.userDocRef);
                         batch.delete(paths.pinCheckRef);
                         await batch.commit();
@@ -1368,7 +1368,7 @@
                     if (!App.state.fb.auth) return;
                     
                     // This listener is the core of the auth flow
-                    App.Firebase.onAuthStateChanged(App.state.fb.auth, (user) => {
+                    AppFirebase.onAuthStateChanged(App.state.fb.auth, (user) => {
                         App.state.ui.authLoading = false;
                         if (user) {
                             console.log("Auth listener: User is signed in.", user.uid);
@@ -1413,7 +1413,7 @@
                         // This fixes the COOP/redirect issue Grok mentioned.
                         if (App.state.fb.auth) { // Only if Firebase is initialized
                             try {
-                                const result = await App.Firebase.getRedirectResult(App.state.fb.auth);
+                                const result = await AppFirebase.getRedirectResult(App.state.fb.auth);
                                 if (result && result.user) {
                                     console.log("Handled redirect sign-in.", result.user.uid);
                                     App.state.ui.isLoggedIn = true;
@@ -1499,10 +1499,10 @@
                             // Link existing anonymous/local user to Google account
                             const user = App.state.fb.auth.currentUser;
                             if (!user) throw new Error("No user to link.");
-                            await App.Firebase.linkWithRedirect(user, provider);
+                            await AppFirebase.linkWithRedirect(user, provider);
                         } else {
                             // Standard sign-in
-                            await App.Firebase.signInWithRedirect(App.state.fb.auth, provider);
+                            await AppFirebase.signInWithRedirect(App.state.fb.auth, provider);
                         }
                     } catch (error) {
                         console.error("Google Sign-In redirect error:", error);
@@ -1518,7 +1518,7 @@
                     if (!App.state.fb.auth) return;
                     
                     try {
-                        await App.Firebase.signOut(App.state.fb.auth);
+                        await AppFirebase.signOut(App.state.fb.auth);
                         App.state.pin = null; // Clear PIN on logout
                         App.state.data = App.util.getDefaultData(); // Clear data
                         App.state.storageDriver = 'local';
@@ -1998,7 +1998,7 @@
                     
                     const hash = this.hashPin(pin);
                     try {
-                        await App.Firebase.setDoc(pinCheckRef, { hash: hash, version: 1 });
+                        await AppFirebase.setDoc(pinCheckRef, { hash: hash, version: 1 });
                         console.log("PIN check saved to cloud.");
                     } catch (e) {
                         console.error("Failed to save PIN check to cloud:", e);
@@ -2014,7 +2014,7 @@
                     if (!pinCheckRef) return false;
                     
                     try {
-                        const docSnap = await App.Firebase.getDoc(pinCheckRef);
+                        const docSnap = await AppFirebase.getDoc(pinCheckRef);
                         return docSnap.exists();
                     } catch (e) {
                         console.error("Error checking for cloud PIN:", e);
@@ -3398,12 +3398,12 @@
                             // Get the *already initialized* app
                             const fbApp = window.AppFirebase.app; 
                             
-                            this.state.fb.db = App.Firebase.getFirestore(fbApp);
-                            this.state.fb.auth = App.Firebase.getAuth(fbApp);
-                            this.state.fb.googleProvider = new App.Firebase.GoogleAuthProvider();
+                            this.state.fb.db = AppFirebase.getFirestore(fbApp);
+                            this.state.fb.auth = AppFirebase.getAuth(fbApp);
+                            this.state.fb.googleProvider = new AppFirebase.GoogleAuthProvider();
                             
                             // Set persistence for redirects
-                            await App.Firebase.setPersistence(this.state.fb.auth, App.Firebase.browserLocalPersistence);
+                            await AppFirebase.setPersistence(this.state.fb.auth, AppFirebase.browserLocalPersistence);
 
                             // Get appId from the config we loaded
                             if (typeof window.firebaseConfig !== 'undefined' && window.firebaseConfig.appId) {
