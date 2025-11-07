@@ -344,7 +344,8 @@
     <!-- 
         FIX (per Grok): Use z-50 (standard Tailwind) instead of z-1000.
     -->
-    <div id="loginView" class="view fixed inset-0 z-50 bg-slate-50 flex items-center justify-center p-4">
+    <!-- FIX 1: Add style="display: none;" to hide this view on load. -->
+    <div id="loginView" class="view fixed inset-0 z-50 bg-slate-50 flex items-center justify-center p-4" style="display: none;">
         <div class="card w-full max-w-sm text-center">
             <h1 class="text-3xl font-bold text-blue-600 mb-4">Tōku Hauora</h1>
             <p class="text-gray-600 mb-6">Sign in to sync your encrypted data across devices.</p>
@@ -3469,9 +3470,11 @@
         Start the App
         ================================================================
         */
-        document.addEventListener('DOMContentLoaded', () => {
-            App.init();
-        });
+        /* FIX 2: Call App.init() directly.
+        Do not use 'DOMContentLoaded' inside a <script type="module">
+        at the end of the body, as the event has already fired.
+        */
+        App.init();
 
     </script>
 </body>
