@@ -206,7 +206,8 @@
         
         /* General Modal */
         .modal {
-            @apply fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center p-4 transition-opacity duration-300 opacity-0 pointer-events-none;
+            /* FIX: z-50 was behind nav bar (z-100). Use z-[101]. */
+            @apply fixed inset-0 z-[101] bg-black bg-opacity-50 flex items-center justify-center p-4 transition-opacity duration-300 opacity-0 pointer-events-none;
         }
         .modal.visible {
             @apply opacity-100 pointer-events-auto;
@@ -243,8 +244,8 @@
 
         /* Lock Screen */
         #lockScreen {
-            /* FIX (per Grok): Use z-50 (standard Tailwind) instead of z-1000. */
-            @apply fixed inset-0 z-50 bg-slate-100 flex-col items-center justify-center p-4;
+            /* FIX (per Grok): Use z-[101] (standard Tailwind) instead of z-1000. */
+            @apply fixed inset-0 z-[101] bg-slate-100 flex-col items-center justify-center p-4;
             display: none; /* Controlled by JS */
         }
         .pin-dot {
@@ -259,8 +260,8 @@
         
         /* Onboarding Modal */
         #onboardingModal {
-            /* FIX (per Grok): Use z-50 */
-            @apply fixed inset-0 z-50 bg-white p-6 flex-col;
+            /* FIX (per Grok): Use z-[101] */
+            @apply fixed inset-0 z-[101] bg-white p-6 flex-col;
             display: none; /* Hidden by default, JS will show if needed */
         }
         .onboarding-step {
@@ -278,8 +279,8 @@
         
         /* Splash Screen */
         #splashScreen {
-            /* FIX (per Grok): Use z-50 */
-            @apply fixed inset-0 z-50 bg-white flex flex-col items-center justify-center transition-opacity duration-300;
+            /* FIX (per Grok): Use z-[101] */
+            @apply fixed inset-0 z-[101] bg-white flex flex-col items-center justify-center transition-opacity duration-300;
         }
         .spinner {
             @apply w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin;
@@ -353,10 +354,10 @@
     
     <!-- --- Login View (for initial Firebase auth) --- -->
     <!-- 
-        FIX (per Grok): Use z-50 (standard Tailwind) instead of z-1000.
+        FIX (per Grok): Use z-[101] (standard Tailwind) instead of z-1000.
     -->
     <!-- FIX 1: Add style="display: none;" to hide this view on load. -->
-    <div id="loginView" class="view fixed inset-0 z-50 bg-slate-50 flex items-center justify-center p-4" style="display: none;">
+    <div id="loginView" class="view fixed inset-0 z-[101] bg-slate-50 flex items-center justify-center p-4" style="display: none;">
         <div class="card w-full max-w-sm text-center">
             <h1 class="text-3xl font-bold text-blue-600 mb-4">Tōku Hauora</h1>
             <p class="text-gray-600 mb-6">Sign in to sync your encrypted data across devices.</p>
