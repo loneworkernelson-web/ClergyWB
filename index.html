@@ -15,26 +15,44 @@
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     
+    <!-- FIX 1: Load config.js file *before* the module that uses it -->
+    <script src="config.js"></script>
+    
     <!-- Firebase JS SDKs -->
     <script type="module">
         try {
-            // Updated to modular SDK v11.6.1
-            const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
-            if (Object.keys(firebaseConfig).length > 0) {
-                console.log("Firebase config loaded, initializing...");
+            /*
+            FIX 2: Prioritize window.firebaseConfig (from config.js)
+            then fall back to __firebase_config (env var)
+            */
+            let firebaseConfig = null;
+            if (typeof window.firebaseConfig !== 'undefined' && Object.keys(window.firebaseConfig).length > 0) {
+                firebaseConfig = window.firebaseConfig;
+                console.log("Firebase config loaded from config.js");
+            } else if (typeof __firebase_config !== 'undefined' && __firebase_config) {
+                firebaseConfig = JSON.parse(__firebase_config);
+                console.log("Firebase config loaded from env variable.");
+            }
+
+            if (firebaseConfig) {
+                console.log("Firebase config found, initializing...");
                 const { initializeApp } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js");
                 const { getAuth, setPersistence, browserLocalPersistence, GoogleAuthProvider, onAuthStateChanged, signInWithRedirect, getRedirectResult, signOut, linkWithRedirect, unlink } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js");
                 const { getFirestore, doc, setDoc, getDoc, runTransaction, writeBatch, collection, onSnapshot, query, where, getDocs, deleteDoc } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
+                
+                // FIX: Initialize the app here and save the instance
+                const fbApp = initializeApp(firebaseConfig);
 
-                // Make Firebase modules available on the global App object
+                // Make Firebase modules AND the app instance available
                 window.AppFirebase = {
+                    app: fbApp, // <-- SAVE THE INITIALIZED APP
                     initializeApp,
                     getAuth, setPersistence, browserLocalPersistence, GoogleAuthProvider, onAuthStateChanged, signInWithRedirect, getRedirectResult, signOut, linkWithRedirect, unlink,
                     getFirestore, doc, setDoc, getDoc, runTransaction, writeBatch, collection, onSnapshot, query, where, getDocs, deleteDoc
                 };
-                console.log("Firebase modules attached to window.AppFirebase");
+                console.log("Firebase modules and app instance attached to window.AppFirebase");
             } else {
-                console.warn("Firebase config (__firebase_config) is empty or undefined. Firebase will not be initialized.");
+                console.warn("Firebase config (from config.js or env) is empty or undefined. Firebase will not be initialized.");
                 window.AppFirebase = null; // Ensure it's null if not loaded
             }
         } catch (e) {
@@ -3369,23 +3387,36 @@
                     this.moduleCheckin.init();
                     
                     /* --- 4. Initialize Firebase --- */
-                    if (window.AppFirebase) {
+                    /*
+                    FIX 3: Use the app instance from window.AppFirebase, DO NOT re-initialize.
+                    The <head> script already called initializeApp.
+                    */
+                    if (window.AppFirebase && window.AppFirebase.app) {
                         try {
-                            const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
-                            const fbApp = App.Firebase.initializeApp(firebaseConfig);
+                            // Get the *already initialized* app
+                            const fbApp = window.AppFirebase.app; 
+                            
                             this.state.fb.db = App.Firebase.getFirestore(fbApp);
                             this.state.fb.auth = App.Firebase.getAuth(fbApp);
                             this.state.fb.googleProvider = new App.Firebase.GoogleAuthProvider();
                             
-                            // FIX (per Grok): Set persistence for redirects
+                            // Set persistence for redirects
                             await App.Firebase.setPersistence(this.state.fb.auth, App.Firebase.browserLocalPersistence);
 
-                            this.state.appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+                            // Get appId from the config we loaded
+                            if (typeof window.firebaseConfig !== 'undefined' && window.firebaseConfig.appId) {
+                                this.state.appId = window.firebaseConfig.appId;
+                            } else if (typeof __app_id !== 'undefined') {
+                                this.state.appId = __app_id;
+                            } else {
+                                this.state.appId = 'default-app-id';
+                            }
+                            
                         } catch (e) {
-                            console.error("Firebase config error:", e);
-                            console.warn("Firebase config missing or invalid. App will run in local-only mode.");
+                            console.error("Firebase state initialization error:", e);
+                            console.warn("Firebase services (Firestore/Auth) could not be set. App will run in local-only mode.");
                             this.state.storageDriver = 'local';
-                            App.dom.settings.syncSection.style.display = 'none';
+                            if(App.dom.settings.syncSection) App.dom.settings.syncSection.style.display = 'none';
                         }
                     } else {
                         console.warn("Firebase modules not loaded. App will run in local-only mode.");
