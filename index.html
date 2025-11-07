@@ -6,11 +6,11 @@
     <title>Tōku Hauora</title>
     <!-- 
         FIX (per Grok): Corrected 'Haura' to 'Hauora' in the icon path.
-        Using the 'Toku_Hauora.png' from the last Part 1 file.
+        And corrected the other icon path.
     -->
-    <link rel="apple-touch-icon" href="https://loneworkernelson-web.github.io/ClergyWB/Toku_Hauora.png">
+    <link rel="apple-touch-icon" href="https://loneworkernelson-web.github.io/ClergyWB/Toku%20Hauora.png">
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#4F46E5">
+    <meta name="theme-color" content="#4a90e2">
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -213,13 +213,16 @@
         
         /* General Modal */
         .modal {
-            @apply fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center p-4 transition-opacity duration-300 opacity-0;
+            @apply fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center p-4 transition-opacity duration-300 opacity-0 pointer-events-none;
         }
         .modal.visible {
-            @apply opacity-100;
+            @apply opacity-100 pointer-events-auto;
         }
         .modal-content {
-            @apply bg-white rounded-lg shadow-xl p-6 w-full max-w-md;
+            @apply bg-white rounded-lg shadow-xl p-6 w-full max-w-md transform scale-95 transition-transform;
+        }
+        .modal.visible .modal-content {
+            @apply scale-100;
         }
         .modal-header {
             @apply flex justify-between items-center mb-4;
@@ -230,8 +233,10 @@
 
         /* Alert Box */
         .alert-box {
-            @apply fixed top-5 left-1/2 -translate-x-1/2 z-[1001] py-3 px-6 rounded-lg shadow-lg text-white font-semibold transition-opacity duration-300;
-            display: none;
+            @apply fixed top-5 left-1/2 -translate-x-1/2 z-[1001] py-3 px-6 rounded-lg shadow-lg text-white font-semibold transition-all duration-300 opacity-0 -translate-y-10;
+        }
+        .alert-box.visible {
+            @apply opacity-100 translate-y-0;
         }
         .alert-box.info {
             @apply bg-blue-500;
@@ -283,7 +288,7 @@
         /* Splash Screen */
         #splashScreen {
             /* FIX (per Grok): Use z-50 */
-            @apply fixed inset-0 z-50 bg-white flex flex-col items-center justify-center;
+            @apply fixed inset-0 z-50 bg-white flex flex-col items-center justify-center transition-opacity duration-300;
         }
         .spinner {
             @apply w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin;
@@ -297,8 +302,8 @@
         /* Shake animation for PIN error */
         @keyframes shake {
             0%, 100% { transform: translateX(0); }
-            10%, 30%, 50%, 70%, 90% { transform: translateX(-10px); }
-            20%, 40%, 60%, 80% { transform: translateX(10px); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+            20%, 40%, 60%, 80% { transform: translateX(5px); }
         }
         .animate-shake {
             animation: shake 0.5s ease-in-out;
@@ -348,7 +353,7 @@
                 <!-- 
                     FIX (per Grok): Replaced malformed SVG path with a standard backspace icon.
                 -->
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8 mx-auto">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8 mx-auto pointer-events-none">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 9.75L14.25 12m0 0l2.25 2.25M14.25 12l2.25-2.25M14.25 12L12 14.25m-2.58 4.92l-6.375-6.375a1.125 1.125 0 010-1.59L9.42 4.83c.39-.39 1.023-.39 1.414 0l4.242 4.242a.375.375 0 00.53 0l4.242-4.242c.39-.39 1.023-.39 1.414 0l1.59 1.59a1.125 1.125 0 010 1.59l-6.375 6.375a.675.675 0 01-.954 0z" />
                 </svg>
             </button>
@@ -424,7 +429,7 @@
             <div class="w-20 h-20"></div> <!-- Placeholder -->
             <button class="numpad-btn" data-key="0">0</button>
             <button id="onboardingNumpadDelete" class="numpad-btn !bg-transparent !shadow-none !text-gray-700">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8 mx-auto">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8 mx-auto pointer-events-none">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 9.75L14.25 12m0 0l2.25 2.25M14.25 12l2.25-2.25M14.25 12L12 14.25m-2.58 4.92l-6.375-6.375a1.125 1.125 0 010-1.59L9.42 4.83c.39-.39 1.023-.39 1.414 0l4.242 4.242a.375.375 0 00.53 0l4.242-4.242c.39-.39 1.023-.39 1.414 0l1.59 1.59a1.125 1.125 0 010 1.59l-6.375 6.375a.675.675 0 01-.954 0z" />
                 </svg>
             </button>
@@ -853,7 +858,8 @@
     ================================================================
     -->
     <script type="module">
-        // This is the combined and fixed JavaScript for the entire application.
+        // This is where all the JavaScript modules will be merged.
+        // I will send this in the next messages.
 
         // --- App Namespace ---
         // We define the main App object and will merge all modules into it.
