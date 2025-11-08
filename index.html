@@ -5,237 +5,181 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tōku Hauora</title>
     
-    <!-- FIX: Corrected favicon links -->
+    <!-- FIX: Corrected favicon links per your 404 error -->
     <link rel="icon" type="image/png" href="https://loneworkernelson-web.github.io/ClergyWB/Toku_Hauora.png">
     <link rel="shortcut icon" href="https://loneworkernelson-web.github.io/ClergyWB/favicon.ico">
     <link rel="apple-touch-icon" href="https://loneworkernelson-web.github.io/ClergyWB/Toku_Hauora.png">
-    
+
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#4F46E5"> <!-- Indigo 600 -->
-    
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- UI-FIX: Load Google Font "Inter" -->
+
+    <!-- UI-FIX: Load Inter font -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     
-    <!-- Config.js (Loaded first) -->
-    <script src="config.js"></script>
+    <!-- Tailwind CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
     
-    <!-- CryptoJS for Encryption -->
-    <!-- FIX: Load all necessary crypto components -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/core.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/enc-base64.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/pbkdf2.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/aes.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/pad-nopad.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/mode-gcm.min.js"></script>
+    <!-- Config file (for Firebase credentials) -->
+    <script src="config.js"></script>
+
+    <!-- Chart.js for Dashboard -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- CryptoJS (Full bundle) -->
+    <!-- FIX: Use the full, bundled crypto-js file -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
 
     <!-- Dexie.js (IndexedDB Wrapper) -->
     <script src="https://unpkg.com/dexie@3/dist/dexie.js"></script>
 
-    <!-- Chart.js for Dashboard -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    
     <!-- Custom CSS -->
-    <!-- FIX: Add type="text/tailwindcss" to enable @apply directives with the CDN -->
+    <!-- FIX: Add type="text/tailwindcss" to enable @apply directives -->
     <style type="text/tailwindcss">
-        /* UI-FIX: Remove old :root variables. We will use Tailwind's `indigo` */
+        /* UI-FIX: Set Inter as the default font */
+        html {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            overscroll-behavior: none;
+        }
         
         body {
-            /* UI-FIX: Use "Inter" font */
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            color: #374151; /* Tailwind gray-700 */
-            overscroll-behavior: none;
+            @apply text-gray-700;
         }
 
         .view {
-            display: none;
-            height: 100vh;
-            height: 100dvh; /* Dynamic viewport height */
-            overflow-y: auto;
-            padding-bottom: 90px; /* Space for bottom nav */
-            /* UI-FIX: Add more "air" to views */
-            @apply p-6;
+            @apply hidden h-[100dvh] overflow-y-auto pt-6 pb-24 px-5;
         }
         
-        #welcomeView {
-            display: block;
-        }
+        /* Default view */
+        #welcomeView { @apply block; }
 
         /* Bottom Nav */
         .bottom-nav {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            height: 70px;
-            z-index: 100;
-            border-top: 1px solid #e5e7eb; /* gray-200 */
-            background-color: white;
-            display: flex;
-            justify-content: space-around;
-            padding-top: 8px;
-            padding-bottom: env(safe-area-inset-bottom);
+            @apply fixed bottom-0 left-0 right-0 z-[100] h-20 border-t border-gray-200 bg-white/95 backdrop-blur-sm;
+            @apply flex justify-around items-start pt-3 pb-[env(safe-area-inset-bottom)];
         }
         
         .nav-link {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            color: #6b7280; /* gray-500 */
-            font-size: 0.7rem;
-            flex-grow: 1;
-            /* UI-FIX: Modern pill design */
-            @apply relative rounded-full transition-colors duration-200;
-            width: 56px;
-            height: 56px;
+            @apply flex flex-col items-center justify-center text-xs font-medium text-gray-500 rounded-lg w-16 h-12;
         }
+        /* UI-FIX: Modern "pill" style for active link */
         .nav-link.active {
-            color: #4338CA; /* indigo-700 */
-        }
-        /* UI-FIX: Add active "pill" background */
-        .nav-link.active::before {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 56px;
-            height: 32px;
-            background-color: #EEF2FF; /* indigo-50 */
-            border-radius: 99px;
-            z-index: -1;
+            @apply text-indigo-600 bg-indigo-50;
         }
         .nav-link svg {
-            width: 28px;
-            height: 28px;
-            margin-bottom: 2px;
+            @apply w-6 h-6 mb-0.5;
         }
 
         /* Re-usable Card Component */
+        /* UI-FIX: Softer shadows, more rounded */
         .card {
-            /* UI-FIX: Softer shadow, more padding, larger radius */
-            @apply bg-white rounded-xl shadow-lg p-6 mb-5;
+            @apply bg-white rounded-xl shadow-lg shadow-gray-200/50 p-5 mb-5;
         }
         
         /* Re-usable Button Components */
         .btn {
-            /* UI-FIX: Add rounded-lg */
-            @apply inline-block font-semibold py-2 px-4 rounded-lg transition-transform transform active:scale-95 text-center;
+            @apply inline-flex items-center justify-center font-semibold py-2.5 px-5 rounded-lg transition-all duration-150;
+            @apply focus:outline-none focus:ring-2 focus:ring-offset-2;
         }
         .btn-primary {
-            /* UI-FIX: Use indigo */
-            @apply bg-indigo-600 text-white shadow-md hover:bg-indigo-700;
+            @apply bg-indigo-600 text-white shadow-sm hover:bg-indigo-700;
+            @apply focus:ring-indigo-500;
         }
         .btn-secondary {
-            @apply bg-gray-200 text-gray-800 hover:bg-gray-300;
+            @apply bg-gray-100 text-gray-700 hover:bg-gray-200;
+            @apply focus:ring-indigo-500;
         }
         .btn-danger {
-            @apply bg-red-600 text-white shadow-md hover:bg-red-700;
+            @apply bg-red-600 text-white shadow-sm hover:bg-red-700;
+            @apply focus:ring-red-500;
         }
         .btn-success {
-            @apply bg-green-600 text-white shadow-md hover:bg-green-700;
+            @apply bg-green-600 text-white shadow-sm hover:bg-green-700;
+            @apply focus:ring-green-500;
         }
         .btn-outline {
-            /* UI-FIX: Use indigo */
-            @apply bg-white text-indigo-600 border border-indigo-600 hover:bg-indigo-50;
+            @apply bg-white text-indigo-600 border border-indigo-300 hover:bg-indigo-50;
+            @apply focus:ring-indigo-500;
         }
         .btn-link {
-            /* UI-FIX: Use indigo */
-            @apply bg-transparent text-indigo-600 hover:underline;
+            @apply bg-transparent text-indigo-600 hover:underline p-1;
         }
         .btn-lg {
-            @apply py-3 px-6 text-lg;
+            @apply py-3 px-6 text-base;
         }
         .btn-sm {
-            @apply py-1 px-3 text-sm;
+            @apply py-2 px-3 text-sm;
         }
         .btn:disabled {
-            @apply bg-gray-300 text-gray-500 cursor-not-allowed opacity-70;
+            @apply bg-gray-200 text-gray-400 cursor-not-allowed opacity-80;
         }
 
         /* Welcome View Big Buttons */
+        /* UI-FIX: Redesigned as clean white cards */
         .welcome-btn {
-            /* UI-FIX: Redesign as white cards */
-            @apply w-full text-left p-5 rounded-xl shadow-lg mb-4 text-gray-800 font-semibold text-lg flex justify-between items-center transition-all bg-white;
+            @apply w-full text-left p-5 rounded-xl shadow-lg shadow-gray-200/50 mb-4 bg-white;
+            @apply flex justify-between items-center transition-all duration-150;
         }
         .welcome-btn:hover {
-            transform: translateY(-2px);
-            @apply shadow-xl;
+            @apply -translate-y-0.5 shadow-xl shadow-gray-300/50;
         }
-        .welcome-btn.complete {
-            /* UI-FIX: Add green border for completed */
-            @apply border-l-4 border-green-500;
+        .welcome-btn-content {
+            @apply flex flex-col;
         }
-        .check-mark {
-            /* UI-FIX: Use indigo for checkmark */
-            @apply text-xl font-bold text-indigo-600;
+        .welcome-btn-title {
+            @apply text-lg font-semibold text-gray-800;
         }
-        .welcome-arrow {
-            @apply text-2xl text-indigo-500;
+        .welcome-btn-status {
+            @apply text-sm text-gray-500;
+        }
+        .welcome-btn-icon {
+            @apply text-3xl text-gray-300;
+        }
+        .welcome-btn.complete .welcome-btn-icon {
+            @apply text-green-500;
         }
 
         /* Check-in Sliders */
         .hauora-slider {
             -webkit-appearance: none;
             appearance: none;
-            width: 100%;
-            height: 10px;
-            border-radius: 5px;
-            background: #e5e7eb; /* gray-200 */
-            outline: none;
-            opacity: 0.9;
-            transition: opacity .2s;
+            @apply w-full h-2 rounded-full bg-gray-200 outline-none opacity-90 transition-opacity;
         }
+        /* UI-FIX: Themed slider thumb */
         .hauora-slider::-webkit-slider-thumb {
             -webkit-appearance: none;
             appearance: none;
-            width: 24px;
-            height: 24px;
-            border-radius: 50%;
-            /* UI-FIX: Use indigo */
-            background: #4F46E5; /* indigo-600 */
-            cursor: pointer;
-            box-shadow: 0 0 5px rgba(0,0,0,0.2);
+            @apply w-6 h-6 rounded-full bg-indigo-600 cursor-pointer shadow-md;
         }
         .hauora-slider::-moz-range-thumb {
-            width: 24px;
-            height: 24px;
-            border-radius: 50%;
-            /* UI-FIX: Use indigo */
-            background: #4F46E5; /* indigo-600 */
-            cursor: pointer;
-            box-shadow: 0 0 5px rgba(0,0,0,0.2);
+            @apply w-6 h-6 rounded-full bg-indigo-600 cursor-pointer shadow-md;
         }
 
         /* Check-in Feeling Toggles */
+        /* UI-FIX: Softer, more modern toggles */
         .feeling-toggle {
             @apply border border-gray-300 rounded-full py-2 px-4 text-sm text-gray-700 cursor-pointer transition-colors;
         }
         .feeling-toggle.selected {
-            /* UI-FIX: Use indigo */
-            @apply bg-indigo-600 text-white border-indigo-600;
+            @apply bg-indigo-600 text-white border-indigo-600 font-medium;
         }
 
         /* --- Modals & Alerts --- */
         
         /* General Modal */
+        /* FIX: z-[101] to appear over nav bar. Added `display: none;` */
         .modal {
-            /* FIX: z-[101] to appear over nav (z-100) */
-            @apply fixed inset-0 z-[101] bg-black bg-opacity-50 flex items-center justify-center p-4 transition-opacity duration-300 opacity-0 pointer-events-none;
-            display: none; /* FIX: Add display:none by default */
+            @apply fixed inset-0 z-[101] bg-black bg-opacity-40 backdrop-blur-sm flex items-center justify-center p-4;
+            @apply transition-opacity duration-300 opacity-0;
+            display: none;
         }
         .modal.visible {
-            @apply opacity-100 pointer-events-auto;
-            display: flex; /* Make visible */
+            @apply opacity-100;
         }
         .modal-content {
-            /* UI-FIX: Larger radius */
-            @apply bg-white rounded-xl shadow-xl p-6 w-full max-w-md transform scale-95 transition-transform;
+            @apply bg-white rounded-xl shadow-xl p-6 w-full max-w-md;
+            @apply transform scale-95 transition-transform;
         }
         .modal.visible .modal-content {
             @apply scale-100;
@@ -244,77 +188,76 @@
             @apply flex justify-between items-center mb-4;
         }
         .modal-header .close-button {
-            @apply text-gray-400 hover:text-gray-600 text-3xl;
+            @apply text-gray-400 hover:text-gray-600 text-3xl font-light -mt-2;
         }
 
         /* Alert Box */
+        /* FIX: z-[101] to appear over nav bar. Added `display: none;` */
         .alert-box {
-            @apply fixed top-5 left-1/2 -translate-x-1/2 z-[1001] py-3 px-6 rounded-lg shadow-lg text-white font-semibold transition-all duration-300 opacity-0 -translate-y-10;
-            display: none; /* FIX: Add display:none by default */
+            @apply fixed top-5 left-1/2 -translate-x-1/2 z-[101] py-3 px-6 rounded-lg shadow-lg text-white font-semibold;
+            @apply transition-all duration-300 opacity-0 -translate-y-10;
+            display: none;
         }
         .alert-box.visible {
             @apply opacity-100 translate-y-0;
         }
-        .alert-box.info {
-            @apply bg-indigo-500;
-        }
-        .alert-box.success {
-            @apply bg-green-500;
-        }
-        .alert-box.error {
-            @apply bg-red-500;
-        }
+        .alert-box.info { @apply bg-indigo-500; }
+        .alert-box.success { @apply bg-green-500; }
+        .alert-box.error { @apply bg-red-500; }
 
         /* Lock Screen */
+        /* FIX: z-[101] to appear over nav bar */
         #lockScreen {
-            /* FIX: z-[101] to appear over nav */
-            @apply fixed inset-0 z-[101] bg-slate-100 flex-col items-center justify-center p-4;
+            @apply fixed inset-0 z-[101] bg-gray-100 flex-col items-center justify-center p-4;
             display: none; /* Controlled by JS */
         }
         .pin-dot {
             @apply w-4 h-4 rounded-full border-2 border-gray-400 mx-2 transition-colors;
         }
         .pin-dot.filled {
-            @apply bg-gray-600 border-gray-600;
+            @apply bg-gray-700 border-gray-700;
         }
         .numpad-btn {
-            @apply w-20 h-20 rounded-full text-3xl font-light bg-white shadow-md text-gray-800 transition-transform active:scale-90;
+            @apply w-20 h-20 rounded-full text-3xl font-light bg-white shadow-lg text-gray-800 transition-transform active:scale-90;
         }
         
         /* Onboarding Modal */
+        /* FIX: z-[101] to appear over nav bar */
         #onboardingModal {
-            /* FIX: z-[101] to appear over nav */
             @apply fixed inset-0 z-[101] bg-white p-6 flex-col;
             display: none; /* Hidden by default */
         }
         .onboarding-step {
-            display: none; /* Hidden by default */
+            @apply hidden; /* Hidden by default */
         }
         .onboarding-step:first-child {
-            display: block; /* Show first step */
+            @apply block; /* Show first step */
         }
         .indicator-dot {
-            @apply w-3 h-3 rounded-full bg-gray-300 mx-1;
+            @apply w-2.5 h-2.5 rounded-full bg-gray-300 mx-1;
         }
         .indicator-dot.active {
-            /* UI-FIX: Use indigo */
             @apply bg-indigo-600;
         }
         
         /* Splash Screen */
+        /* FIX: z-[101] to appear over nav bar */
         #splashScreen {
-            /* FIX: z-[101] to appear over nav */
             @apply fixed inset-0 z-[101] bg-white flex flex-col items-center justify-center transition-opacity duration-300;
         }
         .spinner {
-            /* UI-FIX: Use indigo */
-            @apply w-12 h-12 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin;
+            @apply w-10 h-10 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin;
         }
         
         /* History View */
+        /* UI-FIX: Softer border color */
         .history-entry {
-            /* UI-FIX: Use indigo */
-            @apply border-l-4 border-indigo-500 pl-4;
+            @apply border-l-4 border-indigo-300 pl-4;
+        }
+        
+        /* Resource Card */
+        .resource-card {
+            @apply flex flex-col;
         }
 
         /* Shake animation for PIN error */
@@ -326,22 +269,9 @@
         .animate-shake {
             animation: shake 0.5s ease-in-out;
         }
-        
-        /* UI-FIX: Input field styles */
-        .form-input, .form-textarea {
-            @apply w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent;
-        }
-        textarea.form-textarea {
-            @apply leading-relaxed;
-        }
-        
-        /* UI-FIX: Resource card style */
-        .resource-card {
-            @apply flex flex-col;
-        }
     </style>
 </head>
-<body class="bg-slate-50">
+<body class="bg-gray-50">
 
     <!-- 
     ================================================================
@@ -351,10 +281,15 @@
 
     <!-- --- Splash Screen (Visible on load) --- -->
     <div id="splashScreen">
-        <!-- UI-FIX: Use indigo -->
-        <h1 class="text-3xl font-bold text-indigo-600 mb-4">Tōku Hauora</h1>
+        <!-- SVG Logo -->
+        <svg class="w-20 h-20 text-indigo-600 mb-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2Z" fill="currentColor" fill-opacity="0.1"/>
+            <path d="M12 7C12.5523 7 13 7.44772 13 8V12C13 12.5523 12.5523 13 12 13C11.4477 13 11 12.5523 11 12V8C11 7.44772 11.4477 7 12 7Z" fill="currentColor"/>
+            <path d="M12 17C12.5523 17 13 16.5523 13 16C13 15.4477 12.5523 15 12 15C11.4477 15 11 15.4477 11 16C11 16.5523 11.4477 17 12 17Z" fill="currentColor"/>
+            <path fill-rule="evenodd" clip-rule="evenodd" d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22ZM12 20C16.4183 20 20 16.4183 20 12C20 7.58172 16.4183 4 12 4C7.58172 4 4 7.58172 4 12C4 16.4183 7.58172 20 12 20Z" fill="currentColor"/>
+        </svg>
         <div class="spinner"></div>
-        <p id="splashMessage" class="text-gray-600 mt-4">Loading...</p>
+        <p id="splashMessage" class="text-gray-500 mt-4">Loading...</p>
     </div>
     
     <!-- --- Lock Screen --- -->
@@ -369,7 +304,7 @@
             <div class="pin-dot"></div>
             <div class="pin-dot"></div>
         </div>
-        <div id="numpad" class="grid grid-cols-3 gap-6">
+        <div id="numpad" class="grid grid-cols-3 gap-6 max-w-xs mx-auto">
             <button class="numpad-btn" data-key="1">1</button>
             <button class="numpad-btn" data-key="2">2</button>
             <button class="numpad-btn" data-key="3">3</button>
@@ -379,21 +314,21 @@
             <button class="numpad-btn" data-key="7">7</button>
             <button class="numpad-btn" data-key="8">8</button>
             <button class="numpad-btn" data-key="9">9</button>
-            <!-- UI-FIX: Use indigo -->
             <button id="lockScreenForgotBtn" class="numpad-btn !bg-transparent !shadow-none !text-sm !font-semibold !text-indigo-600">Forgot?</button>
             <button class="numpad-btn" data-key="0">0</button>
             <button id="numpadDelete" class="numpad-btn !bg-transparent !shadow-none !text-gray-700">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8 mx-auto pointer-events-none">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 9.75L14.25 12m0 0l2.25 2.25M14.25 12l2.25-2.25M14.25 12L12 14.25m-2.58 4.92l-6.375-6.375a1.125 1.125 0 010-1.59L9.42 4.83c.39-.39 1.023-.39 1.414 0l4.242 4.242a.375.375 0 00.53 0l4.242-4.242c.39-.39 1.023-.39 1.414 0l1.59 1.59a1.125 1.125 0 010 1.59l-6.375 6.375a.675.675 0 01-.954 0z" />
+                <!-- FIX (per Grok): Replaced malformed SVG path with a standard backspace icon. -->
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-8 h-8 mx-auto pointer-events-none">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 9.75L14.25 12m0 0l2.25 2.25M14.25 12l2.25-2.25M14.25 12L12 14.25m-2.58 4.92l-6.375-6.375a1.125 1.125 0 010-1.59L9.42 4.83c.39-.39 1.023-.39 1.414 0l4.242 4.242a.375.375 0 00.53 0l4.242-4.242c.39-.39 1.023-.39 1.414 0l1.59 1.59a1.125 1.125 0 010 1.59l-6.375 6.375a.675.675 0 01-.954 0z" />
                 </svg>
             </button>
         </div>
     </div>
     
     <!-- --- Login View (for initial Firebase auth) --- -->
-    <div id="loginView" class="view fixed inset-0 z-[101] bg-slate-50 flex items-center justify-center" style="display: none;">
-        <div class="card w-full max-w-sm text-center">
-            <!-- UI-FIX: Use indigo -->
+    <!-- FIX (per Grok): Use z-50. And FIX: add style="display: none;" to hide on load. -->
+    <div id="loginView" class="view fixed inset-0 z-50 bg-gray-50 flex items-center justify-center p-4" style="display: none;">
+        <div class="card w-full max-w-sm text-center !shadow-2xl">
             <h1 class="text-3xl font-bold text-indigo-600 mb-4">Tōku Hauora</h1>
             <p class="text-gray-600 mb-6">Sign in to sync your encrypted data across devices.</p>
             <button id="googleSignInBtn" class="btn btn-primary w-full mb-4 flex items-center justify-center gap-2">
@@ -411,11 +346,10 @@
             
             <!-- Step 1 -->
             <div class="onboarding-step text-center">
-                <!-- UI-FIX: Use indigo -->
                 <h1 class="text-3xl font-bold text-indigo-600 mb-4">Welcome to Tōku Hauora</h1>
                 <p class="text-lg text-gray-700 mb-8">Your private, encrypted space for health and reflection.</p>
-                <!-- FIX: Use real image -->
-                <img src="https://loneworkernelson-web.github.io/ClergyWB/Toku_Hauora.png" alt="Tōku Hauora App Logo" class="w-full max-w-xs mx-auto rounded-lg shadow-md mb-8">
+                <!-- FIX: Replaced placeholder with the app's actual logo -->
+                <img src="https://loneworkernelson-web.github.io/ClergyWB/Toku_Hauora.png" alt="Toku Hauora App Logo" class="w-full max-w-xs mx-auto rounded-lg shadow-md mb-8">
                 <p class="text-gray-600">Let's quickly set up your app.</p>
             </div>
             
@@ -425,7 +359,6 @@
                 <p class="text-gray-600 mb-6">Your data is always encrypted. This 4-digit PIN is the **only** key. It is **never** stored online.</p>
                 <p class="text-red-600 font-semibold mb-6">If you forget this PIN, your data cannot be recovered.</p>
                 <div id="onboardingPinContainer">
-                    <!-- UI-FIX: Use indigo -->
                     <p id="onboardingPinPrompt" class="text-lg font-medium text-center mb-4 text-indigo-600">Enter a 4-digit PIN</p>
                     <div id="onboardingPinDisplay" class="flex justify-center mb-8">
                         <div class="pin-dot"></div>
@@ -441,14 +374,14 @@
             <div class="onboarding-step text-center">
                 <h2 class="text-2xl font-semibold mb-4 text-gray-800">You're All Set!</h2>
                 <p class="text-gray-600 mb-8">You can now start your journey of reflection and hauora.</p>
-                <!-- FIX: Use real image -->
-                <img src="https://loneworkernelson-web.github.io/ClergyWB/Toku_Hauora.png" alt="Tōku Hauora App Logo" class="w-full max-w-xs mx-auto rounded-lg shadow-md mb-8">
+                <!-- FIX: Replaced placeholder with the app's actual logo -->
+                <img src="https://loneworkernelson-web.github.io/ClergyWB/Toku_Hauora.png" alt="Toku Hauora App Logo" class="w-full max-w-xs mx-auto rounded-lg shadow-md mb-8">
             </div>
 
         </div>
         
         <!-- Onboarding Numpad (for Step 2) -->
-        <div id="onboardingNumpad" class="grid grid-cols-3 gap-6 mb-4" style="display: none;">
+        <div id="onboardingNumpad" class="grid grid-cols-3 gap-6 mb-4 max-w-xs mx-auto" style="display: none;">
             <button class="numpad-btn" data-key="1">1</button>
             <button class="numpad-btn" data-key="2">2</button>
             <button class="numpad-btn" data-key="3">3</button>
@@ -461,7 +394,7 @@
             <div class="w-20 h-20"></div> <!-- Placeholder -->
             <button class="numpad-btn" data-key="0">0</button>
             <button id="onboardingNumpadDelete" class="numpad-btn !bg-transparent !shadow-none !text-gray-700">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-8 h-8 mx-auto pointer-events-none">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-8 h-8 mx-auto">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 9.75L14.25 12m0 0l2.25 2.25M14.25 12l2.25-2.25M14.25 12L12 14.25m-2.58 4.92l-6.375-6.375a1.125 1.125 0 010-1.59L9.42 4.83c.39-.39 1.023-.39 1.414 0l4.242 4.242a.375.375 0 00.53 0l4.242-4.242c.39-.39 1.023-.39 1.414 0l1.59 1.59a1.125 1.125 0 010 1.59l-6.375 6.375a.675.675 0 01-.954 0z" />
                 </svg>
             </button>
@@ -484,38 +417,49 @@
     <main id="appWrapper" class="relative">
 
         <!-- --- Welcome View (Home) --- -->
+        <!-- UI-FIX: Added more padding and spacing -->
         <div id="welcomeView" class="view">
-            <h1 class="text-4xl font-bold mb-1">Kia ora,</h1>
-            <p class="text-xl text-gray-600 mb-8">How are you feeling today?</p>
+            <h1 class="text-4xl font-bold mb-1 text-gray-800">Kia ora,</h1>
+            <p class="text-xl text-gray-500 mb-8">How are you feeling today?</p>
             
             <div class="card">
-                <h2 class="text-xl font-semibold mb-2">Today's Dashboard</h2>
+                <h2 class="text-xl font-semibold mb-4 text-gray-800">Today's Dashboard</h2>
                 <div id="dashboardPreview" class="text-center text-gray-500 py-4">
                     <p>Complete a check-in to see your dashboard.</p>
                 </div>
                 <canvas id="hauoraChart" width="400" height="200" style="display: none;"></canvas>
             </div>
             
+            <!-- UI-FIX: Use new welcome-btn design -->
             <button id="welcomeCheckinBtn" class="welcome-btn">
-                <span>Daily Check-in</span>
-                <span class="welcome-arrow">&rarr;</span>
+                <span class="welcome-btn-content">
+                    <span class="welcome-btn-title">Daily Check-in</span>
+                    <span class="welcome-btn-status">Tap to begin</span>
+                </span>
+                <span class="welcome-btn-icon">&rarr;</span>
             </button>
             
             <button id="welcomeGratitudeBtn" class="welcome-btn">
-                <span>Gratitude Journal</span>
-                <span class="welcome-arrow">&rarr;</span>
+                <span class="welcome-btn-content">
+                    <span class="welcome-btn-title">Gratitude Journal</span>
+                    <span class="welcome-btn-status">Tap to begin</span>
+                </span>
+                <span class="welcome-btn-icon">&rarr;</span>
             </button>
             
             <button id="welcomeSabbathBtn" class="welcome-btn">
-                <span>Sabbath Reflection</span>
-                <span class="welcome-arrow">&rarr;</span>
+                <span class="welcome-btn-content">
+                    <span class="welcome-btn-title">Sabbath Reflection</span>
+                    <span class="welcome-btn-status">Tap to begin</span>
+                </span>
+                <span class="welcome-btn-icon">&rarr;</span>
             </button>
         </div>
 
         <!-- --- Daily Check-in View --- -->
         <div id="checkinView" class="view">
-            <button class="btn-back btn btn-link !p-0 mb-2">&larr; Back</button>
-            <h1 class="text-3xl font-bold mb-4">Daily Check-in</h1>
+            <button class="btn-back btn btn-link !p-0 mb-2">&larr; Back to Home</button>
+            <h1 class="text-3xl font-bold mb-6 text-gray-800">Daily Check-in</h1>
             
             <form id="checkinForm">
                 <div class="card">
@@ -530,13 +474,13 @@
                     <h2 class="text-xl font-semibold mb-4">Tōku Hauora</h2>
                     
                     <label for="slider-physical" class="block font-medium mb-1">Taha Tinana (Physical)</label>
-                    <input type="range" id="slider-physical" class="hauora-slider mb-4" min="1" max="10" value="5">
+                    <input type="range" id="slider-physical" class="hauora-slider mb-5" min="1" max="10" value="5">
                     
                     <label for="slider-mental" class="block font-medium mb-1">Taha Hinengaro (Mental)</label>
-                    <input type="range" id="slider-mental" class="hauora-slider mb-4" min="1" max="10" value="5">
+                    <input type="range" id="slider-mental" class="hauora-slider mb-5" min="1" max="10" value="5">
                     
                     <label for="slider-social" class="block font-medium mb-1">Taha Whānau (Social)</label>
-                    <input type="range" id="slider-social" class="hauora-slider mb-4" min="1" max="10" value="5">
+                    <input type="range" id="slider-social" class="hauora-slider mb-5" min="1" max="10" value="5">
                     
                     <label for="slider-spiritual" class="block font-medium mb-1">Taha Wairua (Spiritual)</label>
                     <input type="range" id="slider-spiritual" class="hauora-slider mb-4" min="1" max="10" value="5">
@@ -545,15 +489,15 @@
                 <div class="card">
                     <label for="checkinNote" class="block text-xl font-semibold mb-2">Today's Note</label>
                     <p class="text-sm text-gray-500 mb-4">A private space for any thoughts.</p>
-                    <textarea id="checkinNote" rows="4" class="form-textarea"></textarea>
+                    <textarea id="checkinNote" rows="4" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"></textarea>
                 </div>
                 
                 <button type="submit" class="btn btn-primary btn-lg w-full">Save Check-in</button>
             </form>
             
+            <!-- Burnout Check Prompt -->
+            <!-- FIX (per Grok): Replaced style="display:none" with "hidden" class -->
             <button id="finishCheckinBtn" class="btn btn-success btn-lg w-full mt-4 hidden">Finish Check-in</button>
-            
-            <!-- Burnout Prompt Modal -->
             <div id="burnoutPromptModal" class="modal">
                 <div class="modal-content">
                     <h2 class="text-xl font-semibold mb-4">Check-in Complete</h2>
@@ -571,6 +515,7 @@
                 <div class="modal-content !max-w-3xl h-[90vh]">
                     <div class="modal-header">
                         <h2 class="text-xl font-semibold">Burnout Self-Check</h2>
+                        <!-- FIX (per Grok): Removed invalid 'class_commented_out' attribute -->
                         <button id="closeBurnoutModalBtn" class="close-button">&times;</button>
                     </div>
                     <div class="h-[calc(80vh-100px)] overflow-y-auto pr-2">
@@ -608,22 +553,22 @@
 
         <!-- --- Gratitude Journal View --- -->
         <div id="gratitudeView" class="view">
-            <button class="btn-back btn btn-link !p-0 mb-2">&larr; Back</button>
-            <h1 class="text-3xl font-bold mb-4">Gratitude Journal</h1>
+            <button class="btn-back btn btn-link !p-0 mb-2">&larr; Back to Home</button>
+            <h1 class="text-3xl font-bold mb-6 text-gray-800">Gratitude Journal</h1>
             
             <form id="gratitudeForm">
                 <div class="card">
                     <h2 class="text-xl font-semibold mb-2">Today I am grateful for...</h2>
                     <p class="text-sm text-gray-500 mb-4">List three things, big or small.</p>
-                    <input type="text" id="gratitudeItem1" class="form-input mb-3" placeholder="1.">
-                    <input type="text" id="gratitudeItem2" class="form-input mb-3" placeholder="2.">
-                    <input type="text" id="gratitudeItem3" class="form-input" placeholder="3.">
+                    <input type="text" id="gratitudeItem1" class="w-full p-3 border border-gray-300 rounded-lg mb-3 focus:ring-2 focus:ring-indigo-500 focus:border-transparent" placeholder="1.">
+                    <input type="text" id="gratitudeItem2" class="w-full p-3 border border-gray-300 rounded-lg mb-3 focus:ring-2 focus:ring-indigo-500 focus:border-transparent" placeholder="2.">
+                    <input type="text" id="gratitudeItem3" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent" placeholder="3.">
                 </div>
                 
                 <div class="card">
                     <label for="gratitudeNote" class="block text-xl font-semibold mb-2">Reflection</label>
                     <p class="text-sm text-gray-500 mb-4">Any extra thoughts on why you're grateful today.</p>
-                    <textarea id="gratitudeNote" rows="4" class="form-textarea"></textarea>
+                    <textarea id="gratitudeNote" rows="4" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"></textarea>
                 </div>
                 
                 <button type="submit" class="btn btn-primary btn-lg w-full">Save Gratitude</button>
@@ -632,20 +577,20 @@
 
         <!-- --- Sabbath Reflection View --- -->
         <div id="sabbathView" class="view">
-            <button class="btn-back btn btn-link !p-0 mb-2">&larr; Back</button>
-            <h1 class="text-3xl font-bold mb-4">Sabbath Reflection</h1>
+            <button class="btn-back btn btn-link !p-0 mb-2">&larr; Back to Home</button>
+            <h1 class="text-3xl font-bold mb-6 text-gray-800">Sabbath Reflection</h1>
             
             <form id="sabbathForm">
                 <div class="card">
                     <label for="sabbathNote" class="block text-xl font-semibold mb-2">Sabbath Practice</label>
                     <p class="text-sm text-gray-500 mb-4">How did you practice Sabbath today? (e.g., rest, worship, nature, family time)</p>
-                    <textarea id="sabbathNote" rows="3" class="form-textarea"></textarea>
+                    <textarea id="sabbathNote" rows="3" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"></textarea>
                 </div>
                 
                 <div class="card">
                     <label for="sabbathReflection" class="block text-xl font-semibold mb-2">Reflection</label>
                     <p class="text-sm text-gray-500 mb-4">How did this time of rest and connection impact you?</p>
-                    <textarea id="sabbathReflection" rows="5" class="form-textarea"></textarea>
+                    <textarea id="sabbathReflection" rows="5" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"></textarea>
                 </div>
                 
                 <button type="submit" class="btn btn-primary btn-lg w-full">Save Reflection</button>
@@ -654,7 +599,7 @@
         
         <!-- --- History View --- -->
         <div id="historyView" class="view">
-            <h1 class="text-3xl font-bold mb-4">My History</h1>
+            <h1 class="text-3xl font-bold mb-6 text-gray-800">My History</h1>
             <div id="historyContainer" class="space-y-6">
                 <!-- History entries will be injected here by JS -->
             </div>
@@ -662,12 +607,12 @@
 
         <!-- --- Rule of Life View --- -->
         <div id="ruleView" class="view">
-            <h1 class="text-3xl font-bold mb-4">Rule of Life</h1>
+            <h1 class="text-3xl font-bold mb-6 text-gray-800">Rule of Life</h1>
             
-            <div class="flex border-b mb-4">
-                <!-- UI-FIX: Use indigo -->
-                <button id="ruleTabEdit" class="flex-1 py-2 text-center font-semibold border-b-2 border-indigo-600 text-indigo-600">Edit</button>
-                <button id="ruleTabReflect" class="flex-1 py-2 text-center font-semibold text-gray-500">Reflect</button>
+            <!-- UI-FIX: Modern tabs -->
+            <div class="flex border-b border-gray-200 mb-6">
+                <button id="ruleTabEdit" class="flex-1 py-3 text-center font-semibold border-b-2 border-indigo-600 text-indigo-600">Edit</button>
+                <button id="ruleTabReflect" class="flex-1 py-3 text-center font-semibold text-gray-500 border-b-2 border-transparent hover:text-gray-700">Reflect</button>
             </div>
             
             <!-- Edit Tab -->
@@ -676,22 +621,22 @@
                     <div class="card">
                         <label for="ruleVision" class="block text-xl font-semibold mb-2">My Vision</label>
                         <p class="text-sm text-gray-500 mb-4">What is your core calling or purpose? (e.g., "To love God and neighbor")</p>
-                        <textarea id="ruleVision" rows="3" class="form-textarea"></textarea>
+                        <textarea id="ruleVision" rows="3" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"></textarea>
                     </div>
                     <div class="card">
                         <label for="ruleCommitments" class="block text-xl font-semibold mb-2">Commitments</label>
                         <p class="text-sm text-gray-500 mb-4">What are your key roles and relationships? (e.g., "Partner, Parent, Pastor, Friend")</p>
-                        <textarea id="ruleCommitments" rows="3" class="form-textarea"></textarea>
+                        <textarea id="ruleCommitments" rows="3" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"></textarea>
                     </div>
                     <div class="card">
                         <label for="rulePractices" class="block text-xl font-semibold mb-2">Practices</label>
                         <p class="text-sm text-gray-500 mb-4">What regular rhythms support your vision? (e.g., "Daily prayer, weekly Sabbath, monthly retreat")</p>
-                        <textarea id="rulePractices" rows="3" class="form-textarea"></textarea>
+                        <textarea id="rulePractices" rows="3" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"></textarea>
                     </div>
                     <div class="card">
                         <label for="ruleCommunity" class="block text-xl font-semibold mb-2">Community</label>
                         <p class="text-sm text-gray-500 mb-4">Who keeps you accountable? (e.g., "My spiritual director, small group")</p>
-                        <textarea id="ruleCommunity" rows="3" class="form-textarea"></textarea>
+                        <textarea id="ruleCommunity" rows="3" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"></textarea>
                     </div>
                     <button type="submit" class="btn btn-primary btn-lg w-full">Save Rule of Life</button>
                 </form>
@@ -701,26 +646,26 @@
             <div id="ruleReflectContent" style="display: none;">
                 <div class="card">
                     <h2 class="text-xl font-semibold mb-2">My Vision</h2>
-                    <p id="reflectVision" class="text-gray-700 whitespace-pre-wrap">...</p>
+                    <p id="reflectVision" class="text-gray-700 whitespace-pre-wrap leading-relaxed">...</p>
                 </div>
                 <div class="card">
                     <h2 class="text-xl font-semibold mb-2">Commitments</h2>
-                    <p id="reflectCommitments" class="text-gray-700 whitespace-pre-wrap">...</p>
+                    <p id="reflectCommitments" class="text-gray-700 whitespace-pre-wrap leading-relaxed">...</p>
                 </div>
                 <div class="card">
                     <h2 class="text-xl font-semibold mb-2">Practices</h2>
-                    <p id="reflectPractices" class="text-gray-700 whitespace-pre-wrap">...</p>
+                    <p id="reflectPractices" class="text-gray-700 whitespace-pre-wrap leading-relaxed">...</p>
                 </div>
                 <div class="card">
                     <h2 class="text-xl font-semibold mb-2">Community</h2>
-                    <p id="reflectCommunity" class="text-gray-700 whitespace-pre-wrap">...</p>
+                    <p id="reflectCommunity" class="text-gray-700 whitespace-pre-wrap leading-relaxed">...</p>
                 </div>
                 
                 <div class="card">
                     <form id="ruleReflectionForm">
                         <label for="ruleReflection" class="block text-xl font-semibold mb-2">Weekly Reflection</label>
                         <p class="text-sm text-gray-500 mb-4">How have you lived by this rule in the past week?</p>
-                        <textarea id="ruleReflection" rows="4" class="form-textarea"></textarea>
+                        <textarea id="ruleReflection" rows="4" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"></textarea>
                         <button type="submit" class="btn btn-secondary w-full mt-4">Save Reflection to History</button>
                     </form>
                 </div>
@@ -730,18 +675,18 @@
         
         <!-- --- Resources View --- -->
         <div id="resourcesView" class="view">
-            <div class="flex justify-between items-center mb-4">
-                <h1 class="text-3xl font-bold">Resources</h1>
+            <div class="flex justify-between items-center mb-6">
+                <h1 class="text-3xl font-bold text-gray-800">Resources</h1>
                 <button id="addResourceBtn" class="btn btn-primary btn-sm">Add New</button>
             </div>
-            <div id="resourceContainer" class="space-y-4">
+            <div id="resourceContainer" class="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <!-- Resources will be injected here by JS -->
             </div>
         </div>
 
         <!-- --- Settings View --- -->
         <div id="settingsView" class="view space-y-6">
-            <h1 class="text-3xl font-bold mb-4">Settings</h1>
+            <h1 class="text-3xl font-bold mb-4 text-gray-800">Settings</h1>
             
             <!-- Account Sync Card -->
             <div id="syncSection" class="card">
@@ -778,7 +723,7 @@
             <div class="card">
                 <h2 class="text-xl font-semibold mb-4">Security</h2>
                 <button id="changePinBtn" class="btn btn-secondary w-full mb-3">Change PIN</button>
-                <button id="dangerZoneBtn" class="btn btn-outline !border-red-500 !text-red-500 w-full">Danger Zone</button>
+                <button id="dangerZoneBtn" class="btn btn-outline !border-red-500 !text-red-500 w-full hover:!bg-red-50">Danger Zone</button>
             </div>
             
             <!-- Danger Zone Modal -->
@@ -833,15 +778,15 @@
                 <input type="hidden" id="resourceId">
                 <div class="mb-4">
                     <label for="resourceTitle" class="block font-medium mb-1">Title</label>
-                    <input type="text" id="resourceTitle" class="form-input" required>
+                    <input type="text" id="resourceTitle" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent" required>
                 </div>
                 <div class="mb-4">
                     <label for="resourceLink" class="block font-medium mb-1">Link (URL)</label>
-                    <input type="url" id="resourceLink" class="form-input" placeholder="https://..." required>
+                    <input type="url" id="resourceLink" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent" placeholder="https://..." required>
                 </div>
                 <div class="mb-4">
                     <label for="resourceDescription" class="block font-medium mb-1">Description</label>
-                    <textarea id="resourceDescription" rows="3" class="form-textarea"></textarea>
+                    <textarea id="resourceDescription" rows="3" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"></textarea>
                 </div>
                 <div class="flex justify-between gap-3">
                     <button type="button" id="resourceDeleteBtn" class="btn btn-danger">Delete</button>
@@ -859,62 +804,74 @@
     -->
     <nav class="bottom-nav">
         <a href="#" class="nav-link active" data-view="welcomeView">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" /></svg>
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" /></svg>
             <span>Home</span>
         </a>
         <a href="#" class="nav-link" data-view="historyView">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18c-2.305 0-4.408.867-6 2.292m0-14.25v14.25" /></svg>
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18c-2.305 0-4.408.867-6 2.292m0-14.25v14.25" /></svg>
             <span>History</span>
         </a>
         <a href="#" class="nav-link" data-view="ruleView">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
             <span>Rule</span>
         </a>
         <a href="#" class="nav-link" data-view="resourcesView">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 18.75a6 6 0 006-6v-1.5m-6 7.5a6 6 0 01-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 01-3-3V4.5a3 3 0 116 0v8.25a3 3 0 01-3 3z" /></svg>
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 18.75a6 6 0 006-6v-1.5m-6 7.5a6 6 0 01-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 01-3-3V4.5a3 3 0 116 0v8.25a3 3 0 01-3 3z" /></svg>
             <span>Resources</span>
         </a>
         <a href="#" class="nav-link" data-view="settingsView">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-1.003 1.11-1.226.55-.223 1.156-.223 1.706 0 .55.223 1.02.684 1.11-1.226M10.344 18.06c.09.542.56 1.003 1.11 1.226.55.223 1.156-.223 1.706 0 .55-.223 1.02-.684 1.11-1.226m-4.662-5.748c.09-.542.56-1.003 1.11-1.226.55-.223 1.156-.223 1.706 0 .55.223 1.02-.684 1.11-1.226M18 10.344c.09.542.56 1.003 1.11 1.226.55.223 1.156-.223 1.706 0 .55-.223 1.02-.684 1.11-1.226M10.344 6c.09-.542.56-1.003 1.11-1.226.55-.223 1.156-.223 1.706 0 .55.223 1.02-.684 1.11-1.226M6 10.344c.09.542.56 1.003 1.11 1.226.55.223 1.156-.223 1.706 0 .55.223 1.02-.684 1.11-1.226M12 6.75a2.25 2.25 0 100 4.5 2.25 2.25 0 000-4.5zM12 12.75a2.25 2.25 0 100 4.5 2.25 2.25 0 000-4.5z" /></svg>
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M10.34 15.84c-.678 0-1.25-.572-1.25-1.25s.572-1.25 1.25-1.25 1.25.572 1.25 1.25-.572 1.25-1.25 1.25zM10.34 10.34c-.678 0-1.25-.572-1.25-1.25s.572-1.25 1.25-1.25 1.25.572 1.25 1.25-.572 1.25-1.25 1.25zM10.34 4.84c-.678 0-1.25-.572-1.25-1.25s.572-1.25 1.25-1.25 1.25.572 1.25 1.25-.572 1.25-1.25 1.25zM15.84 15.84c-.678 0-1.25-.572-1.25-1.25s.572-1.25 1.25-1.25 1.25.572 1.25 1.25-.572 1.25-1.25 1.25zM15.84 10.34c-.678 0-1.25-.572-1.25-1.25s.572-1.25 1.25-1.25 1.25.572 1.25 1.25-.572 1.25-1.25 1.25zM15.84 4.84c-.678 0-1.25-.572-1.25-1.25s.572-1.25 1.25-1.25 1.25.572 1.25 1.25-.572 1.25-1.25 1.25zM21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
             <span>Settings</span>
         </a>
     </nav>
     
     <!-- 
     ================================================================
-    APP JAVASCRIPT
+    APP JAVASCRIPT (All Merged)
     ================================================================
     -->
     <script type="module">
         /*
         ================================================================
-        APP JAVASCRIPT - Complete & Merged
+        APP JAVASCRIPT (All Merged)
         ================================================================
         */
 
-        // --- Firebase Modules ---
-        // FIX: Load Firebase modules at the top, synchronously, before App init.
-        let AppFirebase = null;
+        // --- Firebase & App Namespace Init ---
+        // FIX: Moved all FB init logic here to prevent race conditions.
+        
+        window.App = window.App || {};
+        window.AppFirebase = window.AppFirebase || null;
+
         try {
-            const config = window.firebaseConfig || JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
-            
-            if (Object.keys(config).length > 0) {
-                if(window.firebaseConfig) console.log("Firebase config loaded from config.js");
-                console.log("Firebase config found, initializing...");
+            // FIX: Prioritize config.js, then __firebase_config
+            const envConfig = typeof __firebase_config !== 'undefined' ? __firebase_config : '{}';
+            const config = window.firebaseConfig || JSON.parse(envConfig);
+
+            if (config && Object.keys(config).length > 0) {
+                if (window.firebaseConfig) {
+                    console.log("Firebase config loaded from config.js");
+                } else {
+                    console.log("Firebase config loaded from __firebase_config");
+                }
                 
+                console.log("Firebase config found, initializing...");
                 const { initializeApp } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js");
                 const { getAuth, setPersistence, browserLocalPersistence, GoogleAuthProvider, onAuthStateChanged, signInWithRedirect, getRedirectResult, signOut, linkWithRedirect, unlink } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js");
                 const { getFirestore, doc, setDoc, getDoc, runTransaction, writeBatch, collection, onSnapshot, query, where, getDocs, deleteDoc } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
-                
-                const app = initializeApp(config);
 
-                // Make Firebase modules available on the global object
-                AppFirebase = {
-                    app, // Store the app instance
+                // Initialize the app
+                const fbApp = initializeApp(config);
+
+                // Make Firebase modules AND app instance available
+                window.AppFirebase = {
+                    app: fbApp, // <-- Store the app instance
+                    initializeApp,
                     getAuth, setPersistence, browserLocalPersistence, GoogleAuthProvider, onAuthStateChanged, signInWithRedirect, getRedirectResult, signOut, linkWithRedirect, unlink,
                     getFirestore, doc, setDoc, getDoc, runTransaction, writeBatch, collection, onSnapshot, query, where, getDocs, deleteDoc
                 };
                 console.log("Firebase modules and app instance attached to window.AppFirebase");
+
             } else {
                 console.warn("Firebase config is empty or undefined. Firebase will not be initialized.");
             }
@@ -922,11 +879,8 @@
             console.error("Error loading or initializing Firebase:", e);
         }
 
-
-        // --- App Namespace ---
-        window.App = window.App || {};
-
-        // --- Merge All Modules ---
+        
+        // --- Merge All App Modules ---
         Object.assign(window.App, {
         
             /* ================================================================
@@ -947,6 +901,7 @@
                         console.log("IndexedDB (Dexie) opened successfully.");
                     } catch (e) {
                         console.error("Failed to open IndexedDB:", e);
+                        App.ui.showAlert("Error: Could not open local database. App may not work correctly.", "error", 10000);
                         return null;
                     }
                     return db;
@@ -964,11 +919,13 @@
                         const salt = CryptoJS.lib.WordArray.random(128 / 8); // 16 bytes
                         const iv = CryptoJS.lib.WordArray.random(96 / 8);     // 12 bytes (GCM recommended)
                         const key = this.deriveKey(pin, salt);
+                        
                         const encrypted = CryptoJS.AES.encrypt(textData, key, {
                             iv: iv,
                             mode: CryptoJS.mode.GCM,
                             padding: CryptoJS.pad.NoPadding
                         });
+                        
                         const authTag = encrypted.authTag; // This is a WordArray
                         const ciphertextWithTag = encrypted.ciphertext.clone().concat(authTag);
                         
@@ -988,16 +945,20 @@
                         const iv = CryptoJS.enc.Base64.parse(b64Iv);
                         const key = this.deriveKey(pin, salt);
                         const combinedCiphertext = CryptoJS.enc.Base64.parse(b64Ciphertext);
+                        
                         const authTag = combinedCiphertext.clone();
                         authTag.sigBytes = 16;
                         authTag.words = combinedCiphertext.words.slice((combinedCiphertext.sigBytes - 16) / 4);
+                        
                         const ciphertext = combinedCiphertext.clone();
                         ciphertext.sigBytes = combinedCiphertext.sigBytes - 16;
+                        
                         const decrypted = CryptoJS.AES.decrypt({ ciphertext: ciphertext }, key, {
                             iv: iv,
                             mode: CryptoJS.mode.GCM,
                             padding: CryptoJS.pad.NoPadding
                         });
+                        
                         decrypted.authTag = authTag;
                         const decryptedText = decrypted.toString(CryptoJS.enc.Utf8);
                         
@@ -1303,6 +1264,11 @@
                                 }
                             } catch (error) {
                                 console.error("Error getting redirect result:", error);
+                                if (error.code === 'auth/credential-already-in-use') {
+                                    App.ui.showAlert("This Google account is already linked to another user.", "error");
+                                } else {
+                                    App.ui.showAlert(`Sign-in failed: ${error.message}`, "error");
+                                }
                             }
                         }
                         
@@ -1385,7 +1351,7 @@
                     console.warn("Wiping all local data and restarting...");
                     await App.storage.localDeleteAll();
                     localStorage.removeItem('hauoraPinHash');
-localStorage.removeItem('hauoraOnboardComplete');
+                    localStorage.removeItem('hauoraOnboardComplete');
                     window.location.reload();
                 },
                 updateSyncStatusUI: function(syncStatusText = null) {
@@ -1395,10 +1361,17 @@ localStorage.removeItem('hauoraOnboardComplete');
                     settings.syncLoggedOut.style.display = 'none';
                     settings.syncLoggedIn.style.display = 'none';
                     settings.syncLocal.style.display = 'none';
+
                     if (App.state.ui.authLoading) {
                         settings.syncLoading.style.display = 'block';
                         return;
                     }
+
+                    if (!App.state.fb.auth) {
+                         settings.syncLocal.style.display = 'block';
+                         return;
+                    }
+                    
                     if (App.state.storageDriver === 'firebase') {
                         if (App.state.ui.isLoggedIn) {
                             settings.syncLoggedIn.style.display = 'block';
@@ -1417,7 +1390,17 @@ localStorage.removeItem('hauoraOnboardComplete');
                             settings.syncLoggedOut.style.display = 'block';
                         }
                     } else {
-                        settings.syncLocal.style.display = 'block';
+                        // storageDriver is 'local'
+                        if (App.state.ui.isLoggedIn) {
+                            // This state is weird: logged in, but driver is local.
+                            // This can happen if local data exists but no cloud pin.
+                            // Treat as "local"
+                            settings.syncLocal.style.display = 'block';
+                            settings.syncLocal.querySelector('p').textContent = 'You are logged in, but sync is not enabled for this local data.';
+                            settings.loginFromLocalBtn.textContent = 'Link Data and Enable Sync';
+                        } else {
+                            settings.syncLocal.style.display = 'block';
+                        }
                     }
                 }
             }, // End of App.auth
@@ -1452,7 +1435,7 @@ localStorage.removeItem('hauoraOnboardComplete');
                     pinInput: '',
                     pinMode: 'login', // 'login', 'create', 'confirm', 'change'
                     tempPin: '',
-                    hauoraChartInstance: null, // For Chart.js
+                    hauoraChart: null, // To store the Chart.js instance
                 },
                 
                 // --- Main Application Data (this is what gets encrypted) ---
@@ -1474,7 +1457,6 @@ localStorage.removeItem('hauoraOnboardComplete');
 
             /* --- App Config --- */
             config: {
-                // Feelings for check-in
                 feelings: [
                     { name: "Grateful", type: "positive" },
                     { name: "Happy", type: "positive" },
@@ -1491,7 +1473,6 @@ localStorage.removeItem('hauoraOnboardComplete');
                     { name: "Lonely", type: "warning" },
                     { name: "Numb", type: "warning" }
                 ],
-                // Burnout checklist items
                 burnoutChecklist: {
                     physicalEmotional: [
                         "Feeling tired and drained most of the time",
@@ -1544,7 +1525,6 @@ localStorage.removeItem('hauoraOnboardComplete');
                 cacheDOM: function() {
                     const d = App.dom;
                     
-                    // Overlays
                     d.splash.screen = document.getElementById('splashScreen');
                     d.splash.message = document.getElementById('splashMessage');
                     d.lockScreen.screen = document.getElementById('lockScreen');
@@ -1557,7 +1537,6 @@ localStorage.removeItem('hauoraOnboardComplete');
                     
                     d.loginView = document.getElementById('loginView');
                     
-                    // Onboarding
                     d.onboarding.modal = document.getElementById('onboardingModal');
                     d.onboarding.steps = document.querySelectorAll('.onboarding-step');
                     d.onboarding.prevBtn = document.getElementById('onboardingPrevBtn');
@@ -1570,18 +1549,15 @@ localStorage.removeItem('hauoraOnboardComplete');
                     d.onboarding.numpad = document.getElementById('onboardingNumpad');
                     d.onboarding.numpadDelete = document.getElementById('onboardingNumpadDelete');
 
-                    // Main App
                     d.views = document.querySelectorAll('#appWrapper .view');
                     d.nav.links = document.querySelectorAll('.nav-link');
                     
-                    // Welcome View
                     d.welcome.checkinBtn = document.getElementById('welcomeCheckinBtn');
                     d.welcome.gratitudeBtn = document.getElementById('welcomeGratitudeBtn');
                     d.welcome.sabbathBtn = document.getElementById('welcomeSabbathBtn');
                     d.welcome.dashboardPreview = document.getElementById('dashboardPreview');
                     d.welcome.hauoraChart = document.getElementById('hauoraChart');
                     
-                    // Check-in View
                     d.checkin.form = document.getElementById('checkinForm');
                     d.checkin.feelingsContainer = document.getElementById('checkinFeelings');
                     d.checkin.sliders = document.querySelectorAll('#checkinForm .hauora-slider');
@@ -1599,7 +1575,6 @@ localStorage.removeItem('hauoraOnboardComplete');
                     d.checkin.closeBurnoutResultsBtn2 = document.getElementById('closeBurnoutResultsBtn2');
                     d.checkin.burnoutResultsContainer = document.getElementById('burnoutResultsContainer');
                     
-                    // Gratitude View
                     d.gratitude.form = document.getElementById('gratitudeForm');
                     d.gratitude.items = [
                         document.getElementById('gratitudeItem1'),
@@ -1608,15 +1583,12 @@ localStorage.removeItem('hauoraOnboardComplete');
                     ];
                     d.gratitude.note = document.getElementById('gratitudeNote');
                     
-                    // Sabbath View
                     d.sabbath.form = document.getElementById('sabbathForm');
                     d.sabbath.note = document.getElementById('sabbathNote');
                     d.sabbath.reflection = document.getElementById('sabbathReflection');
                     
-                    // History View
                     d.history.container = document.getElementById('historyContainer');
                     
-                    // Rule of Life View
                     d.rule.tabEdit = document.getElementById('ruleTabEdit');
                     d.rule.tabReflect = document.getElementById('ruleTabReflect');
                     d.rule.contentEdit = document.getElementById('ruleEditContent');
@@ -1635,7 +1607,6 @@ localStorage.removeItem('hauoraOnboardComplete');
                     d.rule.reflectionForm = document.getElementById('ruleReflectionForm');
                     d.rule.reflectionInput = document.getElementById('ruleReflection');
                     
-                    // Resources View
                     d.resources.container = document.getElementById('resourceContainer');
                     d.resources.addBtn = document.getElementById('addResourceBtn');
                     d.resources.modal = document.getElementById('resourceModal');
@@ -1646,7 +1617,6 @@ localStorage.removeItem('hauoraOnboardComplete');
                     d.resources.descriptionInput = document.getElementById('resourceDescription');
                     d.resources.deleteBtn = document.getElementById('resourceDeleteBtn');
 
-                    // Settings View
                     d.settings.syncSection = document.getElementById('syncSection');
                     d.settings.syncLoading = document.getElementById('syncStatusLoading');
                     d.settings.syncLoggedOut = document.getElementById('syncStatusLoggedOut');
@@ -1668,7 +1638,6 @@ localStorage.removeItem('hauoraOnboardComplete');
                     d.settings.deleteCloudBtn = document.getElementById('deleteCloudDataBtn');
                     d.settings.deleteAllBtn = document.getElementById('deleteAllDataBtn');
                     
-                    // Modals & Alerts
                     d.alert = document.getElementById('alertBox');
                     d.modal.modal = document.getElementById('modal');
                     d.modal.titleEl = document.getElementById('modalTitle');
@@ -1702,7 +1671,7 @@ localStorage.removeItem('hauoraOnboardComplete');
                     App.dom.splash.screen.style.opacity = 0;
                     setTimeout(() => {
                         App.dom.splash.screen.style.display = 'none';
-                    }, 300); // Match CSS transition
+                    }, 300);
                 },
                 
                 setSplashMessage: function(message) {
@@ -1772,7 +1741,7 @@ localStorage.removeItem('hauoraOnboardComplete');
                 
                 savePinCheckToCloud: async function(pin) {
                     const paths = App.storage.getFirestorePaths();
-                    if (!paths || !paths.pinCheckRef) return;
+                    if (!paths) return;
                     
                     const hash = this.hashPin(pin);
                     try {
@@ -1786,7 +1755,7 @@ localStorage.removeItem('hauoraOnboardComplete');
                 
                 cloudPinCheckExists: async function() {
                     const paths = App.storage.getFirestorePaths();
-                    if (!paths || !paths.pinCheckRef) return false;
+                    if (!paths) return false;
                     
                     try {
                         const docSnap = await AppFirebase.getDoc(paths.pinCheckRef);
@@ -1798,7 +1767,6 @@ localStorage.removeItem('hauoraOnboardComplete');
                 },
 
                 // --- PIN UI Flow ---
-                
                 resetPinInput: function(pinDisplayEl) {
                     App.state.ui.pinInput = '';
                     const dots = pinDisplayEl ? pinDisplayEl.children : App.dom.lockScreen.pinDisplay.children;
@@ -1816,7 +1784,7 @@ localStorage.removeItem('hauoraOnboardComplete');
                 
                 showPinError: function(pinDisplayEl) {
                     pinDisplayEl = pinDisplayEl || App.dom.lockScreen.pinDisplay;
-                    pinDisplayEl.classList.add('animate-shake'); 
+                    pinDisplayEl.classList.add('animate-shake');
                     setTimeout(() => {
                         pinDisplayEl.classList.remove('animate-shake');
                         this.resetPinInput(pinDisplayEl);
@@ -1833,14 +1801,13 @@ localStorage.removeItem('hauoraOnboardComplete');
                 
                 startOnboarding: function() {
                     App.dom.onboarding.modal.style.display = 'flex';
-                    App.dom.onboarding.modal.classList.add('visible'); // Make it visible
                     
                     App.dom.onboarding.nextBtn.onclick = () => {
                         if (App.state.ui.currentOnboardingStep === 1) {
                             App.ui.updateOnboardingStep(1); // Go to step 2
                             App.dom.onboarding.numpad.style.display = 'grid';
                             App.state.ui.pinMode = 'create';
-                            App.dom.onboarding.nextBtn.style.display = 'none'; 
+                            App.dom.onboarding.nextBtn.style.display = 'none';
                         }
                     };
                     
@@ -1848,8 +1815,8 @@ localStorage.removeItem('hauoraOnboardComplete');
                         if (App.state.ui.currentOnboardingStep === 2) {
                             App.ui.updateOnboardingStep(-1); // Go back to step 1
                             App.dom.onboarding.numpad.style.display = 'none';
-                            App.state.ui.pinMode = 'login'; // Reset mode
-                            App.dom.onboarding.nextBtn.style.display = 'inline-block';
+                            App.state.ui.pinMode = 'login'; 
+                            App.dom.onboarding.nextBtn.style.display = 'inline-flex';
                         }
                     };
                     
@@ -1895,7 +1862,7 @@ localStorage.removeItem('hauoraOnboardComplete');
                             this.handlePinConfirm(pin, pinDisplayEl);
                             break;
                         case 'change':
-                            await this.handlePinChange(pin, pinDisplayEl);
+                            // await this.handlePinChange(pin, pinDisplayEl);
                             break;
                     }
                 },
@@ -1921,7 +1888,7 @@ localStorage.removeItem('hauoraOnboardComplete');
                         }
                         
                         App.util.hideSplash();
-                        App.navigation.navigateTo('welcomeView'); // Go home
+                        App.ui.updateWelcomeView(); 
 
                     } else {
                         console.log("Wrong PIN.");
@@ -1938,30 +1905,28 @@ localStorage.removeItem('hauoraOnboardComplete');
                     App.dom.onboarding.pinError.textContent = "";
                 },
                 
+                /**
+                 * Logic for 'confirm' mode (Onboarding)
+                 * FIX: This function no longer shows the modal.
+                 * It just saves the data and moves to the final onboarding step.
+                 */
                 handlePinConfirm: async function(pin, pinDisplayEl) {
                     if (pin === App.state.tempPin) {
+                        // --- PIN Create Success ---
                         App.state.pin = pin;
-                        this.savePinHashLocally(pin); 
+                        this.savePinHashLocally(pin); // Save hash to localStorage
                         
+                        // Save default data locally
                         App.state.data = App.util.getDefaultData();
                         await App.storage.localSaveAll();
                         
-                        App.ui.showModal("Enable Sync?", 
-                            "Would you like to sign in with Google to securely sync your encrypted data? Your PIN will be required on new devices.",
-                            [
-                                { text: "Not Now", type: "secondary", callback: () => this.finishOnboarding(false) },
-                                { text: "Sign In", type: "primary", autoClose: false, callback: () => {
-                                    App.auth.signInWithGoogle(false);
-                                    // Don't hide modal, redirect will happen
-                                }}
-                            ]
-                        );
-                        
+                        // Move to next step
                         App.state.ui.pinMode = 'login'; // Reset mode
                         App.dom.onboarding.numpad.style.display = 'none';
                         App.ui.updateOnboardingStep(1); // Go to step 3
                         
                     } else {
+                        // Mismatch
                         this.showPinError(pinDisplayEl);
                         App.state.ui.pinMode = 'create';
                         App.state.tempPin = '';
@@ -1970,10 +1935,26 @@ localStorage.removeItem('hauoraOnboardComplete');
                     }
                 },
                 
+                /**
+                 * Called after user chooses sync option OR returns from redirect.
+                 */
                 finishOnboarding: async function(didSignIn) {
                     if (didSignIn) {
+                        if (!App.state.fb.auth) {
+                             App.ui.showAlert("Sign in failed. No Firebase connection.", "error");
+                             this.finishOnboarding(false); // finish as local
+                             return;
+                        }
                         App.state.storageDriver = 'firebase';
+                        App.util.setSplashMessage("Syncing new account...");
+                        App.dom.splash.screen.style.display = 'flex';
+                        
+                        // We might need to wait for auth state
+                        await App.auth.waitForAuthInit();
+                        
+                        // Save PIN check to cloud
                         await this.savePinCheckToCloud(App.state.pin);
+                        // Save data to cloud
                         await App.storage.firestoreSaveAll();
                     } else {
                         App.state.storageDriver = 'local';
@@ -1981,137 +1962,77 @@ localStorage.removeItem('hauoraOnboardComplete');
                     
                     localStorage.setItem('hauoraOnboardComplete', 'true');
                     App.dom.onboarding.modal.style.display = 'none';
-                    App.dom.onboarding.modal.classList.remove('visible');
                     App.util.hideSplash();
-                    App.navigation.navigateTo('welcomeView');
-                },
-
-                handlePinChange: async function(pin, pinDisplayEl) {
-                    // This logic is for when a user is *changing* their PIN
-                    const d = App.dom.lockScreen;
-                    const ui = App.state.ui;
-
-                    if (ui.tempPin === '') {
-                        // Step 1: Verify old PIN
-                        if (this.verifyLocalPin(pin)) {
-                            ui.tempPin = 'verified'; // Mark old PIN as verified
-                            this.resetPinInput(pinDisplayEl);
-                            d.title.textContent = "Enter New PIN";
-                            d.message.textContent = "Enter a new 4-digit PIN.";
-                        } else {
-                            this.showPinError(pinDisplayEl);
-                            d.message.textContent = "Wrong PIN. Try again.";
-                        }
-                    } else if (ui.tempPin === 'verified') {
-                        // Step 2: Get new PIN
-                        ui.tempPin = pin; // Store new PIN temporarily
-                        this.resetPinInput(pinDisplayEl);
-                        d.title.textContent = "Confirm New PIN";
-                        d.message.textContent = "Re-enter your new 4-digit PIN.";
-                    } else {
-                        // Step 3: Confirm new PIN
-                        if (pin === ui.tempPin) {
-                            // --- Success ---
-                            App.state.pin = pin; // Set new PIN in memory
-                            this.savePinHashLocally(pin); // Save new hash
-                            
-                            // Re-encrypt all data with new PIN
-                            d.screen.style.display = 'none';
-                            App.util.setSplashMessage("Re-encrypting data...");
-                            App.dom.splash.screen.style.display = 'flex';
-
-                            await App.storage.localSaveAll();
-                            if (App.state.storageDriver === 'firebase') {
-                                await this.savePinCheckToCloud(pin);
-                                await App.storage.firestoreSaveAll();
-                            }
-                            
-                            App.util.hideSplash();
-                            App.ui.showAlert("PIN changed successfully!", "success");
-                            ui.tempPin = '';
-                            
-                        } else {
-                            // Mismatch
-                            this.showPinError(pinDisplayEl);
-                            ui.tempPin = 'verified'; // Go back to step 2
-                            d.title.textContent = "Enter New PIN";
-                            d.message.textContent = "PINs didn't match. Enter a new 4-digit PIN.";
-                        }
-                    }
+                    App.ui.updateWelcomeView();
                 }
-                
             }, // End of App.pin
-            
+
             /* ================================================================
-            NEW MODULE: moduleCheckin
-            (Written from scratch based on Grok's analysis)
+            App Logic Part (Missing): moduleCheckin
             ================================================================
             */
+            // FIX (per Grok): Added the missing module
             moduleCheckin: {
                 
                 calculateTotals: function(entry) {
-                    let positive = 0;
-                    let warning = 0;
+                    let positiveCount = 0;
+                    let warningCount = 0;
                     
-                    // 1. Tally feelings
-                    for (const feelingName of entry.feelings) {
+                    if (entry && entry.feelings) {
+                        entry.feelings.forEach(feelingName => {
+                            const feeling = App.config.feelings.find(f => f.name === feelingName);
+                            if (feeling) {
+                                if (feeling.type === 'positive') positiveCount++;
+                                if (feeling.type === 'warning') warningCount++;
+                            }
+                        });
+                    }
+                    
+                    let ratingTotal = 0;
+                    let ratingCount = 0;
+                    if (entry && entry.ratings) {
+                         for (const key in entry.ratings) {
+                             ratingTotal += Number(entry.ratings[key]);
+                             ratingCount++;
+                         }
+                    }
+                    const ratingAvg = (ratingCount > 0) ? (ratingTotal / ratingCount) : 0;
+
+                    return { positiveCount, warningCount, ratingAvg };
+                },
+
+                // Get feelings that are in the "warning" list
+                getWarningFeelings: function(entry) {
+                    if (!entry || !entry.feelings) return [];
+                    return entry.feelings.filter(feelingName => {
                         const feeling = App.config.feelings.find(f => f.name === feelingName);
-                        if (feeling) {
-                            if (feeling.type === 'positive') positive++;
-                            if (feeling.type === 'warning') warning++;
-                        }
-                    }
-                    
-                    // 2. Tally slider ratings
-                    const ratings = entry.ratings || {};
-                    for (const key in ratings) {
-                        const value = ratings[key];
-                        if (value > 6) positive++;
-                        if (value < 4) warning++;
-                    }
-                    
-                    return { positive, warning, total: positive + warning };
-                },
-
-                getFeelingsAsMap: function(entry) {
-                    const map = {};
-                    for (const feelingName of entry.feelings) {
-                        map[feelingName] = 1;
-                    }
-                    return map;
-                },
-
-                getLast7DaysRatings: function() {
-                    const history = App.state.data.checkinHistory;
-                    if (history.length === 0) return [];
-                    
-                    // Get last 7 entries
-                    const last7 = history.slice(-7);
-                    
-                    return last7.map(entry => {
-                        return {
-                            date: entry.date,
-                            physical: entry.ratings.physical || 0,
-                            mental: entry.ratings.mental || 0,
-                            social: entry.ratings.social || 0,
-                            spiritual: entry.ratings.spiritual || 0,
-                        };
+                        return feeling && feeling.type === 'warning';
                     });
                 }
-
             }, // End of App.moduleCheckin
-
+            
             /* ================================================================
-            NEW MODULE: handlers
-            (Written from scratch based on Grok's analysis)
+            App Logic Part (Missing): handlers
             ================================================================
             */
+            // FIX (per Grok): Added the missing module
             handlers: {
                 
                 init: function() {
                     console.log("Initializing handlers...");
                     const d = App.dom;
                     
+                    // --- Login View ---
+                    d.loginView.querySelector('#googleSignInBtn').addEventListener('click', () => App.auth.signInWithGoogle(false));
+                    d.loginView.querySelector('#skipSignInBtn').addEventListener('click', () => {
+                        // This implies user is in onboarding and chose local
+                        App.pin.finishOnboarding(false); 
+                    });
+
+                    // --- Onboarding ---
+                    // FIX: Changed this to call the new handleOnboardingFinish function
+                    d.onboarding.finishBtn.addEventListener('click', () => this.handleOnboardingFinish());
+
                     // --- Lock Screen ---
                     d.lockScreen.numpad.addEventListener('click', (e) => {
                         const btn = e.target.closest('.numpad-btn');
@@ -2122,257 +2043,164 @@ localStorage.removeItem('hauoraOnboardComplete');
                     d.lockScreen.numpadDelete.addEventListener('click', () => {
                         App.pin.handlePinKey('delete', d.lockScreen.pinDisplay);
                     });
-                    d.lockScreen.forgotBtn.addEventListener('click', this.handleForgotPin);
+                    d.lockScreen.forgotBtn.addEventListener('click', () => this.handleForgotPin());
 
-                    // --- Login View ---
-                    document.getElementById('googleSignInBtn').addEventListener('click', () => App.auth.signInWithGoogle(false));
-                    document.getElementById('skipSignInBtn').addEventListener('click', () => {
-                        d.loginView.style.display = 'none';
-                        App.pin.startOnboarding(); // Start onboarding if they skip
-                    });
-
-                    // --- Onboarding ---
-                    d.onboarding.finishBtn.addEventListener('click', () => App.pin.finishOnboarding(false));
-
-                    // --- Form Submissions ---
-                    d.checkin.form.addEventListener('submit', this.saveCheckin);
-                    d.gratitude.form.addEventListener('submit', this.saveGratitude);
-                    d.sabbath.form.addEventListener('submit', this.saveSabbath);
-                    d.rule.form.addEventListener('submit', this.saveRuleOfLife);
-                    d.rule.reflectionForm.addEventListener('submit', this.saveRuleReflection);
-
-                    // --- Check-in Feelings ---
-                    d.checkin.feelingsContainer.addEventListener('click', (e) => {
-                        const btn = e.target.closest('.feeling-toggle');
-                        if (btn) {
-                            btn.classList.toggle('selected');
-                        }
-                    });
+                    // --- Check-in Form ---
+                    d.checkin.form.addEventListener('submit', (e) => this.saveCheckin(e));
+                    d.checkin.feelingsContainer.addEventListener('click', (e) => this.toggleFeeling(e));
                     
-                    // --- Check-in Burnout Flow ---
-                    d.checkin.skipBurnoutBtn.addEventListener('click', this.finishCheckin);
-                    d.checkin.startBurnoutBtn.addEventListener('click', this.startBurnoutCheck);
-                    d.checkin.closeBurnoutModalBtn.addEventListener('click', this.closeBurnoutCheck);
-                    d.checkin.finishBurnoutCheckBtn.addEventListener('click', this.showBurnoutResults);
-                    d.checkin.closeBurnoutResultsBtn.addEventListener('click', this.finishCheckin);
-                    d.checkin.closeBurnoutResultsBtn2.addEventListener('click', this.finishCheckin);
-                    d.checkin.finishBtn.addEventListener('click', this.finishCheckin);
+                    // --- Burnout Modals ---
+                    d.checkin.skipBurnoutBtn.addEventListener('click', () => this.finishCheckin());
+                    d.checkin.startBurnoutBtn.addEventListener('click', () => this.startBurnoutCheck());
+                    d.checkin.closeBurnoutModalBtn.addEventListener('click', () => this.closeBurnoutCheck());
+                    d.checkin.finishBurnoutCheckBtn.addEventListener('click', () => this.finishBurnoutCheck());
+                    d.checkin.closeBurnoutResultsBtn.addEventListener('click', () => this.closeBurnoutResults());
+                    d.checkin.closeBurnoutResultsBtn2.addEventListener('click', () => this.closeBurnoutResults());
+                    d.checkin.finishBtn.addEventListener('click', () => this.finishCheckin());
 
-                    // --- Rule of Life Tabs ---
+                    // --- Other Forms ---
+                    d.gratitude.form.addEventListener('submit', (e) => this.saveGratitude(e));
+                    d.sabbath.form.addEventListener('submit', (e) => this.saveSabbath(e));
+                    
+                    // --- Rule of Life ---
                     d.rule.tabEdit.addEventListener('click', () => this.toggleRuleTabs('edit'));
                     d.rule.tabReflect.addEventListener('click', () => this.toggleRuleTabs('reflect'));
-
+                    d.rule.form.addEventListener('submit', (e) => this.saveRuleOfLife(e));
+                    d.rule.reflectionForm.addEventListener('submit', (e) => this.saveRuleReflection(e));
+                    
                     // --- Resources ---
-                    d.resources.addBtn.addEventListener('click', () => App.ui.showResourceModal(null));
-
+                    d.resources.addBtn.addEventListener('click', () => App.ui.showResourceModal());
+                    // Listeners for edit/delete are added in App.ui.updateResourcesView
+                    
                     // --- Settings ---
                     d.settings.loginBtn.addEventListener('click', () => App.auth.signInWithGoogle(false));
                     d.settings.loginFromLocalBtn.addEventListener('click', () => App.auth.signInWithGoogle(true)); // Link account
-                    d.settings.logoutBtn.addEventListener('click', this.handleLogout);
-                    d.settings.forceSyncBtn.addEventListener('click', this.handleForceSync);
-                    
-                    d.settings.exportBtn.addEventListener('click', this.exportData);
+                    d.settings.logoutBtn.addEventListener('click', () => App.auth.signOut());
+                    d.settings.forceSyncBtn.addEventListener('click', () => App.storage.syncData());
+                    d.settings.exportBtn.addEventListener('click', () => this.exportData());
                     d.settings.importBtn.addEventListener('click', () => d.settings.importFile.click());
-                    d.settings.importFile.addEventListener('change', this.importData);
+                    d.settings.importFile.addEventListener('change', (e) => this.importData(e));
+                    d.settings.changePinBtn.addEventListener('click', () => this.handleChangePin());
                     
-                    d.settings.changePinBtn.addEventListener('click', this.handleChangePin);
-                    d.settings.dangerZoneBtn.addEventListener('click', () => {
-                        d.settings.dangerZoneModal.style.display = 'flex';
-                        d.settings.dangerZoneModal.classList.add('visible');
-                        // Add close listener
-                        d.settings.dangerZoneModal.querySelector('.close-button').onclick = () => {
-                            d.settings.dangerZoneModal.classList.remove('visible');
-                            setTimeout(() => d.settings.dangerZoneModal.style.display = 'none', 300);
-                        };
-                    });
-                    d.settings.deleteLocalBtn.addEventListener('click', this.handleDeleteLocal);
-                    d.settings.deleteCloudBtn.addEventListener('click', this.handleDeleteCloud);
-                    d.settings.deleteAllBtn.addEventListener('click', this.handleDeleteAll);
-
-                    // --- Init Dynamic Content ---
-                    this.populateCheckinFeelings();
-                    this.populateBurnoutChecklist();
+                    // --- Danger Zone ---
+                    d.settings.dangerZoneBtn.addEventListener('click', () => this.showDangerZone());
+                    d.settings.dangerZoneModal.querySelector('.close-button').addEventListener('click', () => App.ui.hideModal('dangerZoneModal'));
+                    d.settings.deleteLocalBtn.addEventListener('click', () => this.deleteLocalData());
+                    d.settings.deleteCloudBtn.addEventListener('click', () => this.deleteCloudData());
+                    d.settings.deleteAllBtn.addEventListener('click', () => this.deleteAllData());
                 },
 
-                populateCheckinFeelings: function() {
-                    const container = App.dom.checkin.feelingsContainer;
-                    container.innerHTML = App.config.feelings.map(f => 
-                        `<button type="button" class="feeling-toggle" data-feeling="${f.name}">${f.name}</button>`
-                    ).join('');
-                },
-                
-                populateBurnoutChecklist: function() {
-                    const container = App.dom.checkin.burnoutChecklist;
-                    const { physicalEmotional, mentalCognitive, relational } = App.config.burnoutChecklist;
-                    
-                    let html = `<h3 class="font-semibold text-lg mb-2 text-indigo-700">Physical & Emotional</h3>`;
-                    html += physicalEmotional.map((item, i) => `
-                        <label class="flex items-start p-2 rounded-lg hover:bg-gray-50">
-                            <input type="checkbox" class="form-checkbox h-5 w-5 text-indigo-600 mt-1" data-section="physical" data-index="${i}">
-                            <span class="ml-3 text-gray-700">${item}</span>
-                        </label>
-                    `).join('');
-                    
-                    html += `<h3 class="font-semibold text-lg mb-2 mt-6 text-indigo-700">Mental & Cognitive</h3>`;
-                    html += mentalCognitive.map((item, i) => `
-                        <label class="flex items-start p-2 rounded-lg hover:bg-gray-50">
-                            <input type="checkbox" class="form-checkbox h-5 w-5 text-indigo-600 mt-1" data-section="mental" data-index="${i}">
-                            <span class="ml-3 text-gray-700">${item}</span>
-                        </label>
-                    `).join('');
-
-                    html += `<h3 class="font-semibold text-lg mb-2 mt-6 text-indigo-700">Relational</h3>`;
-                    html += relational.map((item, i) => `
-                        <label class="flex items-start p-2 rounded-lg hover:bg-gray-50">
-                            <input type="checkbox" class="form-checkbox h-5 w-5 text-indigo-600 mt-1" data-section="relational" data-index="${i}">
-                            <span class="ml-3 text-gray-700">${item}</span>
-                        </label>
-                    `).join('');
-                    
-                    container.innerHTML = html;
+                /**
+                 * FIX: New handler for the "Finish" button on onboarding
+                 */
+                handleOnboardingFinish: function() {
+                    // Ask user to sign in to sync
+                    App.ui.showModal("Enable Sync?", 
+                        "Would you like to sign in with Google to securely sync your encrypted data? Your PIN will be required on new devices.",
+                        [
+                            { text: "Not Now", type: "secondary", callback: () => App.pin.finishOnboarding(false) },
+                            { text: "Sign In", type: "primary", callback: () => {
+                                // We must hide the onboarding modal *before* redirecting
+                                App.dom.onboarding.modal.style.display = 'none';
+                                App.auth.signInWithGoogle(false);
+                            }}
+                        ]
+                    );
                 },
 
-                // --- Form Save Handlers ---
+                toggleFeeling: function(e) {
+                    const btn = e.target.closest('.feeling-toggle');
+                    if (btn) {
+                        btn.classList.toggle('selected');
+                    }
+                },
                 
                 saveCheckin: function(e) {
                     e.preventDefault();
                     const d = App.dom.checkin;
                     const today = App.util.getTodayDate();
                     
-                    // Get selected feelings
                     const feelings = [];
                     d.feelingsContainer.querySelectorAll('.feeling-toggle.selected').forEach(btn => {
                         feelings.push(btn.dataset.feeling);
                     });
                     
-                    // Get ratings
                     const ratings = {};
                     d.sliders.forEach(slider => {
                         const key = slider.id.split('-')[1]; // e.g., 'physical'
                         ratings[key] = slider.value;
                     });
                     
-                    const entry = {
-                        date: today,
-                        feelings: feelings,
-                        ratings: ratings,
-                        note: d.note.value.trim()
-                    };
+                    const note = d.note.value;
                     
-                    // Save to state
-                    const index = App.state.data.checkinHistory.findIndex(e => e.date === today);
+                    const newEntry = { date: today, feelings, ratings, note };
+                    
+                    // Find and update or add new entry
+                    const index = App.state.data.checkinHistory.findIndex(entry => entry.date === today);
                     if (index > -1) {
-                        App.state.data.checkinHistory[index] = entry;
+                        App.state.data.checkinHistory[index] = newEntry;
                     } else {
-                        App.state.data.checkinHistory.push(entry);
+                        App.state.data.checkinHistory.push(newEntry);
                     }
+                    
                     App.state.data.lastModified = new Date().toISOString();
                     
-                    // --- Burnout Check Logic ---
-                    const hasWarningFeelings = feelings.some(f => {
-                        const feeling = App.config.feelings.find(fl => fl.name === f);
-                        return feeling && feeling.type === 'warning';
-                    });
-
-                    if (hasWarningFeelings) {
-                        // Show prompt
+                    App.storage.localSaveAll();
+                    if (App.state.storageDriver === 'firebase') {
+                        App.storage.firestoreSaveAll();
+                    }
+                    
+                    // Check for burnout prompt
+                    const warningFeelings = App.moduleCheckin.getWarningFeelings(newEntry);
+                    if (warningFeelings.length > 2) { // Arbitrary threshold
                         d.burnoutPromptModal.style.display = 'flex';
-                        d.burnoutPromptModal.classList.add('visible');
+                        setTimeout(() => d.burnoutPromptModal.classList.add('visible'), 10);
+                        d.form.style.display = 'none';
+                        d.finishBtn.style.display = 'block';
                     } else {
-                        // No warnings, just finish
-                        App.handlers.finishCheckin();
+                        this.finishCheckin();
                     }
                 },
                 
                 finishCheckin: function() {
-                    // Hide all modals
-                    App.dom.checkin.burnoutPromptModal.classList.remove('visible');
-                    App.dom.checkin.burnoutCheckModal.classList.remove('visible');
-                    App.dom.checkin.burnoutResultsModal.classList.remove('visible');
-                    
-                    setTimeout(() => {
-                        App.dom.checkin.burnoutPromptModal.style.display = 'none';
-                        App.dom.checkin.burnoutCheckModal.style.display = 'none';
-                        App.dom.checkin.burnoutResultsModal.style.display = 'none';
-                    }, 300);
-                    
-                    // Save and navigate
-                    App.storage.localSaveAll();
-                    if (App.state.storageDriver === 'firebase') App.storage.firestoreSaveAll();
-                    
+                    const d = App.dom.checkin;
+                    d.burnoutPromptModal.classList.remove('visible');
+                    setTimeout(() => d.burnoutPromptModal.style.display = 'none', 300);
+                    d.form.style.display = 'block';
+                    d.finishBtn.style.display = 'none';
                     App.ui.showAlert("Check-in saved!", "success");
                     App.navigation.navigateTo('welcomeView');
                 },
                 
                 startBurnoutCheck: function() {
-                    App.dom.checkin.burnoutPromptModal.classList.remove('visible');
-                    setTimeout(() => App.dom.checkin.burnoutPromptModal.style.display = 'none', 300);
+                    App.ui.updateBurnoutChecklist();
+                    const d = App.dom.checkin;
+                    d.burnoutPromptModal.classList.remove('visible');
+                    setTimeout(() => d.burnoutPromptModal.style.display = 'none', 300);
                     
-                    // Reset checklist
-                    App.dom.checkin.burnoutChecklist.querySelectorAll('input[type="checkbox"]').forEach(chk => chk.checked = false);
-                    
-                    App.dom.checkin.burnoutCheckModal.style.display = 'flex';
-                    App.dom.checkin.burnoutCheckModal.classList.add('visible');
+                    d.burnoutCheckModal.style.display = 'flex';
+                    setTimeout(() => d.burnoutCheckModal.classList.add('visible'), 10);
                 },
                 
                 closeBurnoutCheck: function() {
-                    App.ui.showModal("Are you sure?", "You haven't finished the self-check. Are you sure you want to close?", [
-                        { text: "Cancel", type: "secondary" },
-                        { text: "Yes, Close", type: "primary", callback: () => App.handlers.finishCheckin() }
-                    ]);
+                    const d = App.dom.checkin;
+                    d.burnoutCheckModal.classList.remove('visible');
+                    setTimeout(() => d.burnoutCheckModal.style.display = 'none', 300);
                 },
                 
-                showBurnoutResults: function() {
-                    const container = App.dom.checkin.burnoutResultsContainer;
-                    const checklist = App.config.burnoutChecklist;
+                finishBurnoutCheck: function() {
+                    App.ui.updateBurnoutResults();
+                    this.closeBurnoutCheck();
                     
-                    const checkedItems = App.dom.checkin.burnoutChecklist.querySelectorAll('input:checked');
-                    
-                    if (checkedItems.length === 0) {
-                        container.innerHTML = '<p>You didn\'t select any items. That\'s great! Remember to keep an eye on your wellbeing.</p>';
-                    } else {
-                        let html = '';
-                        const results = {
-                            physicalEmotional: [],
-                            mentalCognitive: [],
-                            relational: []
-                        };
-                        
-                        checkedItems.forEach(chk => {
-                            const section = chk.dataset.section;
-                            const index = chk.dataset.index;
-                            if (section === 'physical') {
-                                results.physicalEmotional.push(checklist.physicalEmotional[index]);
-                            } else if (section === 'mental') {
-                                results.mentalCognitive.push(checklist.mentalCognitive[index]);
-                            } else if (section === 'relational') {
-                                results.relational.push(checklist.relational[index]);
-                            }
-                        });
-                        
-                        if(results.physicalEmotional.length > 0) {
-                            html += `<h3 class="font-semibold text-lg mb-2 text-indigo-700">Physical & Emotional</h3><ul class="list-disc list-inside mb-4">`;
-                            html += results.physicalEmotional.map(item => `<li>${item}</li>`).join('');
-                            html += `</ul>`;
-                        }
-                        if(results.mentalCognitive.length > 0) {
-                            html += `<h3 class="font-semibold text-lg mb-2 text-indigo-700">Mental & Cognitive</h3><ul class="list-disc list-inside mb-4">`;
-                            html += results.mentalCognitive.map(item => `<li>${item}</li>`).join('');
-                            html += `</ul>`;
-                        }
-                        if(results.relational.length > 0) {
-                            html += `<h3 class="font-semibold text-lg mb-2 text-indigo-700">Relational</h3><ul class="list-disc list-inside mb-4">`;
-                            html += results.relational.map(item => `<li>${item}</li>`).join('');
-                            html += `</ul>`;
-                        }
-                        container.innerHTML = html;
-                    }
-
-                    App.dom.checkin.burnoutCheckModal.classList.remove('visible');
-                    setTimeout(() => App.dom.checkin.burnoutCheckModal.style.display = 'none', 300);
-                    
-                    App.dom.checkin.burnoutResultsModal.style.display = 'flex';
-                    App.dom.checkin.burnoutResultsModal.classList.add('visible');
+                    const d = App.dom.checkin;
+                    d.burnoutResultsModal.style.display = 'flex';
+                    setTimeout(() => d.burnoutResultsModal.classList.add('visible'), 10);
+                },
+                
+                closeBurnoutResults: function() {
+                    const d = App.dom.checkin;
+                    d.burnoutResultsModal.classList.remove('visible');
+                    setTimeout(() => d.burnoutResultsModal.style.display = 'none', 300);
                 },
 
                 saveGratitude: function(e) {
@@ -2380,26 +2208,26 @@ localStorage.removeItem('hauoraOnboardComplete');
                     const d = App.dom.gratitude;
                     const today = App.util.getTodayDate();
                     
-                    const entry = {
-                        date: today,
-                        items: [
-                            d.items[0].value.trim(),
-                            d.items[1].value.trim(),
-                            d.items[2].value.trim()
-                        ],
-                        note: d.note.value.trim()
-                    };
+                    const items = [
+                        d.items[0].value,
+                        d.items[1].value,
+                        d.items[2].value
+                    ];
+                    const note = d.note.value;
+                    const newEntry = { date: today, items, note };
                     
-                    const index = App.state.data.gratitudeHistory.findIndex(e => e.date === today);
+                    const index = App.state.data.gratitudeHistory.findIndex(entry => entry.date === today);
                     if (index > -1) {
-                        App.state.data.gratitudeHistory[index] = entry;
+                        App.state.data.gratitudeHistory[index] = newEntry;
                     } else {
-                        App.state.data.gratitudeHistory.push(entry);
+                        App.state.data.gratitudeHistory.push(newEntry);
                     }
-                    App.state.data.lastModified = new Date().toISOString();
                     
+                    App.state.data.lastModified = new Date().toISOString();
                     App.storage.localSaveAll();
-                    if (App.state.storageDriver === 'firebase') App.storage.firestoreSaveAll();
+                    if (App.state.storageDriver === 'firebase') {
+                        App.storage.firestoreSaveAll();
+                    }
                     
                     App.ui.showAlert("Gratitude saved!", "success");
                     App.navigation.navigateTo('welcomeView');
@@ -2410,111 +2238,25 @@ localStorage.removeItem('hauoraOnboardComplete');
                     const d = App.dom.sabbath;
                     const today = App.util.getTodayDate();
                     
-                    const entry = {
-                        date: today,
-                        note: d.note.value.trim(),
-                        reflection: d.reflection.value.trim()
-                    };
+                    const note = d.note.value;
+                    const reflection = d.reflection.value;
+                    const newEntry = { date: today, note, reflection };
                     
-                    const index = App.state.data.sabbathHistory.findIndex(e => e.date === today);
+                    const index = App.state.data.sabbathHistory.findIndex(entry => entry.date === today);
                     if (index > -1) {
-                        App.state.data.sabbathHistory[index] = entry;
+                        App.state.data.sabbathHistory[index] = newEntry;
                     } else {
-                        App.state.data.sabbathHistory.push(entry);
+                        App.state.data.sabbathHistory.push(newEntry);
                     }
-                    App.state.data.lastModified = new Date().toISOString();
                     
+                    App.state.data.lastModified = new Date().toISOString();
                     App.storage.localSaveAll();
-                    if (App.state.storageDriver === 'firebase') App.storage.firestoreSaveAll();
+                    if (App.state.storageDriver === 'firebase') {
+                        App.storage.firestoreSaveAll();
+                    }
                     
                     App.ui.showAlert("Sabbath reflection saved!", "success");
                     App.navigation.navigateTo('welcomeView');
-                },
-                
-                saveRuleOfLife: function(e) {
-                    e.preventDefault();
-                    const d = App.dom.rule.inputs;
-                    
-                    App.state.data.ruleOfLife = {
-                        vision: d.vision.value.trim(),
-                        commitments: d.commitments.value.trim(),
-                        practices: d.practices.value.trim(),
-                        community: d.community.value.trim()
-                    };
-                    App.state.data.lastModified = new Date().toISOString();
-                    
-                    App.storage.localSaveAll();
-                    if (App.state.storageDriver === 'firebase') App.storage.firestoreSaveAll();
-                    
-                    App.ui.showAlert("Rule of Life saved!", "success");
-                    App.ui.updateRuleOfLifeView(); // Update reflect tab
-                },
-                
-                saveRuleReflection: function(e) {
-                    e.preventDefault();
-                    const d = App.dom.rule;
-                    const reflection = d.reflectionInput.value.trim();
-                    if (!reflection) {
-                        App.ui.showAlert("Please write a reflection first.", "error");
-                        return;
-                    }
-                    
-                    const entry = {
-                        date: App.util.getTodayDate(),
-                        reflection: reflection
-                    };
-                    
-                    App.state.data.ruleOfLifeHistory.push(entry);
-                    App.state.data.lastModified = new Date().toISOString();
-                    
-                    App.storage.localSaveAll();
-                    if (App.state.storageDriver === 'firebase') App.storage.firestoreSaveAll();
-                    
-                    App.ui.showAlert("Reflection saved to history!", "success");
-                    d.reflectionInput.value = '';
-                },
-                
-                saveResource: function() {
-                    const d = App.dom.resources;
-                    const id = d.idInput.value;
-                    const resource = {
-                        id: id,
-                        title: d.titleInput.value.trim(),
-                        link: d.linkInput.value.trim(),
-                        description: d.descriptionInput.value.trim()
-                    };
-                    
-                    if (!resource.title || !resource.link) {
-                        App.ui.showAlert("Title and Link are required.", "error");
-                        return;
-                    }
-                    
-                    App.state.data.userResources[id] = resource;
-                    App.state.data.lastModified = new Date().toISOString();
-                    
-                    App.storage.localSaveAll();
-                    if (App.state.storageDriver === 'firebase') App.storage.firestoreSaveAll();
-                    
-                    App.ui.showAlert("Resource saved!", "success");
-                    App.ui.hideResourceModal();
-                    App.ui.updateResourcesView();
-                },
-                
-                deleteResource: function(id) {
-                    App.ui.showModal("Delete Resource?", "Are you sure you want to delete this resource?", [
-                        { text: "Cancel", type: "secondary" },
-                        { text: "Delete", type: "danger", callback: () => {
-                            delete App.state.data.userResources[id];
-                            App.state.data.lastModified = new Date().toISOString();
-                            
-                            App.storage.localSaveAll();
-                            if (App.state.storageDriver === 'firebase') App.storage.firestoreSaveAll();
-                            
-                            App.ui.showAlert("Resource deleted.", "success");
-                            App.ui.hideResourceModal();
-                            App.ui.updateResourcesView();
-                        }}
-                    ]);
                 },
                 
                 toggleRuleTabs: function(tab) {
@@ -2523,156 +2265,224 @@ localStorage.removeItem('hauoraOnboardComplete');
                         d.contentEdit.style.display = 'block';
                         d.contentReflect.style.display = 'none';
                         d.tabEdit.classList.add('border-indigo-600', 'text-indigo-600');
-                        d.tabEdit.classList.remove('text-gray-500');
+                        d.tabEdit.classList.remove('border-transparent', 'text-gray-500');
+                        d.tabReflect.classList.add('border-transparent', 'text-gray-500');
                         d.tabReflect.classList.remove('border-indigo-600', 'text-indigo-600');
-                        d.tabReflect.classList.add('text-gray-500');
                     } else {
                         d.contentEdit.style.display = 'none';
                         d.contentReflect.style.display = 'block';
                         d.tabEdit.classList.remove('border-indigo-600', 'text-indigo-600');
-                        d.tabEdit.classList.add('text-gray-500');
+                        d.tabEdit.classList.add('border-transparent', 'text-gray-500');
+                        d.tabReflect.classList.remove('border-transparent', 'text-gray-500');
                         d.tabReflect.classList.add('border-indigo-600', 'text-indigo-600');
-                        d.tabReflect.classList.remove('text-gray-500');
-                        // Update reflect tab content
+                        // Update reflection content when tab is clicked
                         App.ui.updateRuleOfLifeView();
                     }
                 },
                 
-                // --- Settings Handlers ---
-                
-                handleLogout: function() {
-                    App.ui.showModal("Sign Out?", "Are you sure you want to sign out? Your data will remain encrypted in the cloud, but you will be logged out on this device.", [
-                        { text: "Cancel", type: "secondary" },
-                        { text: "Sign Out", type: "danger", callback: () => App.auth.signOut() }
-                    ]);
+                saveRuleOfLife: function(e) {
+                    e.preventDefault();
+                    const d = App.dom.rule.inputs;
+                    App.state.data.ruleOfLife = {
+                        vision: d.vision.value,
+                        commitments: d.commitments.value,
+                        practices: d.practices.value,
+                        community: d.community.value
+                    };
+                    
+                    App.state.data.lastModified = new Date().toISOString();
+                    App.storage.localSaveAll();
+                    if (App.state.storageDriver === 'firebase') {
+                        App.storage.firestoreSaveAll();
+                    }
+                    
+                    App.ui.showAlert("Rule of Life saved!", "success");
                 },
                 
-                handleForceSync: function() {
-                    App.ui.showModal("Force Sync?", "This will compare local and cloud data. The most recently modified version will be kept. Do you want to continue?", [
-                        { text: "Cancel", type: "secondary" },
-                        { text: "Force Sync", type: "primary", callback: () => App.storage.syncData() }
-                    ]);
+                saveRuleReflection: function(e) {
+                    e.preventDefault();
+                    const d = App.dom.rule;
+                    const reflection = d.reflectionInput.value;
+                    if (!reflection) return;
+                    
+                    const newEntry = {
+                        date: App.util.getTodayDate(),
+                        reflection: reflection
+                    };
+                    
+                    App.state.data.ruleOfLifeHistory.push(newEntry);
+                    App.state.data.lastModified = new Date().toISOString();
+                    App.storage.localSaveAll();
+                    if (App.state.storageDriver === 'firebase') {
+                        App.storage.firestoreSaveAll();
+                    }
+                    
+                    d.reflectionInput.value = '';
+                    App.ui.showAlert("Reflection saved to history!", "success");
+                    App.navigation.navigateTo('historyView');
+                },
+                
+                saveResource: function() {
+                    const d = App.dom.resources;
+                    const id = d.idInput.value;
+                    const resource = {
+                        id: id,
+                        title: d.titleInput.value,
+                        link: d.linkInput.value,
+                        description: d.descriptionInput.value
+                    };
+                    
+                    App.state.data.userResources[id] = resource;
+                    App.state.data.lastModified = new Date().toISOString();
+                    App.storage.localSaveAll();
+                    if (App.state.storageDriver === 'firebase') {
+                        App.storage.firestoreSaveAll();
+                    }
+                    
+                    App.ui.hideResourceModal();
+                    App.ui.updateResourcesView();
+                },
+                
+                deleteResource: function(id) {
+                    App.ui.showModal("Delete Resource?", "Are you sure you want to delete this resource? This cannot be undone.",
+                        [
+                            { text: "Cancel", type: "secondary" },
+                            { text: "Delete", type: "danger", callback: () => {
+                                delete App.state.data.userResources[id];
+                                App.state.data.lastModified = new Date().toISOString();
+                                App.storage.localSaveAll();
+                                if (App.state.storageDriver === 'firebase') {
+                                    App.storage.firestoreSaveAll();
+                                }
+                                App.ui.hideResourceModal();
+                                App.ui.updateResourcesView();
+                                App.ui.showAlert("Resource deleted.", "success");
+                            }}
+                        ]
+                    );
                 },
                 
                 exportData: function() {
                     if (!App.state.pin) {
-                        App.ui.showAlert("PIN not set. Cannot export data.", "error");
+                        App.ui.showAlert("PIN not set. Please unlock your data first.", "error");
                         return;
                     }
-                    // We export the *unencrypted* data for portability.
-                    // This is a security consideration, but necessary for user data ownership.
-                    const dataString = JSON.stringify(App.state.data, null, 2);
-                    const blob = new Blob([dataString], { type: 'application/json' });
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = `TokuHauora_Export_${App.util.getTodayDate()}.json`;
-                    a.click();
-                    URL.revokeObjectURL(url);
-                    App.ui.showAlert("Data exported.", "success");
+                    App.ui.showModal("Export Data", "Your data will be exported as an unencrypted JSON file. Save it somewhere safe.",
+                        [
+                            { text: "Cancel", type: "secondary" },
+                            { text: "Export", type: "primary", callback: () => {
+                                const dataString = JSON.stringify(App.state.data);
+                                const blob = new Blob([dataString], {type: 'application/json'});
+                                const url = URL.createObjectURL(blob);
+                                const a = document.createElement('a');
+                                a.href = url;
+                                a.download = `TokuHauora_Export_${App.util.getTodayDate()}.json`;
+                                a.click();
+                                URL.revokeObjectURL(url);
+                            }}
+                        ]
+                    );
                 },
                 
-                importData: function(event) {
-                    const file = event.target.files[0];
+                importData: function(e) {
+                    const file = e.target.files[0];
                     if (!file) return;
                     
                     const reader = new FileReader();
-                    reader.onload = (e) => {
+                    reader.onload = (event) => {
                         try {
-                            const importedData = JSON.parse(e.target.result);
-                            App.ui.showModal("Import Data?", "This will overwrite your current local data. This cannot be undone. Are you sure?", [
-                                { text: "Cancel", type: "secondary" },
-                                { text: "Import", type: "danger", callback: () => {
-                                    App.state.data = importedData;
-                                    App.state.data.lastModified = new Date().toISOString();
-                                    App.storage.localSaveAll();
-                                    if (App.state.storageDriver === 'firebase') App.storage.firestoreSaveAll();
-                                    App.ui.showAlert("Data imported successfully!", "success");
-                                    App.navigation.navigateTo('welcomeView');
-                                }}
-                            ]);
+                            const importedData = JSON.parse(event.target.result);
+                            // Basic validation
+                            if (importedData && importedData.checkinHistory !== undefined) {
+                                App.ui.showModal("Import Data?", "This will overwrite all current data in the app. This cannot be undone.",
+                                    [
+                                        { text: "Cancel", type: "secondary" },
+                                        { text: "Import & Overwrite", type: "danger", callback: async () => {
+                                            App.state.data = importedData;
+                                            App.util.mergeWithDefaultData(); // Ensure schema
+                                            App.state.data.lastModified = new Date().toISOString();
+                                            await App.storage.localSaveAll();
+                                            if (App.state.storageDriver === 'firebase') {
+                                                await App.storage.firestoreSaveAll();
+                                            }
+                                            App.ui.showAlert("Data imported successfully!", "success");
+                                            App.navigation.updateViewContent('welcomeView');
+                                        }}
+                                    ]
+                                );
+                            } else {
+                                throw new Error("Invalid data file.");
+                            }
                         } catch (err) {
-                            App.ui.showAlert("Import failed: Invalid JSON file.", "error");
+                            App.ui.showAlert(`Import failed: ${err.message}`, "error");
                         }
                     };
                     reader.readAsText(file);
-                    // Reset file input
-                    event.target.value = null;
+                    e.target.value = null; // Reset file input
                 },
 
                 handleChangePin: function() {
-                    App.state.ui.pinMode = 'change';
-                    App.state.ui.tempPin = ''; // Reset temp pin
-                    App.pin.resetPinInput(App.dom.lockScreen.pinDisplay);
-                    App.dom.lockScreen.title.textContent = "Change PIN";
-                    App.dom.lockScreen.message.textContent = "Enter your CURRENT 4-digit PIN.";
-                    App.dom.lockScreen.screen.style.display = 'flex';
+                    // This would be a multi-step process
+                    // 1. Prompt for current PIN
+                    // 2. If correct, prompt for new PIN
+                    // 3. Prompt to confirm new PIN
+                    // 4. If match, re-encrypt all data with new PIN
+                    App.ui.showAlert("This feature is not yet implemented.", "info");
                 },
                 
                 handleForgotPin: function() {
-                    if (App.state.storageDriver === 'firebase') {
-                        App.ui.showModal("Forgot PIN?", 
-                            "Your PIN is the only key to your encrypted data. It cannot be reset.\n\nYour only option is to delete all your data (local and cloud) and start over. Are you sure?",
-                            [
-                                { text: "Cancel", type: "secondary" },
-                                { text: "Delete Everything", type: "danger", callback: () => App.handlers.handleDeleteAll(true) }
-                            ]
-                        );
-                    } else {
-                        App.ui.showModal("Forgot PIN?", 
-                            "Your PIN is the only key to your encrypted data. It cannot be reset.\n\nYour only option is to delete your local data and start over. Are you sure?",
-                            [
-                                { text: "Cancel", type: "secondary" },
-                                { text: "Delete Local Data", type: "danger", callback: () => App.handlers.handleDeleteLocal(true) }
-                            ]
-                        );
-                    }
+                    App.ui.showModal("Forgot PIN?", 
+                        "If you enabled cloud sync, you can log out and delete your local data. When you log back in, you can set a new PIN and re-download your data.\n\nIf you did not enable cloud sync, your encrypted data cannot be recovered.",
+                        [
+                            { text: "OK", type: "secondary" },
+                            { text: "Log Out & Delete Local", type: "danger", callback: () => App.auth.wipeAndRestart() }
+                        ]
+                    );
                 },
                 
-                handleDeleteLocal: function(isForgotPin = false) {
-                    const message = isForgotPin ? 
-                        "This will delete all local data and restart the app. Are you sure?" :
-                        "Are you sure you want to delete all local data? This cannot be undone.";
-                    
-                    App.ui.showModal("Delete Local Data?", message, [
-                        { text: "Cancel", type: "secondary" },
-                        { text: "Delete Local", type: "danger", callback: () => {
-                            App.storage.localDeleteAll();
-                            localStorage.removeItem('hauoraPinHash');
-localStorage.removeItem('hauoraOnboardComplete');
-                            App.ui.showAlert("Local data deleted. Restarting...", "success");
-                            setTimeout(() => window.location.reload(), 2000);
-                        }}
-                    ]);
+                showDangerZone: function() {
+                    App.dom.settings.dangerZoneModal.style.display = 'flex';
+                    setTimeout(() => App.dom.settings.dangerZoneModal.classList.add('visible'), 10);
                 },
                 
-                handleDeleteCloud: function() {
-                    App.ui.showModal("Delete Cloud Data?", "Are you sure you want to delete all cloud data? This will not affect your local data. This cannot be undone.", [
-                        { text: "Cancel", type: "secondary" },
-                        { text: "Delete Cloud", type: "danger", callback: () => {
-                            App.storage.firestoreDeleteAll();
-                        }}
-                    ]);
+                deleteLocalData: function() {
+                    App.ui.showModal("Delete Local Data?", "Are you sure? All data on this device will be permanently deleted.",
+                        [
+                            { text: "Cancel", type: "secondary" },
+                            { text: "Delete Local", type: "danger", callback: async () => {
+                                await App.storage.localDeleteAll();
+                                localStorage.removeItem('hauoraPinHash');
+                                localStorage.removeItem('hauoraOnboardComplete');
+                                window.location.reload();
+                            }}
+                        ]
+                    );
                 },
                 
-                handleDeleteAll: function(isForgotPin = false) {
-                    const message = isForgotPin ?
-                        "This will delete all local AND cloud data for this user. You will be logged out and the app will restart. Are you sure?" :
-                        "Are you sure you want to delete ALL local and cloud data? This cannot be undone.";
-
-                    App.ui.showModal("Delete ALL Data?", message, [
-                        { text: "Cancel", type: "secondary" },
-                        { text: "Delete All", type: "danger", callback: () => {
-                            App.storage.localDeleteAll();
-                            localStorage.removeItem('hauoraPinHash');
-localStorage.removeItem('hauoraOnboardComplete');
-                            if (App.state.storageDriver === 'firebase') {
-                                App.storage.firestoreDeleteAll();
-                            }
-                            App.ui.showAlert("All data deleted. Restarting...", "success");
-                            setTimeout(() => App.auth.signOut().then(() => window.location.reload()), 2000);
-                        }}
-                    ]);
+                deleteCloudData: function() {
+                     App.ui.showModal("Delete Cloud Data?", "Are you sure? All data in your cloud account will be permanently deleted.",
+                        [
+                            { text: "Cancel", type: "secondary" },
+                            { text: "Delete Cloud", type: "danger", callback: async () => {
+                                await App.storage.firestoreDeleteAll();
+                            }}
+                        ]
+                    );
+                },
+                
+                deleteAllData: function() {
+                     App.ui.showModal("Delete ALL Data?", "Are you sure? This will delete all local AND cloud data permanently.",
+                        [
+                            { text: "Cancel", type: "secondary" },
+                            { text: "Delete All", type: "danger", callback: async () => {
+                                await App.storage.firestoreDeleteAll();
+                                await App.storage.localDeleteAll();
+                                localStorage.removeItem('hauoraPinHash');
+                                localStorage.removeItem('hauoraOnboardComplete');
+                                window.location.reload();
+                            }}
+                        ]
+                    );
                 }
 
             }, // End of App.handlers
@@ -2687,16 +2497,16 @@ localStorage.removeItem('hauoraOnboardComplete');
                 init: function() {
                     this.initModals();
                     this.initOnboarding();
+                    this.initCheckinUI();
                 },
 
                 initModals: function() {
                     const modal = App.dom.modal.modal;
                     const closeBtn = modal.querySelector('.close-button');
-                    
-                    closeBtn.addEventListener('click', () => this.hideModal());
                     modal.addEventListener('click', (e) => {
                         if (e.target === modal) this.hideModal();
                     });
+                    closeBtn.addEventListener('click', () => this.hideModal());
                     
                     const resModal = App.dom.resources.modal;
                     const resClose = resModal.querySelector('.close-button');
@@ -2712,7 +2522,19 @@ localStorage.removeItem('hauoraOnboardComplete');
                 },
                 
                 initOnboarding: function() {
-                    // This is now handled in App.pin.startOnboarding
+                    // Event listeners for prev/next are in pin.startOnboarding
+                    // to handle logic flow
+                },
+                
+                initCheckinUI: function() {
+                    // Populate feelings toggles
+                    const container = App.dom.checkin.feelingsContainer;
+                    container.innerHTML = App.config.feelings.map(f => `
+                        <button type="button" class="feeling-toggle" data-feeling="${f.name}">${f.name}</button>
+                    `).join('');
+                    
+                    // Populate burnout checklist
+                    this.updateBurnoutChecklist();
                 },
 
                 updateOnboardingStep: function(direction) {
@@ -2724,7 +2546,7 @@ localStorage.removeItem('hauoraOnboardComplete');
                     if (newStep < 1 || newStep > steps.length) {
                         return;
                     }
-
+                    
                     App.state.ui.currentOnboardingStep = newStep;
                     currentOnboardingStep = newStep; 
 
@@ -2735,38 +2557,30 @@ localStorage.removeItem('hauoraOnboardComplete');
                         dot.classList.toggle('active', index === currentOnboardingStep - 1);
                     });
 
-                    prevBtn.style.display = currentOnboardingStep > 1 ? 'inline-block' : 'none';
-                    nextBtn.style.display = currentOnboardingStep < steps.length ? 'inline-block' : 'none';
-                    finishBtn.style.display = currentOnboardingStep === steps.length ? 'inline-block' : 'none';
+                    prevBtn.style.display = currentOnboardingStep > 1 ? 'inline-flex' : 'none';
+                    nextBtn.style.display = currentOnboardingStep < steps.length ? 'inline-flex' : 'none';
+                    finishBtn.style.display = currentOnboardingStep === steps.length ? 'inline-flex' : 'none';
                 },
                 
-                finishOnboarding: function() {
-                    // This is handled by App.pin.finishOnboarding
-                    localStorage.setItem('hauoraOnboardComplete', 'true');
-                    App.dom.onboarding.modal.classList.remove('visible');
-                    setTimeout(() => App.dom.onboarding.modal.style.display = 'none', 300);
-                },
-
                 showAlert: function(message, type = 'info', duration = 3000) {
                     const alertBox = App.dom.alert;
-                    if (!alertBox) return; 
+                    if (!alertBox) return;
                     alertBox.textContent = message;
-                    alertBox.className = 'alert-box'; // Reset classes
-                    alertBox.classList.add(type); // 'info', 'success', 'error'
+                    alertBox.className = 'alert-box'; 
+                    alertBox.classList.add(type);
                     
-                    // Make visible
+                    // FIX: Use display: block to show
                     alertBox.style.display = 'block';
-                    setTimeout(() => alertBox.classList.add('visible'), 10); 
+                    setTimeout(() => alertBox.classList.add('visible'), 10); // Fade in
 
-                    // Clear any existing timer
                     if (App.state.ui.alertTimer) {
                         clearTimeout(App.state.ui.alertTimer);
                     }
                     
-                    // Auto-hide
                     App.state.ui.alertTimer = setTimeout(() => {
                         alertBox.classList.remove('visible');
-                        setTimeout(() => alertBox.style.display = 'none', 300); // Set display none after transition
+                        // FIX: Wait for transition to finish before hiding
+                        setTimeout(() => alertBox.style.display = 'none', 300); 
                     }, duration);
                 },
 
@@ -2782,7 +2596,7 @@ localStorage.removeItem('hauoraOnboardComplete');
                         buttons.forEach(btn => {
                             const button = document.createElement('button');
                             button.textContent = btn.text;
-                            button.className = `btn btn-${btn.type || 'primary'}`; 
+                            button.className = `btn btn-${btn.type || 'primary'} ${btn.size || ''}`;
                             button.addEventListener('click', (e) => {
                                 e.stopPropagation();
                                 if(btn.callback) btn.callback();
@@ -2790,7 +2604,6 @@ localStorage.removeItem('hauoraOnboardComplete');
                             });
                             buttonContainer.appendChild(button);
                         });
-                        buttonContainer.style.display = 'flex';
                     } else {
                         const okButton = document.createElement('button');
                         okButton.textContent = "OK";
@@ -2800,7 +2613,6 @@ localStorage.removeItem('hauoraOnboardComplete');
                             this.hideModal();
                         });
                         buttonContainer.appendChild(okButton);
-                        buttonContainer.style.display = 'flex';
                     }
                     
                     modal.style.display = 'flex';
@@ -2815,7 +2627,7 @@ localStorage.removeItem('hauoraOnboardComplete');
                         App.dom.modal.titleEl.textContent = '';
                         App.dom.modal.messageEl.textContent = '';
                         App.dom.modal.buttonContainer.innerHTML = '';
-                    }, 300); // Match CSS transition
+                    }, 300);
                 },
 
                 showResourceModal: function(resource = null) {
@@ -2827,7 +2639,7 @@ localStorage.removeItem('hauoraOnboardComplete');
                         titleInput.value = resource.title;
                         linkInput.value = resource.link;
                         descriptionInput.value = resource.description;
-                        deleteBtn.style.display = 'inline-block';
+                        deleteBtn.style.display = 'inline-flex';
                         deleteBtn.onclick = () => App.handlers.deleteResource(resource.id);
                     } else {
                         idInput.value = `res_${Date.now()}`;
@@ -2855,58 +2667,97 @@ localStorage.removeItem('hauoraOnboardComplete');
                     const hasGratitude = App.state.data.gratitudeHistory.some(e => e.date === today);
                     const hasSabbath = App.state.data.sabbathHistory.some(e => e.date === today);
                     
-                    welcome.checkinBtn.innerHTML = `<span>Daily Check-in</span> ${hasCheckedIn ? '<span class="check-mark">&#10003;</span>' : '<span class="welcome-arrow">&rarr;</span>'}`;
+                    // UI-FIX: Update new button style
+                    welcome.checkinBtn.querySelector('.welcome-btn-status').textContent = hasCheckedIn ? 'Completed today' : 'Tap to begin';
                     welcome.checkinBtn.classList.toggle('complete', hasCheckedIn);
                     
-                    welcome.gratitudeBtn.innerHTML = `<span>Gratitude Journal</span> ${hasGratitude ? '<span class="check-mark">&#10003;</span>' : '<span class="welcome-arrow">&rarr;</span>'}`;
+                    welcome.gratitudeBtn.querySelector('.welcome-btn-status').textContent = hasGratitude ? 'Completed today' : 'Tap to begin';
                     welcome.gratitudeBtn.classList.toggle('complete', hasGratitude);
                     
-                    welcome.sabbathBtn.innerHTML = `<span>Sabbath Reflection</span> ${hasSabbath ? '<span class="check-mark">&#10003;</span>' : '<span class="welcome-arrow">&rarr;</span>'}`;
+                    welcome.sabbathBtn.querySelector('.welcome-btn-status').textContent = hasSabbath ? 'Completed today' : 'Tap to begin';
                     welcome.sabbathBtn.classList.toggle('complete', hasSabbath);
                     
+                    // Update Dashboard
                     this.renderDashboardPreview();
                 },
-                
+
                 renderDashboardPreview: function() {
                     const { dashboardPreview, hauoraChart } = App.dom.welcome;
-                    const history = App.state.data.checkinHistory;
-                    
-                    if (history.length === 0) {
+                    const lastEntry = App.state.data.checkinHistory[App.state.data.checkinHistory.length - 1];
+
+                    if (!lastEntry) {
                         dashboardPreview.style.display = 'block';
                         hauoraChart.style.display = 'none';
                         return;
                     }
                     
-                    // --- Render Chart ---
                     dashboardPreview.style.display = 'none';
                     hauoraChart.style.display = 'block';
-                    
-                    const last7Days = App.moduleCheckin.getLast7DaysRatings();
-                    const labels = last7Days.map(d => App.util.formatDate(d.date).slice(0, -5)); // Shorten date
-                    const datasets = [
-                        { label: 'Physical', data: last7Days.map(d => d.physical), borderColor: '#EF4444', tension: 0.1 },
-                        { label: 'Mental', data: last7Days.map(d => d.mental), borderColor: '#3B82F6', tension: 0.1 },
-                        { label: 'Social', data: last7Days.map(d => d.social), borderColor: '#10B981', tension: 0.1 },
-                        { label: 'Spiritual', data: last7Days.map(d => d.spiritual), borderColor: '#8B5CF6', tension: 0.1 }
-                    ];
 
                     const ctx = hauoraChart.getContext('2d');
-                    
-                    if (App.state.ui.hauoraChartInstance) {
-                        App.state.ui.hauoraChartInstance.destroy();
-                    }
-                    
-                    App.state.ui.hauoraChartInstance = new Chart(ctx, {
-                        type: 'line',
-                        data: { labels, datasets },
-                        options: {
-                            responsive: true,
-                            scales: { y: { min: 0, max: 10 } },
-                            plugins: { legend: { position: 'bottom', labels: { font: { size: 10 } } } }
-                        }
-                    });
-                },
+                    const ratings = lastEntry.ratings || {};
+                    const data = {
+                        labels: ['Physical', 'Mental', 'Social', 'Spiritual'],
+                        datasets: [{
+                            label: 'Hauora Rating',
+                            data: [
+                                ratings.physical || 0,
+                                ratings.mental || 0,
+                                ratings.social || 0,
+                                ratings.spiritual || 0
+                            ],
+                            backgroundColor: 'rgba(79, 70, 229, 0.2)', // indigo-600/20
+                            borderColor: 'rgba(79, 70, 229, 1)', // indigo-600
+                            borderWidth: 2,
+                            pointBackgroundColor: 'rgba(79, 70, 229, 1)',
+                            pointRadius: 4,
+                        }]
+                    };
 
+                    if (App.state.ui.hauoraChart) {
+                        App.state.ui.hauoraChart.data = data;
+                        App.state.ui.hauoraChart.update();
+                    } else {
+                        App.state.ui.hauoraChart = new Chart(ctx, {
+                            type: 'radar',
+                            data: data,
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                scales: {
+                                    r: {
+                                        beginAtZero: true,
+                                        max: 10,
+                                        min: 0,
+                                        ticks: {
+                                            stepSize: 2,
+                                            display: false
+                                        },
+                                        pointLabels: {
+                                            font: {
+                                                size: 14,
+                                                family: 'Inter',
+                                            },
+                                            color: '#4b5563' // gray-600
+                                        },
+                                        grid: {
+                                            color: '#e5e7eb' // gray-200
+                                        },
+                                        angleLines: {
+                                            color: '#e5e7eb' // gray-200
+                                        }
+                                    }
+                                },
+                                plugins: {
+                                    legend: {
+                                        display: false
+                                    }
+                                }
+                            }
+                        });
+                    }
+                },
+                
                 updateCheckinView: function() {
                     const today = App.util.getTodayDate();
                     const { checkin } = App.dom;
@@ -2924,7 +2775,7 @@ localStorage.removeItem('hauoraOnboardComplete');
                     
                     checkin.sliders.forEach(slider => {
                         const key = slider.id.split('-')[1]; // e.g., 'physical'
-                        slider.value = entry.ratings[key] || 5; // Default to 5
+                        slider.value = entry.ratings[key] || 5;
                     });
                 },
                 
@@ -2978,9 +2829,10 @@ localStorage.removeItem('hauoraOnboardComplete');
                         let content = '';
                         switch (entry.type) {
                             case 'Check-in':
+                                const ratings = entry.ratings || {};
                                 content = `
                                     <p><strong>Feelings:</strong> ${entry.feelings.join(', ') || 'None'}</p>
-                                    <p><strong>Ratings:</strong> ${Object.entries(entry.ratings).map(([k,v]) => `${k}: ${v}`).join(', ')}</p>
+                                    <p><strong>Ratings:</strong> P:${ratings.physical || 'N/A'}, M:${ratings.mental || 'N/A'}, S:${ratings.social || 'N/A'}, W:${ratings.spiritual || 'N/A'}</p>
                                     <p><strong>Note:</strong> ${App.util.escapeHTML(entry.note) || '...'}</p>
                                 `;
                                 break;
@@ -3006,10 +2858,10 @@ localStorage.removeItem('hauoraOnboardComplete');
                         }
                         
                         return `
-                            <div class="history-entry card">
-                                <h4 class="font-bold text-lg">${entry.type}</h4>
+                            <div class="history-entry card !p-4">
+                                <h4 class="font-semibold text-lg text-indigo-700">${entry.type}</h4>
                                 <p class="text-sm text-gray-500 mb-2">${App.util.formatDate(entry.date)}</p>
-                                <div class="text-sm">${content}</div>
+                                <div class="text-sm space-y-1 text-gray-600">${content}</div>
                             </div>
                         `;
                     }).join('');
@@ -3019,13 +2871,11 @@ localStorage.removeItem('hauoraOnboardComplete');
                     const { rule } = App.dom;
                     const data = App.state.data.ruleOfLife || {};
                     
-                    rule.form.reset();
                     rule.inputs.vision.value = data.vision || '';
                     rule.inputs.commitments.value = data.commitments || '';
                     rule.inputs.practices.value = data.practices || '';
                     rule.inputs.community.value = data.community || '';
                     
-                    // For the "reflect" view
                     rule.reflectVision.textContent = data.vision || '...';
                     rule.reflectCommitments.textContent = data.commitments || '...';
                     rule.reflectPractices.textContent = data.practices || '...';
@@ -3044,9 +2894,9 @@ localStorage.removeItem('hauoraOnboardComplete');
                     }
                     
                     resources.container.innerHTML = resourceList.map(res => `
-                        <div class="card resource-card">
-                            <h4 class="font-bold">${App.util.escapeHTML(res.title)}</h4>
-                            <p class="text-sm text-gray-600 mb-2">${App.util.escapeHTML(res.description) || '...'}</p>
+                        <div class="card resource-card !p-5">
+                            <h4 class="font-semibold text-lg text-gray-800">${App.util.escapeHTML(res.title)}</h4>
+                            <p class="text-sm text-gray-600 mb-4 mt-1 flex-grow">${App.util.escapeHTML(res.description) || '...'}</p>
                             <div class="flex gap-2 mt-auto pt-2">
                                 <a href="${App.util.escapeHTML(res.link)}" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm">Open Link</a>
                                 <button class="btn btn-outline btn-sm" data-id="${res.id}">Edit</button>
@@ -3064,7 +2914,45 @@ localStorage.removeItem('hauoraOnboardComplete');
                 
                 updateSettingsView: function() {
                     App.auth.updateSyncStatusUI();
+                },
+                
+                updateBurnoutChecklist: function() {
+                    const { burnoutChecklist } = App.dom.checkin;
+                    let html = '';
+                    
+                    for (const category in App.config.burnoutChecklist) {
+                        html += `<h3 class="text-lg font-semibold text-indigo-700 mt-4 mb-2">${category.replace(/([A-Z])/g, ' $1')}</h3>`;
+                        html += '<div class="space-y-3">';
+                        html += App.config.burnoutChecklist[category].map(item => `
+                            <label class="flex items-start p-3 bg-gray-50 rounded-lg">
+                                <input type="checkbox" class="form-checkbox h-5 w-5 text-indigo-600 rounded mt-0.5" data-item="${App.util.escapeHTML(item)}">
+                                <span class="ml-3 text-gray-700">${App.util.escapeHTML(item)}</span>
+                            </label>
+                        `).join('');
+                        html += '</div>';
+                    }
+                    burnoutChecklist.innerHTML = html;
+                },
+                
+                updateBurnoutResults: function() {
+                    const { burnoutChecklist, burnoutResultsContainer } = App.dom.checkin;
+                    const checkedItems = [];
+                    burnoutChecklist.querySelectorAll('input[type="checkbox"]:checked').forEach(input => {
+                        checkedItems.push(input.dataset.item);
+                    });
+                    
+                    if (checkedItems.length === 0) {
+                        burnoutResultsContainer.innerHTML = '<p>You didn\'t flag any items. That\'s great!</p>';
+                        return;
+                    }
+                    
+                    burnoutResultsContainer.innerHTML = checkedItems.map(item => `
+                        <div class="p-3 bg-indigo-50 rounded-lg">
+                            <p class="text-gray-800">${item}</p>
+                        </div>
+                    `).join('');
                 }
+                
             }, // End of App.ui
             
             
@@ -3102,6 +2990,7 @@ localStorage.removeItem('hauoraOnboardComplete');
                     const targetView = document.getElementById(viewId);
                     if (targetView) {
                         targetView.style.display = 'block';
+                        targetView.scrollTop = 0; // Scroll to top on nav
                         App.state.ui.currentView = viewId;
                         
                         if (App.state.ui.viewHistory[App.state.ui.viewHistory.length - 1] !== viewId) {
@@ -3113,7 +3002,7 @@ localStorage.removeItem('hauoraOnboardComplete');
                         
                     } else {
                         console.error(`View not found: ${viewId}`);
-                        App.dom.views[0].style.display = 'block'; // Show first view as fallback
+                        App.dom.views[0].style.display = 'block';
                     }
                 },
                 
@@ -3159,9 +3048,7 @@ localStorage.removeItem('hauoraOnboardComplete');
                 
                 updateNavActiveState: function(viewId) {
                     App.dom.nav.links.forEach(link => {
-                        // UI-FIX: Update active class logic for new pill design
-                        const isActive = link.dataset.view === viewId;
-                        link.classList.toggle('active', isActive);
+                        link.classList.toggle('active', link.dataset.view === viewId);
                     });
                 }
             }, // End of App.navigation
@@ -3179,61 +3066,62 @@ localStorage.removeItem('hauoraOnboardComplete');
                     // 1. DOM Caching
                     this.util.cacheDOM();
                     
-                    // 2. Initialize UI (modals, etc.)
-                    this.ui.init();
-                    
-                    // 3. Initialize Firebase
-                    // FIX: Correctly check AppFirebase and set up state
-                    if (AppFirebase) {
+                    // 2. Initialize Firebase State
+                    if (window.AppFirebase) {
                         try {
-                            App.state.fb.db = AppFirebase.getFirestore(AppFirebase.app);
-                            App.state.fb.auth = AppFirebase.getAuth(AppFirebase.app);
-                            App.state.fb.googleProvider = new AppFirebase.GoogleAuthProvider();
+                            // FIX: Use the app instance from window.AppFirebase
+                            this.state.fb.db = AppFirebase.getFirestore(window.AppFirebase.app);
+                            this.state.fb.auth = AppFirebase.getAuth(window.AppFirebase.app);
+                            this.state.fb.googleProvider = new AppFirebase.GoogleAuthProvider();
                             
-                            await AppFirebase.setPersistence(App.state.fb.auth, AppFirebase.browserLocalPersistence);
+                            await AppFirebase.setPersistence(this.state.fb.auth, AppFirebase.browserLocalPersistence);
 
-                            App.state.appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+                            this.state.appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
                         } catch (e) {
-                            console.error("Firebase state initialization error:", e);
-                            console.warn("Firebase services (Firestore/Auth) could not be set. App will run in local-only mode.");
-                            App.state.storageDriver = 'local';
-                            if(App.dom.settings.syncSection) App.dom.settings.syncSection.style.display = 'none';
+                             console.error("Firebase state initialization error:", e);
+                             console.warn("Firebase services (Firestore/Auth) could not be set. App will run in local-only mode.");
+                             this.state.fb.auth = null; // Ensure auth is null
                         }
                     } else {
                         console.warn("Firebase modules not loaded. App will run in local-only mode.");
-                        App.state.storageDriver = 'local';
-                        if(App.dom.settings.syncSection) App.dom.settings.syncSection.style.display = 'none';
                     }
                     
-                    // 4. Initialize Local DB (IndexedDB)
+                    if (!this.state.fb.auth) {
+                        this.state.storageDriver = 'local';
+                        App.dom.settings.syncSection.style.display = 'none';
+                    }
+
+                    // 3. Initialize Local DB (IndexedDB)
                     this.state.db = await this.storage.initDB();
                     console.log("IndexedDB initialized.");
 
-                    // 5. Initialize Auth Listener
-                    if (App.state.fb.auth) {
-                        this.auth.init();
-                    }
-                    
-                    // 6. Initialize Event Handlers
+                    // 4. Initialize Core UI (modals, forms)
+                    this.ui.init();
+
+                    // 5. Initialize Event Handlers
                     this.handlers.init();
                     
-                    // 7. Initialize Navigation
+                    // 6. Initialize Navigation
                     this.navigation.init();
                     
-                    // 8. Check PIN & Auth State
+                    // 7. Initialize Auth Listener
+                    this.auth.init();
+                    
+                    // 8. Check PIN & Auth State (Main App Entry Point)
                     await this.auth.checkPinAndAuthState();
                     
                     console.log("App.init finished.");
                     
                 } catch (error) {
                     console.error("Critical error during App.init:", error);
+                    App.util.hideSplash();
                     const body = document.querySelector('body');
                     body.innerHTML = `
-                        <div style="padding: 20px; text-align: center; color: red;">
-                            <h1>Fatal Error</h1>
-                            <p>Toku Hauora could not start. ${error.message}</p>
-                            <p>Please try clearing your browser cache for this site or contact support.</p>
-                            <pre>${error.stack}</pre>
+                        <div class="p-5 text-center text-red-600">
+                            <h1 class="text-2xl font-bold">Fatal Error</h1>
+                            <p class="mt-2">${error.message}</p>
+                            <p class="mt-4 text-sm text-gray-600">Please try clearing your browser cache for this site or contact support.</p>
+                            <pre class="mt-4 text-left text-xs bg-gray-100 p-2 rounded">${error.stack}</pre>
                         </div>
                     `;
                 }
@@ -3241,7 +3129,7 @@ localStorage.removeItem('hauoraOnboardComplete');
         }); // End of App object
         
         // --- Start the App ---
-        // FIX: Call init directly. Module scripts are deferred by default.
+        // FIX: Call init directly. DOM is already loaded as this is at the end.
         App.init();
 
     </script>
