@@ -40,7 +40,8 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
     <!-- Custom CSS -->
-    <style>
+    <!-- FIX: Add type="text/tailwindcss" to enable @apply directives with the CDN -->
+    <style type="text/tailwindcss">
         /* UI-FIX: Remove old :root variables. We will use Tailwind's `indigo` */
         
         body {
