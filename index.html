@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tōku Hauora</title>
     
-    <!-- FIX: Corrected favicon links per your 404 error -->
+    <!-- FIX: Corrected favicon links -->
     <link rel="icon" type="image/png" href="https://loneworkernelson-web.github.io/ClergyWB/Toku_Hauora.png">
     <link rel="shortcut icon" href="https://loneworkernelson-web.github.io/ClergyWB/favicon.ico">
     <link rel="apple-touch-icon" href="https://loneworkernelson-web.github.io/ClergyWB/Toku_Hauora.png">
@@ -25,16 +25,17 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     
     <!-- 
-    FIX: Load the full, correct set of CryptoJS components in order.
-    This resolves the `createEncryptor` and `extend` errors.
+      FIX: Replaced the 7-script (broken) solution with the single,
+      bundled 'crypto-js.min.js' file. This file contains PBKDF2,
+      AES, and all dependencies, resolving the race condition.
     -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/core.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/cipher-core.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/pbkdf2.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/aes.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
+    <!--
+      FIX: We still need mode-gcm, which is *not* in the main bundle.
+      Loading it after the main bundle is the correct, stable fix.
+    -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/mode-gcm.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/pad-nopad.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/enc-base64.min.js"></script>
+
 
     <!-- Dexie.js (IndexedDB Wrapper) -->
     <script src="https://unpkg.com/dexie@3/dist/dexie.js"></script>
@@ -43,8 +44,8 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
     <!-- 
-    FIX: Add `type="text/tailwindcss"` to tell the CDN script
-    to process our @apply rules.
+      FIX: Add `type="text/tailwindcss"` to tell the CDN script
+      to process our @apply rules.
     -->
     <style type="text/tailwindcss">
         /* UI POLISH: Use Inter font and Tailwind's 'indigo' palette */
@@ -55,88 +56,109 @@
         }
 
         .view {
-            @apply min-h-screen pb-24 px-4 pt-6;
+            @apply p-4 pt-6;
             display: none;
+            height: 100vh;
+            height: 100dvh; /* Dynamic viewport height */
+            overflow-y: auto;
+            padding-bottom: 80px; /* Space for bottom nav */
         }
         
         #welcomeView {
             display: block;
         }
 
+        /* FIX: Force loginView to be hidden by default */
+        #loginView {
+            display: none;
+        }
+
         /* Bottom Nav */
         .bottom-nav {
-            @apply fixed bottom-0 left-0 right-0 h-20 border-t border-gray-200 bg-white grid grid-cols-5 z-[100];
+            @apply fixed bottom-0 left-0 right-0 h-[70px] z-[100] border-t border-gray-200 bg-white flex justify-around;
             padding-bottom: env(safe-area-inset-bottom);
         }
         
         .nav-link {
-            @apply flex flex-col items-center justify-center text-gray-500 text-xs gap-1 pt-3;
+            @apply flex flex-col items-center justify-center text-gray-400 text-xs flex-grow pt-2 relative;
         }
-        .nav-link svg {
-            @apply w-6 h-6;
-        }
-        /* UI POLISH: "Pill" style for active link */
+        /* UI POLISH: New "pill" style for active link */
         .nav-link.active {
             @apply text-indigo-600;
         }
-        .nav-link.active span {
-            @apply font-semibold;
+        .nav-link.active .nav-pill {
+            @apply w-10 h-8 rounded-full bg-indigo-50;
         }
-        .nav-link.active svg {
-            @apply text-indigo-600;
+        .nav-link svg {
+            @apply w-6 h-6 mb-0.5 relative z-10;
+        }
+        .nav-link span {
+            @apply relative z-10;
+        }
+        .nav-pill {
+            @apply absolute w-10 h-8 top-1.5 transition-all;
         }
 
         /* Re-usable Card Component */
         .card {
             /* UI POLISH: Softer shadow, more padding, larger radius */
-            @apply bg-white rounded-xl shadow-lg p-5 mb-5;
+            @apply bg-white rounded-xl shadow-lg shadow-gray-100 p-5 mb-5;
         }
         
         /* Re-usable Button Components */
         .btn {
-            @apply inline-block font-semibold py-3 px-5 rounded-lg transition-transform transform active:scale-95 text-center;
+            @apply inline-block font-semibold py-2.5 px-5 rounded-lg transition-transform transform active:scale-95 text-center;
         }
         .btn-primary {
-            @apply bg-indigo-600 text-white shadow-md hover:bg-indigo-700;
+            @apply bg-indigo-600 text-white shadow-md shadow-indigo-200 hover:bg-indigo-700;
         }
         .btn-secondary {
-            @apply bg-gray-200 text-gray-800 hover:bg-gray-300;
+            @apply bg-gray-100 text-gray-700 hover:bg-gray-200;
         }
         .btn-danger {
-            @apply bg-red-600 text-white shadow-md hover:bg-red-700;
+            @apply bg-red-600 text-white shadow-md shadow-red-200 hover:bg-red-700;
         }
         .btn-success {
-            @apply bg-green-600 text-white shadow-md hover:bg-green-700;
+            @apply bg-green-600 text-white shadow-md shadow-green-200 hover:bg-green-700;
         }
         .btn-outline {
-            @apply bg-white text-indigo-600 border border-indigo-600 hover:bg-indigo-50;
+            @apply bg-white text-indigo-600 border border-indigo-500 hover:bg-indigo-50;
         }
         .btn-link {
-            @apply bg-transparent text-indigo-600 hover:underline;
+            @apply bg-transparent text-indigo-600 hover:underline p-0;
         }
         .btn-lg {
             @apply py-3 px-6 text-base;
         }
         .btn-sm {
-            @apply py-2 px-3 text-sm font-medium;
+            @apply py-1.5 px-3 text-sm font-medium;
         }
         .btn:disabled {
-            @apply bg-gray-300 text-gray-500 cursor-not-allowed opacity-70;
+            @apply bg-gray-200 text-gray-400 cursor-not-allowed opacity-70 shadow-none;
+        }
+        
+        /* Custom "Back" button style */
+        .btn-back {
+            @apply text-indigo-600 font-medium text-sm mb-2;
         }
 
         /* UI POLISH: Redesigned Welcome Buttons */
         .welcome-btn {
-            @apply w-full text-left p-5 rounded-xl shadow-lg mb-4 bg-white flex justify-between items-center transition-all hover:shadow-xl hover:-translate-y-0.5;
+            @apply w-full text-left p-5 rounded-xl shadow-lg shadow-gray-100 mb-4 bg-white flex justify-between items-center transition-all hover:shadow-indigo-100 hover:-translate-y-0.5;
+        }
+        .welcome-btn.complete {
+             @apply shadow-green-100;
+        }
+        .welcome-btn.complete .welcome-btn-icon {
+            @apply text-green-500;
         }
         .welcome-btn .welcome-btn-text {
             @apply text-lg font-semibold text-gray-800;
         }
         .welcome-btn .welcome-btn-icon {
-            @apply text-3xl text-gray-300;
+            @apply text-3xl text-indigo-200;
         }
-        .welcome-btn.complete .welcome-btn-icon {
-            @apply text-green-500;
-        }
+
         
         /* UI POLISH: Themed Sliders */
         .hauora-slider {
@@ -164,6 +186,13 @@
         .feeling-toggle.selected {
             @apply bg-indigo-600 text-white border-indigo-600;
         }
+        /* UI POLISH: Add context colors for toggles */
+        .feeling-toggle.selected[data-type="positive"] {
+             @apply bg-green-600 border-green-600;
+        }
+        .feeling-toggle.selected[data-type="warning"] {
+            @apply bg-yellow-600 text-white border-yellow-600;
+        }
 
         /* --- Modals & Alerts --- */
         
@@ -186,12 +215,12 @@
             @apply flex justify-between items-center mb-4;
         }
         .modal-header .close-button {
-            @apply text-gray-400 hover:text-gray-600 text-3xl;
+            @apply text-gray-400 hover:text-gray-600 text-3xl font-light;
         }
 
         .alert-box {
             /* FIX: Set z-index higher than nav bar */
-            @apply fixed top-5 left-1/2 -translate-x-1/2 z-[101] py-3 px-6 rounded-lg shadow-lg text-white font-semibold transition-all duration-300 opacity-0 -translate-y-10;
+            @apply fixed top-5 left-1/2 -translate-x-1/2 z-[102] py-3 px-6 rounded-lg shadow-lg text-white font-semibold transition-all duration-300 opacity-0 -translate-y-10;
             /* FIX: Add display: none */
             display: none;
         }
@@ -254,6 +283,20 @@
             @apply border-l-4 border-indigo-500 pl-4;
         }
 
+        /* Rule of Life Tabs */
+        .rule-tab.active {
+            @apply border-b-2 border-indigo-600 text-indigo-600;
+        }
+        .rule-tab {
+            @apply flex-1 py-2 text-center font-semibold text-gray-500;
+        }
+        
+        /* Resource Card Layout */
+        .resource-card {
+            @apply flex flex-col;
+            min-height: 150px; /* Ensure cards have a consistent min-height */
+        }
+
         /* Shake animation for PIN error */
         @keyframes shake {
             0%, 100% { transform: translateX(0); }
@@ -262,6 +305,14 @@
         }
         .animate-shake {
             animation: shake 0.5s ease-in-out;
+        }
+        
+        /* Input field styling */
+        input[type="text"],
+        input[type="url"],
+        input[type="email"],
+        textarea {
+            @apply w-full p-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400;
         }
     </style>
 </head>
@@ -584,8 +635,8 @@
             <h1 class="text-3xl font-bold mb-4">Rule of Life</h1>
             
             <div class="flex border-b mb-4">
-                <button id="ruleTabEdit" class="flex-1 py-2 text-center font-semibold border-b-2 border-indigo-600 text-indigo-600">Edit</button>
-                <button id="ruleTabReflect" class="flex-1 py-2 text-center font-semibold text-gray-500">Reflect</button>
+                <button id="ruleTabEdit" class="rule-tab active">Edit</button>
+                <button id="ruleTabReflect" class="rule-tab">Reflect</button>
             </div>
             
             <!-- Edit Tab -->
@@ -673,7 +724,7 @@
                 </div>
                 <div id="syncStatusLoggedIn" style="display: none;">
                     <p class="mb-2">Signed in as:</p>
-                    <p id="userEmail" class="font-semibold text-gray-700 mb-4"></p>
+                    <p id="userEmail" class="font-semibold text-gray-700 mb-4 break-words"></p>
                     <p id="syncStatus" class="text-sm text-gray-500 mb-4">Sync status: ...</p>
                     <button id="forceSyncBtn" class="btn btn-secondary w-full mb-3">Force Sync Now</button>
                     <button id="settingsLogoutBtn" class="btn btn-danger w-full">Sign Out</button>
@@ -696,7 +747,7 @@
             <div class="card">
                 <h2 class="text-xl font-semibold mb-4">Security</h2>
                 <button id="changePinBtn" class="btn btn-secondary w-full mb-3">Change PIN</button>
-                <button id="dangerZoneBtn" class="btn btn-outline !border-red-500 !text-red-500 w-full">Danger Zone</button>
+                <button id="dangerZoneBtn" class="btn btn-outline !border-red-500 !text-red-500 w-full hover:!bg-red-50">Danger Zone</button>
             </div>
             
             <!-- Danger Zone Modal -->
@@ -777,28 +828,43 @@
     -->
     <nav class="bottom-nav">
         <a href="#" class="nav-link active" data-view="welcomeView">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" /></svg>
+            <div class="nav-pill"></div>
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" /></svg>
             <span>Home</span>
         </a>
         <a href="#" class="nav-link" data-view="historyView">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18c-2.305 0-4.408.867-6 2.292m0-14.25v14.25" /></svg>
+            <div class="nav-pill"></div>
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18c-2.305 0-4.408.867-6 2.292m0-14.25v14.25" /></svg>
             <span>History</span>
         </a>
         <a href="#" class="nav-link" data-view="ruleView">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+            <div class="nav-pill"></div>
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
             <span>Rule</span>
         </a>
         <a href="#" class="nav-link" data-view="resourcesView">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 18.75a6 6 0 006-6v-1.5m-6 7.5a6 6 0 01-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 01-3-3V4.5a3 3 0 116 0v8.25a3 3 0 01-3 3z" /></svg>
+            <div class="nav-pill"></div>
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 18.75a6 6 0 006-6v-1.5m-6 7.5a6 6 0 01-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 01-3-3V4.5a3 3 0 116 0v8.25a3 3 0 01-3 3z" /></svg>
             <span>Resources</span>
         </a>
         <a href="#" class="nav-link" data-view="settingsView">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-1.003 1.11-1.226.55-.223 1.156-.223 1.706 0 .55.223 1.02.684 1.11-1.226M10.344 18.06c.09.542.56 1.003 1.11 1.226.55.223 1.156-.223 1.706 0 .55-.223 1.02-.684 1.11-1.226m-4.662-5.748c.09-.542.56-1.003 1.11-1.226.55-.223 1.156-.223 1.706 0 .55.223 1.02-.684 1.11-1.226M18 10.344c.09.542.56 1.003 1.11 1.226.55.223 1.156-.223 1.706 0 .55-.223 1.02-.684 1.11-1.226M10.344 6c.09-.542.56-1.003 1.11-1.226.55-.223 1.156-.223 1.706 0 .55.223 1.02-.684 1.11-1.226M6 10.344c.09.542.56 1.003 1.11 1.226.55.223 1.156-.223 1.706 0 .55.223 1.02-.684 1.11-1.226M12 6.75a2.25 2.25 0 100 4.5 2.25 2.25 0 000-4.5zM12 12.75a2.25 2.25 0 100 4.5 2.25 2.25 0 000-4.5z" /></svg>
+            <div class="nav-pill"></div>
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-1.003 1.11-1.226.55-.223 1.156-.223 1.706 0 .55.223 1.02.684 1.11-1.226M10.344 18.06c.09.542.56 1.003 1.11 1.226.55.223 1.156-.223 1.706 0 .55-.223 1.02-.684 1.11-1.226m-4.662-5.748c.09-.542.56-1.003 1.11-1.226.55-.223 1.156-.223 1.706 0 .55.223 1.02-.684 1.11-1.226M18 10.344c.09.542.56 1.003 1.11 1.226.55.223 1.156-.223 1.706 0 .55-.223 1.02-.684 1.11-1.226M10.344 6c.09-.542.56-1.003 1.11-1.226.55-.223 1.156-.223 1.706 0 .55.223 1.02-.684 1.11-1.226M6 10.344c.09.542.56 1.003 1.11 1.226.55.223 1.156-.223 1.706 0 .55.223 1.02-.684 1.11-1.226M12 6.75a2.25 2.25 0 100 4.5 2.25 2.25 0 000-4.5zM12 12.75a2.25 2.25 0 100 4.5 2.25 2.25 0 000-4.5z" /></svg>
             <span>Settings</span>
         </a>
     </nav>
     
     <!-- 
+    ================================================================
+    APP JAVASCRIPT
+    ================================================================
+    -->
+    <script type="module">
+        // THIS IS PART 2. PASTE THE JAVASCRIPT CODE HERE.
+    </script>
+</body>
+</html>
+<!-- 
     ================================================================
     APP JAVASCRIPT
     ================================================================
@@ -881,6 +947,7 @@
                     return db;
                 },
 
+                // --- Encryption/Decryption ---
                 deriveKey: function(pin, salt) {
                     return CryptoJS.PBKDF2(pin, salt, {
                         keySize: 256 / 32,
@@ -893,7 +960,6 @@
                         const iv = CryptoJS.lib.WordArray.random(96 / 8);     // 12 bytes (GCM recommended)
                         const key = this.deriveKey(pin, salt);
                         
-                        // FIX: Use CryptoJS.pad.NoPadding for GCM
                         const encrypted = CryptoJS.AES.encrypt(textData, key, {
                             iv: iv,
                             mode: CryptoJS.mode.GCM,
@@ -928,7 +994,6 @@
                         const ciphertext = combinedCiphertext.clone();
                         ciphertext.sigBytes = combinedCiphertext.sigBytes - 16;
                         
-                        // FIX: Use CryptoJS.pad.NoPadding for GCM
                         const decrypted = CryptoJS.AES.decrypt({ ciphertext: ciphertext }, key, {
                             iv: iv,
                             mode: CryptoJS.mode.GCM,
@@ -948,6 +1013,7 @@
                     }
                 },
 
+                // --- Local DB Operations ---
                 localSaveAll: async function() {
                     if (!App.state.db || !App.state.pin) {
                         console.error("Cannot save: DB or PIN not set.");
@@ -1038,6 +1104,7 @@
                     }
                 },
 
+                // --- Firestore Operations ---
                 getFirestorePaths: function() {
                     if (!App.state.fb || !App.state.fb.auth || !App.state.fb.auth.currentUser) {
                         console.error("getFirestorePaths: No user logged in.");
@@ -1143,6 +1210,7 @@
                     }
                 },
                 
+                // --- Data Sync Logic ---
                 syncData: async function() {
                     console.log("Starting data sync...");
                     App.auth.updateSyncStatusUI("Syncing...");
@@ -1189,8 +1257,12 @@
                         App.ui.showAlert("Could not download cloud data. Wrong PIN or no data found.", "error");
                     }
                 }
-            }, 
+            }, // End of App.storage
 
+            /* ================================================================
+            App Logic Part 2: Auth
+            ================================================================
+            */
             auth: {
                 init: function() {
                     if (!App.state.fb.auth) return;
@@ -1352,7 +1424,7 @@
                         settings.syncLocal.style.display = 'block';
                     }
                 }
-            }, 
+            }, // End of App.auth
 
             /* ================================================================
             App Logic Part 3: State, Config, DOM, Utils, PIN
@@ -1421,6 +1493,7 @@
                         "Having a cynical or negative outlook",
                         "Self-doubt, procrastinating, and taking longer to get things done"
                     ],
+                    // FIX (per Grok): Corrected "sennse" to "sense"
                     mentalCognitive: [
                         "Difficulty concentrating or making decisions",
                         "Forgetfulness",
@@ -1458,6 +1531,7 @@
             },
             
             util: {
+                
                 cacheDOM: function() {
                     const d = App.dom;
                     
@@ -1646,9 +1720,11 @@
                         }[m];
                     });
                 }
-            }, 
+            }, // End of App.util
 
+            
             pin: {
+                
                 hashPin: function(pin) {
                     const staticSalt = "TokuHauora.PIN.Check.v1";
                     return CryptoJS.PBKDF2(pin, staticSalt, {
@@ -1699,6 +1775,8 @@
                     }
                 },
 
+                // --- PIN UI Flow ---
+                
                 resetPinInput: function(pinDisplayEl) {
                     App.state.ui.pinInput = '';
                     const dots = pinDisplayEl ? pinDisplayEl.children : App.dom.lockScreen.pinDisplay.children;
@@ -1791,6 +1869,7 @@
                             this.handlePinCreate(pin, pinDisplayEl);
                             break;
                         case 'confirm':
+                            // FIX: Logic moved to handlers.handleOnboardingFinish
                             this.handlePinConfirm(pin, pinDisplayEl);
                             break;
                         case 'change':
@@ -1873,8 +1952,9 @@
                     App.util.hideSplash();
                     App.navigation.updateViewContent('welcomeView');
                 }
-            }, 
-            
+                
+            }, // End of App.pin
+
             /* ================================================================
             App Logic Part 4: Missing modules
             ================================================================
@@ -1933,7 +2013,7 @@
                     const d = App.dom;
                     
                     // Onboarding
-                    // FIX: This logic is now in App.pin.handlePinConfirm and this new function
+                    // FIX: Logic for finish button click
                     d.onboarding.finishBtn.addEventListener('click', () => this.handleOnboardingFinish());
 
                     // Nav
@@ -2026,7 +2106,7 @@
                             "Would you like to sign in with Google to securely sync your encrypted data? Your PIN will be required on new devices.",
                             [
                                 { text: "Not Now", type: "secondary", callback: () => App.pin.finishOnboarding(false) },
-                                { text: "Sign In", type: "primary", callback: () => App.pin.finishOnboarding(true) }
+                                { text: "Sign In", type: "primary", callback: () => App.auth.signInWithGoogle(false) }
                             ]
                         );
                     } else {
@@ -2053,14 +2133,12 @@
                     
                     const entry = { date: today, feelings, ratings, note };
                     
-                    // Remove today's entry if it exists, then add new one
                     App.state.data.checkinHistory = App.state.data.checkinHistory.filter(e => e.date !== today);
                     App.state.data.checkinHistory.push(entry);
                     App.state.data.lastModified = new Date().toISOString();
                     
                     App.storage.localSaveAll();
                     
-                    // Check for burnout
                     const triggers = App.moduleCheckin.getBurnoutTriggers();
                     if (triggers) {
                         App.ui.showBurnoutPrompt(triggers);
@@ -2135,7 +2213,6 @@
                     App.state.data.lastModified = new Date().toISOString();
                     App.storage.localSaveAll();
                     App.ui.showAlert("Rule of Life saved!", "success");
-                    // Update the reflect tab immediately
                     App.ui.updateRuleOfLifeView();
                     App.ui.updateRuleTabs('reflect');
                 },
@@ -2201,7 +2278,6 @@
                         App.ui.showAlert("Please log in to export data.", "error");
                         return;
                     }
-                    // We export the *encrypted* blob for security
                     App.state.db.userData.get('data').then(encryptedData => {
                         if (!encryptedData) {
                             App.ui.showAlert("No data to export.", "error");
@@ -2237,7 +2313,6 @@
                                     { text: "Overwrite", type: "danger", callback: async () => {
                                         await App.state.db.userData.put({ key: 'data', ...encryptedData });
                                         await App.storage.localSaveState('hasData', true);
-                                        // Force user to re-login to decrypt new data
                                         App.ui.showAlert("Import successful! Please re-enter your PIN.", "success");
                                         window.location.reload();
                                     }}
@@ -2563,7 +2638,7 @@
                     checkin.note.value = entry.note;
                     
                     checkin.feelingsContainer.innerHTML = App.config.feelings.map(f => 
-                        `<button type="button" class="feeling-toggle" data-feeling="${f.name}">${f.name}</button>`
+                        `<button type="button" class="feeling-toggle" data-feeling="${f.name}" data-type="${f.type}">${f.name}</button>`
                     ).join('');
                     
                     checkin.feelingsContainer.querySelectorAll('.feeling-toggle').forEach(btn => {
@@ -2683,17 +2758,13 @@
                 updateRuleTabs: function(activeTab) {
                     const { rule } = App.dom;
                     if (activeTab === 'edit') {
-                        rule.tabEdit.classList.add('border-indigo-600', 'text-indigo-600');
-                        rule.tabEdit.classList.remove('text-gray-500');
-                        rule.tabReflect.classList.remove('border-indigo-600', 'text-indigo-600');
-                        rule.tabReflect.classList.add('text-gray-500');
+                        rule.tabEdit.classList.add('active');
+                        rule.tabReflect.classList.remove('active');
                         rule.contentEdit.style.display = 'block';
                         rule.contentReflect.style.display = 'none';
                     } else {
-                        rule.tabReflect.classList.add('border-indigo-600', 'text-indigo-600');
-                        rule.tabReflect.classList.remove('text-gray-500');
-                        rule.tabEdit.classList.remove('border-indigo-600', 'text-indigo-600');
-                        rule.tabEdit.classList.add('text-gray-500');
+                        rule.tabReflect.classList.add('active');
+                        rule.tabEdit.classList.remove('active');
                         rule.contentReflect.style.display = 'block';
                         rule.contentEdit.style.display = 'none';
                     }
@@ -2710,7 +2781,7 @@
                     }
                     
                     resources.container.innerHTML = resourceList.map(res => `
-                        <div class="card !p-4 flex flex-col">
+                        <div class="card !p-4 flex flex-col resource-card">
                             <h4 class="font-semibold text-lg">${App.util.escapeHTML(res.title)}</h4>
                             <p class="text-sm text-gray-600 mb-2 flex-grow">${App.util.escapeHTML(res.description) || '...'}</p>
                             <div class="flex gap-2 mt-auto pt-2">
@@ -2733,7 +2804,7 @@
                 },
                 
                 showBurnoutPrompt: function(triggers) {
-                    App.dom.checkin.finishBtn.style.display = 'block';
+                    // App.dom.checkin.finishBtn.style.display = 'block'; // This is now handled by the checkin save function
                     App.dom.checkin.burnoutPromptModal.style.display = 'flex';
                     setTimeout(() => App.dom.checkin.burnoutPromptModal.classList.add('visible'), 10);
                 },
@@ -2798,11 +2869,12 @@
                     modal.classList.remove('visible');
                     setTimeout(() => modal.style.display = 'none', 300);
                 }
-            }, 
+            }, // End of App.ui
+            
             
             navigation: {
                 init: function() {
-                    // Handled by App.handlers.init
+                    // This is handled by App.handlers.init
                 },
                 
                 navigateTo: function(viewId) {
@@ -2876,8 +2948,9 @@
                         link.classList.toggle('active', link.dataset.view === viewId);
                     });
                 }
-            }, 
+            }, // End of App.navigation
 
+            
             /* ================================================================
             App Init
             ================================================================
@@ -2903,7 +2976,9 @@
                     } else {
                         console.warn("Firebase modules not loaded. App will run in local-only mode.");
                         this.state.storageDriver = 'local';
-                        App.dom.settings.syncSection.style.display = 'none';
+                        if (App.dom.settings.syncSection) {
+                            App.dom.settings.syncSection.style.display = 'none';
+                        }
                     }
                 } catch (e) {
                     console.error("Firebase state initialization error:", e);
@@ -2923,14 +2998,14 @@
 
                 this.ui.init();
                 this.handlers.init();
-                this.navigation.init(); // This is just for safety, handlers.init gets most of it
+                this.navigation.init(); 
                 
                 await this.auth.checkPinAndAuthState();
                 
                 console.log("App.init finished.");
                 
             }
-        }); 
+        }); // End of App object
         
         // --- Start the App ---
         // FIX: Remove DOMContentLoaded, call init directly
