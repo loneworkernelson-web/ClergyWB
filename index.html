@@ -1696,7 +1696,7 @@ Object.assign(window.App, {
             });
         }
     }, // End of App.util
-    pin: {
+pin: {
         
         hashPin: function(pin) {
             const staticSalt = "TokuHauora.PIN.Check.v1";
@@ -2028,9 +2028,12 @@ Object.assign(window.App, {
             
             // Settings: Auth
             d.settings.loginBtn.addEventListener('click', () => App.auth.signInWithGoogle(false));
-            // FIX: "No user to link" error
-            // Use 'false' for a fresh sign-in, not 'true'
+            
+            // ****** THIS IS THE FIX ******
+            // "No user to link" error occurred because this was 'true'.
+            // Set to 'false' to perform a fresh sign-in, which is correct for local-only mode.
             d.settings.loginFromLocalBtn.addEventListener('click', () => App.auth.signInWithGoogle(false)); 
+            
             d.settings.logoutBtn.addEventListener('click', () => App.auth.signOut());
             
             // Settings: Data
