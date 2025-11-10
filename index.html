@@ -25,14 +25,10 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     
     <!-- 
-    FIX: This is the critical encryption fix.
-    1. Load the main 'crypto-js.min.js' bundle (which has Core, AES, PBKDF2).
-    2. Load the GCM mode and NoPadding plugins separately.
-    This fixes *all* race conditions and 'createEncryptor' / 'NoPadding' errors.
+    FIX: Removed the 404'ing scripts for GCM and NoPadding.
+    We will use CBC mode, which is included in the main crypto-js.min.js file.
     -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/mode-gcm.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/pad-nopad.min.js"></script>
 
     <!-- Dexie.js (IndexedDB Wrapper) -->
     <script src="https://unpkg.com/dexie@3/dist/dexie.js"></script>
@@ -724,7 +720,7 @@
                     <p id="userEmail" class="font-semibold text-gray-700 mb-4 break-words"></p>
                     <p id="syncStatus" class="text-sm text-gray-500 mb-4">Sync status: ...</p>
                     <button id="forceSyncBtn" class="btn btn-secondary w-full mb-3">Force Sync Now</button>
-                    <button id="settingsLogoutBtn" class="btn btn-danger w-full">Sign Out</button>
+                    <button id="settingsLogoutBtn" classm="btn btn-danger w-full">Sign Out</button>
                 </div>
                 <div id="syncStatusLocal" style="display: none;">
                     <p class="mb-4">You are in local-only mode. Your data is not being synced.</p>
@@ -789,7 +785,6 @@
     </div>
     
     <!-- --- Resource Modal (Add/Edit) --- -->
-    <!-- FIX: Corrected 'classim' to 'class' -->
     <div id="resourceModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
@@ -810,7 +805,7 @@
                     <label for="resourceDescription" class="block font-medium mb-1">Description</label>
                     <textarea id="resourceDescription" rows="3" class="w-full p-2 border rounded-lg"></textarea>
                 </div>
-                <div classs="flex justify-between gap-3">
+                <div class="flex justify-between gap-3">
                     <button type="button" id="resourceDeleteBtn" class="btn btn-danger">Delete</button>
                     <button type="submit" class="btn btn-primary">Save</button>
                 </div>
@@ -847,7 +842,7 @@
         </a>
         <a href="#" class="nav-link" data-view="settingsView">
             <div class="nav-pill"></div>
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-1.003 1.11-1.226.55-.223 1.156-.223 1.706 0 .55.223 1.02.684 1.11-1.226M10.344 18.06c.09.542.56 1.003 1.11 1.226.55.223 1.156-.223 1.706 0 .55-.223 1.02-.684 1.11-1.226m-4.662-5.748c.09-.542.56-1.003 1.11-1.226.55-.223 1.156-.223 1.706 0 .55.223 1.02-.684 1.11-1.226M18 10.344c.09.542.56 1.003 1.11 1.226.55.223 1.156-.223 1.706 0 .55-.223 1.02-.684 1.11-1.226M10.344 6c.09-.542.56-1.003 1.11-1.226.55-.223 1.156-.223 1.706 0 .55.223 1.02-.684 1.11-1.226M6 10.344c.09.542.56 1.003 1.11 1.226.55.223 1.156-.223 1.706 0 .55.223 1.02-.684 1.11-1.226M12 6.75a2.25 2.25 0 100 4.5 2.25 2.25 0 000-4.5zM12 12.75a2.25 2.25 0 100 4.5 2.25 2.25 0 000-4.5z" /></svg>
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-1.003 1.11-1.226.55-.223 1.156-.223 1.706 0 .55.223 1.02.684 1.11 1.226M10.344 18.06c.09.542.56 1.003 1.11 1.226.55.223 1.156-.223 1.706 0 .55-.223 1.02-.684 1.11-1.226m-4.662-5.748c.09-.542.56-1.003 1.11-1.226.55-.223 1.156-.223 1.706 0 .55.223 1.02-.684 1.11-1.226M18 10.344c.09.542.56 1.003 1.11 1.226.55.223 1.156-.223 1.706 0 .55-.223 1.02-.684 1.11-1.226M10.344 6c.09-.542.56-1.003 1.11-1.226.55-.223 1.156-.223 1.706 0 .55.223 1.02-.684 1.11-1.226M6 10.344c.09.542.56 1.003 1.11 1.226.55-.223 1.156-.223 1.706 0 .55.223 1.02-.684 1.11-1.226M12 6.75a2.25 2.25 0 100 4.5 2.25 2.25 0 000-4.5zM12 12.75a2.25 2.25 0 100 4.5 2.25 2.25 0 000-4.5z" /></svg>
             <span>Settings</span>
         </a>
     </nav>
@@ -858,7 +853,7 @@
     ================================================================
     -->
     <script type="module">
-/*
+    /*
 ================================================================
 APP JAVASCRIPT - Complete & Merged
 ================================================================
@@ -941,24 +936,22 @@ Object.assign(window.App, {
                 iterations: 10000 
             });
         },
+        
+        // FIX: Re-wrote to use CBC mode (default) instead of GCM
         encryptData: function(textData, pin) {
             try {
                 const salt = CryptoJS.lib.WordArray.random(128 / 8); // 16 bytes
-                const iv = CryptoJS.lib.WordArray.random(96 / 8);     // 12 bytes (GCM recommended)
+                const iv = CryptoJS.lib.WordArray.random(128 / 8);     // 16 bytes for CBC
                 const key = this.deriveKey(pin, salt);
                 
-                // FIX: Use CryptoJS.pad.NoPadding for GCM
                 const encrypted = CryptoJS.AES.encrypt(textData, key, {
                     iv: iv,
-                    mode: CryptoJS.mode.GCM,
-                    padding: CryptoJS.pad.NoPadding 
+                    mode: CryptoJS.mode.CBC, // Use CBC
+                    padding: CryptoJS.pad.Pkcs7 // Use standard PKCS7 padding
                 });
                 
-                const authTag = encrypted.authTag; 
-                const ciphertextWithTag = encrypted.ciphertext.clone().concat(authTag);
-                
                 return {
-                    ciphertext: CryptoJS.enc.Base64.stringify(ciphertextWithTag),
+                    ciphertext: encrypted.toString(), // Base64 string from the ciphertext object
                     salt: CryptoJS.enc.Base64.stringify(salt),
                     iv: CryptoJS.enc.Base64.stringify(iv)
                 };
@@ -967,29 +960,20 @@ Object.assign(window.App, {
                 return null;
             }
         },
+        
+        // FIX: Re-wrote to use CBC mode (default) instead of GCM
         decryptData: function(b64Ciphertext, pin, b64Salt, b64Iv) {
             try {
                 const salt = CryptoJS.enc.Base64.parse(b64Salt);
                 const iv = CryptoJS.enc.Base64.parse(b64Iv);
                 const key = this.deriveKey(pin, salt);
                 
-                const combinedCiphertext = CryptoJS.enc.Base64.parse(b64Ciphertext);
-                
-                const authTag = combinedCiphertext.clone();
-                authTag.sigBytes = 16;
-                authTag.words = combinedCiphertext.words.slice((combinedCiphertext.sigBytes - 16) / 4);
-                
-                const ciphertext = combinedCiphertext.clone();
-                ciphertext.sigBytes = combinedCiphertext.sigBytes - 16;
-                
-                // FIX: Use CryptoJS.pad.NoPadding for GCM
-                const decrypted = CryptoJS.AES.decrypt({ ciphertext: ciphertext }, key, {
+                const decrypted = CryptoJS.AES.decrypt(b64Ciphertext, key, {
                     iv: iv,
-                    mode: CryptoJS.mode.GCM,
-                    padding: CryptoJS.pad.NoPadding
+                    mode: CryptoJS.mode.CBC,
+                    padding: CryptoJS.pad.Pkcs7
                 });
                 
-                decrypted.authTag = authTag;
                 const decryptedText = decrypted.toString(CryptoJS.enc.Utf8);
                 
                 if (!decryptedText) {
@@ -1246,8 +1230,9 @@ Object.assign(window.App, {
     }, 
 
     auth: {
+        // FIX: This function is now "defensive"
+        // It will always set authLoading = false
         init: function() {
-            // FIX: Apply the 'authLoading' fix
             if (!App.state.fb.auth) {
                 // If Firebase isn't loaded, just set authLoading to false and exit.
                 App.state.ui.authLoading = false;
@@ -1433,7 +1418,7 @@ Object.assign(window.App, {
             currentView: 'welcomeView',
             viewHistory: ['welcomeView'],
             isLoggedIn: false,
-            authLoading: true, 
+            authLoading: true, // This is the key!
             alertTimer: null,
             currentOnboardingStep: 1,
             pinInput: '',
@@ -1487,7 +1472,6 @@ Object.assign(window.App, {
                 "Forgetfulness",
                 "Constant rumination about work problems, even during time off",
                 "Loss of creativity or motivation",
-                // FIX (per Grok): Corrected "sennse" to "sense"
                 "A sense that you are never \"not working\" mentally"
             ],
             relational: [
@@ -1654,7 +1638,6 @@ Object.assign(window.App, {
         
         formatDate: function(dateString) {
             try {
-                // FIX (per Grok): Use replace to make it Safari-compatible
                 const safeDateString = dateString.replace(/-/g, '/');
                 const d = new Date(safeDateString);
                 return d.toLocaleDateString(undefined, {
@@ -1663,7 +1646,7 @@ Object.assign(window.App, {
                     day: 'numeric'
                 });
             } catch (e) {
-                return dateString; // Fallback
+                return dateString; 
             }
         },
         
@@ -1671,7 +1654,7 @@ Object.assign(window.App, {
             App.dom.splash.screen.style.opacity = 0;
             setTimeout(() => {
                 App.dom.splash.screen.style.display = 'none';
-            }, 300); // Match CSS transition
+            }, 300); 
         },
         
         setSplashMessage: function(message) {
@@ -1695,7 +1678,6 @@ Object.assign(window.App, {
         mergeWithDefaultData: function() {
             const defaults = this.getDefaultData();
             App.state.data = { ...defaults, ...App.state.data };
-            // Ensure nested objects are also merged
             App.state.data.ruleOfLife = { ...defaults.ruleOfLife, ...App.state.data.ruleOfLife };
         },
         
@@ -1712,7 +1694,7 @@ Object.assign(window.App, {
             });
         }
     }, // End of App.util
-pin: {
+    pin: {
         
         hashPin: function(pin) {
             const staticSalt = "TokuHauora.PIN.Check.v1";
@@ -1939,12 +1921,12 @@ pin: {
             App.navigation.updateViewContent('welcomeView');
         }
     }, // End of App.pin
-    
+
     /* ================================================================
-    App Logic Part 4: Missing modules
+    App Logic: Missing Modules (Checkin & Handlers)
     ================================================================
     */
-    
+
     /* --- Check-in Module (Grok: was missing) --- */
     moduleCheckin: {
         calculateTotals: function(entry) {
@@ -2025,7 +2007,7 @@ pin: {
             d.sabbath.form.addEventListener('submit', (e) => this.saveSabbath(e));
             d.rule.form.addEventListener('submit', (e) => this.saveRuleOfLife(e));
             d.rule.reflectionForm.addEventListener('submit', (e) => this.saveRuleReflection(e));
-            d.resources.form.addEventListener('submit', (e) => this.saveResource(e));
+            // d.resources.form is handled in ui.initModals
 
             // Check-in Modals
             d.checkin.skipBurnoutBtn.addEventListener('click', () => this.finishCheckin());
@@ -2088,7 +2070,7 @@ pin: {
                     "Would you like to sign in with Google to securely sync your encrypted data? Your PIN will be required on new devices.",
                     [
                         { text: "Not Now", type: "secondary", callback: () => App.pin.finishOnboarding(false) },
-                        { text: "Sign In", type: "primary", callback: () => App.auth.signInWithGoogle(false) } // Was true (link), changed to false (sign-in)
+                        { text: "Sign In", type: "primary", callback: () => App.auth.signInWithGoogle(false) } // was App.pin.finishOnboarding(true)
                     ]
                 );
             } else {
@@ -2222,7 +2204,7 @@ pin: {
         },
 
         saveResource: async (e) => {
-            // FIX: Already prevented default in init
+            // This is handled by the submit listener in ui.initModals
             const { form, idInput, titleInput, linkInput, descriptionInput } = App.dom.resources;
             const id = idInput.value;
             
@@ -2361,31 +2343,31 @@ pin: {
         }
         
     }, // End of App.handlers
-ui: {
+    /* ================================================================
+    App Logic Part 4: UI, Navigation, and Init
+    ================================================================
+    */
+    ui: {
         init: function() {
             this.initModals();
         },
 
         initModals: function() {
-            // --- General Modal ---
-            const modal = App.dom.modal.modal;
-            const closeBtn = modal.querySelector('.close-button');
-            
-            closeBtn.addEventListener('click', () => this.hideModal());
+            const { modal } = App.dom.modal;
+            modal.querySelector('.close-button').addEventListener('click', () => this.hideModal());
             modal.addEventListener('click', (e) => {
                 if (e.target === modal) this.hideModal();
             });
             
-            // --- Resource Modal ---
             const resModal = App.dom.resources.modal;
-            const resClose = resModal.querySelector('.close-button');
-            resClose.addEventListener('click', () => this.hideResourceModal());
+            resModal.querySelector('.close-button').addEventListener('click', () => this.hideResourceModal());
             resModal.addEventListener('click', (e) => {
                 if (e.target === resModal) this.hideResourceModal();
             });
             
+            // Handle form submission for resources
             App.dom.resources.form.addEventListener('submit', (e) => {
-                e.preventDefault(); 
+                e.preventDefault();
                 App.handlers.saveResource(e);
             });
         },
@@ -2421,6 +2403,7 @@ ui: {
             alertBox.className = 'alert-box'; 
             alertBox.classList.add(type); 
             
+            // FIX: Use display: block to show
             alertBox.style.display = 'block';
             setTimeout(() => alertBox.classList.add('visible'), 10);
 
@@ -2430,6 +2413,7 @@ ui: {
             
             App.state.ui.alertTimer = setTimeout(() => {
                 alertBox.classList.remove('visible');
+                // FIX: Use display: none to hide after transition
                 setTimeout(() => alertBox.style.display = 'none', 300);
             }, duration);
         },
@@ -2439,7 +2423,6 @@ ui: {
             
             titleEl.textContent = title;
             messageEl.textContent = message;
-            
             buttonContainer.innerHTML = '';
             
             if (buttons.length > 0) {
@@ -2508,7 +2491,7 @@ ui: {
             modal.classList.remove('visible');
             setTimeout(() => modal.style.display = 'none', 300);
         },
-
+        
         showDangerZone: function() {
             const modal = App.dom.settings.dangerZoneModal;
             modal.style.display = 'flex';
@@ -2748,13 +2731,17 @@ ui: {
         updateRuleTabs: function(activeTab) {
             const { rule } = App.dom;
             if (activeTab === 'edit') {
-                rule.tabEdit.classList.add('active');
-                rule.tabReflect.classList.remove('active');
+                rule.tabEdit.classList.add('border-indigo-600', 'text-indigo-600');
+                rule.tabEdit.classList.remove('text-gray-500');
+                rule.tabReflect.classList.remove('border-indigo-600', 'text-indigo-600');
+                rule.tabReflect.classList.add('text-gray-500');
                 rule.contentEdit.style.display = 'block';
                 rule.contentReflect.style.display = 'none';
             } else {
-                rule.tabReflect.classList.add('active');
-                rule.tabEdit.classList.remove('active');
+                rule.tabReflect.classList.add('border-indigo-600', 'text-indigo-600');
+                rule.tabReflect.classList.remove('text-gray-500');
+                rule.tabEdit.classList.remove('border-indigo-600', 'text-indigo-600');
+                rule.tabEdit.classList.add('text-gray-500');
                 rule.contentReflect.style.display = 'block';
                 rule.contentEdit.style.display = 'none';
             }
@@ -2861,14 +2848,9 @@ ui: {
         }
     }, // End of App.ui
     
-    
-    /* ================================================================
-    App Logic: Navigation Module
-    ================================================================
-    */
     navigation: {
         init: function() {
-            // All event listeners are now in App.handlers.init
+            // Handled by App.handlers.init
         },
         
         navigateTo: function(viewId) {
@@ -2893,13 +2875,13 @@ ui: {
                 
             } else {
                 console.error(`View not found: ${viewId}`);
-                App.dom.views[0].style.display = 'block'; 
+                App.dom.views[0].style.display = 'block'; // Fallback to welcomeView
             }
         },
         
         goBack: function(defaultView = 'welcomeView') {
-            App.state.ui.viewHistory.pop(); 
-            let lastView = App.state.ui.viewHistory.pop(); 
+            App.state.ui.viewHistory.pop(); // Pop current view
+            let lastView = App.state.ui.viewHistory.pop(); // Get previous view
             
             if (!lastView) {
                 lastView = defaultView;
@@ -2944,7 +2926,6 @@ ui: {
         }
     }, // End of App.navigation
 
-    
     /* ================================================================
     App Init
     ================================================================
@@ -2954,14 +2935,11 @@ ui: {
         try {
             console.log("App.init started...");
             
-            // 1. DOM Caching
             this.util.cacheDOM();
             
-            // 2. Initialize Firebase (must happen before Auth Init)
-            // This code block is from the top of the <script>
-            // We just need to set the state here
+            // FIX (per user): Use AppFirebase global, not App.Firebase
             if (window.AppFirebase) {
-                console.log("Firebase services found, setting state...");
+                console.log("Firebase services found, initializing...");
                 this.state.fb.db = AppFirebase.getFirestore(AppFirebase.app);
                 this.state.fb.auth = AppFirebase.getAuth(AppFirebase.app);
                 this.state.fb.googleProvider = new AppFirebase.GoogleAuthProvider();
@@ -2969,6 +2947,7 @@ ui: {
                 await AppFirebase.setPersistence(this.state.fb.auth, AppFirebase.browserLocalPersistence);
                 this.state.appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
                 
+                // this.auth.init(); // <-- FIX: Removed from here
             } else {
                 console.warn("Firebase modules not loaded. App will run in local-only mode.");
                 this.state.storageDriver = 'local';
@@ -2983,7 +2962,6 @@ ui: {
             }
         }
         
-        // 3. Initialize Local DB
         this.state.db = await this.storage.initDB();
         if (!this.state.db) {
             this.ui.showAlert("Critical Error: Could not initialize local database. App cannot save data.", "error", 10000);
@@ -2991,28 +2969,23 @@ ui: {
         }
         console.log("IndexedDB initialized.");
 
-        // 4. FIX FOR "STUCK ON LOADING": Call auth.init() HERE
-        // This ensures authLoading is set to false *before* we await it.
-        this.auth.init(); 
-        
-        // 5. Initialize UI (modals, etc.)
+        // FIX (per user): this.auth.init() is moved here, before ui.init
+        this.auth.init(); // This will always run and set authLoading = false
         this.ui.init();
-        
-        // 6. Initialize Event Handlers
         this.handlers.init();
+        this.navigation.init(); 
         
-        // 7. Initialize Navigation
-        this.navigation.init();
-        
-        // 8. Check PIN & Auth State (this will now wait correctly)
         await this.auth.checkPinAndAuthState();
         
         console.log("App.init finished.");
         
-    }
+    } // End of App.init
+
 }); // End of Object.assign
 
 // --- Start the App ---
 // FIX: Remove DOMContentLoaded, call init directly
 App.init();
-App.state.ui.authLoading = false;
+    </script>
+</body>
+</html>
