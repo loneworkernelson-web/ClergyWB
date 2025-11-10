@@ -862,3 +862,2161 @@
     </script>
 </body>
 </html>
+/*
+================================================================
+APP JAVASCRIPT - Complete & Merged
+================================================================
+*/
+
+// --- Firebase Init ---
+// FIX: Moved from <head> to run synchronously before App.init
+// This resolves the race condition.
+try {
+    // 1. Prioritize window.firebaseConfig (from config.js)
+    const envConfig = typeof __firebase_config !== 'undefined' ? __firebase_config : '{}';
+    let configToParse = envConfig;
+    
+    if (window.firebaseConfig && Object.keys(window.firebaseConfig).length > 0) {
+        console.log("Firebase config loaded from config.js");
+        configToParse = JSON.stringify(window.firebaseConfig);
+    } else {
+        console.log("Using __firebase_config (Canvas environment)");
+    }
+
+    const firebaseConfig = JSON.parse(configToParse);
+    
+    if (Object.keys(firebaseConfig).length > 0) {
+        console.log("Firebase config found, initializing...");
+        const { initializeApp } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js");
+        const { getAuth, setPersistence, browserLocalPersistence, GoogleAuthProvider, onAuthStateChanged, signInWithRedirect, getRedirectResult, signOut, linkWithRedirect, unlink } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js");
+        const { getFirestore, doc, setDoc, getDoc, runTransaction, writeBatch, collection, onSnapshot, query, where, getDocs, deleteDoc } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
+
+        // Initialize the Firebase App
+        const fbApp = initializeApp(firebaseConfig);
+
+        // Make modules AND the app instance available globally
+        window.AppFirebase = {
+            app: fbApp, // Save the app instance
+            getAuth, setPersistence, browserLocalPersistence, GoogleAuthProvider, onAuthStateChanged, signInWithRedirect, getRedirectResult, signOut, linkWithRedirect, unlink,
+            getFirestore, doc, setDoc, getDoc, runTransaction, writeBatch, collection, onSnapshot, query, where, getDocs, deleteDoc
+        };
+        console.log("Firebase modules and app instance attached to window.AppFirebase");
+    } else {
+        console.warn("Firebase config is empty or undefined. Firebase will not be initialized.");
+        window.AppFirebase = null;
+    }
+} catch (e) {
+    console.error("Error loading or initializing Firebase:", e);
+    window.AppFirebase = null;
+}
+
+// --- App Namespace ---
+window.App = window.App || {};
+
+// --- Merge All Modules ---
+Object.assign(window.App, {
+
+    /* ================================================================
+    App Logic Part 2: Storage & Auth
+    ================================================================
+    */
+    storage: {
+        
+        initDB: async function() {
+            const db = new Dexie("TokuHauoraDB");
+            db.version(1).stores({
+                appState: 'key', // For simple key-value pairs (like lastSync)
+                userData: 'key'  // For encrypted data blobs (e.g., 'data', 'salt', 'iv')
+            });
+            
+            try {
+                await db.open();
+                console.log("IndexedDB (Dexie) opened successfully.");
+            } catch (e) {
+                console.error("Failed to open IndexedDB:", e);
+                return null;
+            }
+            return db;
+        },
+
+        // --- Encryption/Decryption ---
+        deriveKey: function(pin, salt) {
+            return CryptoJS.PBKDF2(pin, salt, {
+                keySize: 256 / 32,
+                iterations: 10000 
+            });
+        },
+        encryptData: function(textData, pin) {
+            try {
+                const salt = CryptoJS.lib.WordArray.random(128 / 8); // 16 bytes
+                const iv = CryptoJS.lib.WordArray.random(96 / 8);     // 12 bytes (GCM recommended)
+                const key = this.deriveKey(pin, salt);
+                
+                // FIX: Use CryptoJS.pad.NoPadding for GCM
+                const encrypted = CryptoJS.AES.encrypt(textData, key, {
+                    iv: iv,
+                    mode: CryptoJS.mode.GCM,
+                    padding: CryptoJS.pad.NoPadding 
+                });
+                
+                const authTag = encrypted.authTag; 
+                const ciphertextWithTag = encrypted.ciphertext.clone().concat(authTag);
+                
+                return {
+                    ciphertext: CryptoJS.enc.Base64.stringify(ciphertextWithTag),
+                    salt: CryptoJS.enc.Base64.stringify(salt),
+                    iv: CryptoJS.enc.Base64.stringify(iv)
+                };
+            } catch (e) {
+                console.error("Encryption failed:", e);
+                return null;
+            }
+        },
+        decryptData: function(b64Ciphertext, pin, b64Salt, b64Iv) {
+            try {
+                const salt = CryptoJS.enc.Base64.parse(b64Salt);
+                const iv = CryptoJS.enc.Base64.parse(b64Iv);
+                const key = this.deriveKey(pin, salt);
+                
+                const combinedCiphertext = CryptoJS.enc.Base64.parse(b64Ciphertext);
+                
+                const authTag = combinedCiphertext.clone();
+                authTag.sigBytes = 16;
+                authTag.words = combinedCiphertext.words.slice((combinedCiphertext.sigBytes - 16) / 4);
+                
+                const ciphertext = combinedCiphertext.clone();
+                ciphertext.sigBytes = combinedCiphertext.sigBytes - 16;
+                
+                // FIX: Use CryptoJS.pad.NoPadding for GCM
+                const decrypted = CryptoJS.AES.decrypt({ ciphertext: ciphertext }, key, {
+                    iv: iv,
+                    mode: CryptoJS.mode.GCM,
+                    padding: CryptoJS.pad.NoPadding
+                });
+                
+                decrypted.authTag = authTag;
+                const decryptedText = decrypted.toString(CryptoJS.enc.Utf8);
+                
+                if (!decryptedText) {
+                    throw new Error("Decryption failed: Empty output. Wrong PIN?");
+                }
+                return decryptedText;
+            } catch (e) {
+                console.error("Decryption failed:", e);
+                return null; 
+            }
+        },
+
+        // --- Local DB Operations ---
+        localSaveAll: async function() {
+            if (!App.state.db || !App.state.pin) {
+                console.error("Cannot save: DB or PIN not set.");
+                return;
+            }
+            console.log("Encrypting and saving data to IndexedDB...");
+            const dataString = JSON.stringify(App.state.data);
+            const encrypted = this.encryptData(dataString, App.state.pin);
+            
+            if (!encrypted) {
+                App.ui.showAlert("Critical: Failed to encrypt data. Data not saved.", "error");
+                return;
+            }
+            try {
+                await App.state.db.userData.put({ key: 'data', ...encrypted });
+                await App.state.db.appState.put({ key: 'hasData', value: true });
+                console.log("Data saved to IndexedDB.");
+            } catch (e) {
+                console.error("Failed to save to IndexedDB:", e);
+                App.ui.showAlert("Error saving data locally.", "error");
+            }
+        },
+        localLoadAll: async function() {
+            if (!App.state.db || !App.state.pin) {
+                console.error("Cannot load: DB or PIN not set.");
+                return false;
+            }
+            console.log("Loading and decrypting data from IndexedDB...");
+            try {
+                const encryptedData = await App.state.db.userData.get('data');
+                if (!encryptedData) {
+                    console.log("No encrypted data found in IndexedDB.");
+                    return false; 
+                }
+                const { ciphertext, salt, iv } = encryptedData;
+                const decryptedString = this.decryptData(ciphertext, App.state.pin, salt, iv);
+                
+                if (!decryptedString) {
+                    console.error("Decryption failed. Wrong PIN or corrupt data.");
+                    return false; 
+                }
+                App.state.data = JSON.parse(decryptedString);
+                App.util.mergeWithDefaultData(); 
+                console.log("Data loaded and decrypted from IndexedDB.");
+                return true;
+            } catch (e) {
+                console.error("Failed to load from IndexedDB:", e);
+                return false;
+            }
+        },
+        localDataExists: async function() {
+            if (!App.state.db) return false;
+            try {
+                const hasData = await App.state.db.appState.get('hasData');
+                return !!hasData;
+            } catch (e) {
+                console.error("Error checking for local data:", e);
+                return false;
+            }
+        },
+        localSaveState: async function(key, value) {
+            if (!App.state.db) return;
+            try {
+                await App.state.db.appState.put({ key, value });
+            } catch (e) {
+                console.error(`Failed to save state key '${key}':`, e);
+            }
+        },
+        localLoadState: async function(key) {
+            if (!App.state.db) return undefined;
+            try {
+                const item = await App.state.db.appState.get(key);
+                return item ? item.value : undefined;
+            } catch (e) {
+                console.error(`Failed to load state key '${key}':`, e);
+                return undefined;
+            }
+        },
+        localDeleteAll: async function() {
+            if (!App.state.db) return;
+            try {
+                await App.state.db.userData.clear();
+                await App.state.db.appState.clear();
+                console.log("Local data cleared from IndexedDB.");
+            } catch (e) {
+                console.error("Failed to delete local data:", e);
+                App.ui.showAlert("Error deleting local data.", "error");
+            }
+        },
+
+        // --- Firestore Operations ---
+        getFirestorePaths: function() {
+            if (!App.state.fb || !App.state.fb.auth || !App.state.fb.auth.currentUser) {
+                console.error("getFirestorePaths: No user logged in.");
+                return null;
+            }
+            const user = App.state.fb.auth.currentUser;
+            const appId = App.state.appId;
+            const userId = user.uid;
+            // FIX: Use AppFirebase global
+            const userDocRef = AppFirebase.doc(App.state.fb.db, `artifacts/${appId}/users/${userId}/appData/data`);
+            const pinCheckRef = AppFirebase.doc(App.state.fb.db, `artifacts/${appId}/users/${userId}/appData/pinCheck`);
+            return { userDocRef, pinCheckRef };
+        },
+        firestoreSaveAll: async function() {
+            const paths = this.getFirestorePaths();
+            if (!paths) {
+                App.ui.showAlert("Not signed in. Cannot save to cloud.", "error");
+                return;
+            }
+            if (!App.state.pin) {
+                console.error("Cannot save to cloud: PIN is not set.");
+                return;
+            }
+            console.log("Encrypting and saving data to Firestore...");
+            App.auth.updateSyncStatusUI("Syncing...");
+            const dataString = JSON.stringify(App.state.data);
+            const encrypted = this.encryptData(dataString, App.state.pin);
+            
+            if (!encrypted) {
+                App.ui.showAlert("Critical: Failed to encrypt data. Not saved to cloud.", "error");
+                App.auth.updateSyncStatusUI("Encryption Failed!");
+                return;
+            }
+            try {
+                await AppFirebase.setDoc(paths.userDocRef, encrypted);
+                await this.localSaveState('lastSync', new Date().toISOString());
+                App.auth.updateSyncStatusUI("Up to date");
+                console.log("Data saved to Firestore.");
+            } catch (e) {
+                console.error("Failed to save to Firestore:", e);
+                App.ui.showAlert("Error saving data to cloud.", "error");
+                App.auth.updateSyncStatusUI(`Error: ${e.message}`);
+            }
+        },
+        firestoreLoadAll: async function() {
+            const paths = this.getFirestorePaths();
+            if (!paths) {
+                console.error("Cannot load from cloud: Not signed in.");
+                return null;
+            }
+            if (!App.state.pin) {
+                console.error("Cannot load from cloud: PIN is not set.");
+                return null;
+            }
+            console.log("Loading and decrypting data from Firestore...");
+            App.auth.updateSyncStatusUI("Downloading...");
+            try {
+                const docSnap = await AppFirebase.getDoc(paths.userDocRef);
+                if (!docSnap.exists()) {
+                    console.log("No data found in Firestore for this user.");
+                    App.auth.updateSyncStatusUI("No cloud data found.");
+                    return null; 
+                }
+                const encryptedData = docSnap.data();
+                const { ciphertext, salt, iv } = encryptedData;
+                const decryptedString = this.decryptData(ciphertext, App.state.pin, salt, iv);
+                
+                if (!decryptedString) {
+                    console.error("Cloud decryption failed. Wrong PIN or corrupt data.");
+                    App.auth.updateSyncStatusUI("Decryption Failed!");
+                    return null; 
+                }
+                const cloudData = JSON.parse(decryptedString);
+                console.log("Data loaded and decrypted from Firestore.");
+                App.auth.updateSyncStatusUI("Downloaded.");
+                return cloudData;
+            } catch (e) {
+                console.error("Failed to load from Firestore:", e);
+                App.auth.updateSyncStatusUI(`Error: ${e.message}`);
+                return null;
+            }
+        },
+        firestoreDeleteAll: async function() {
+            const paths = this.getFirestorePaths();
+            if (!paths) {
+                App.ui.showAlert("Not signed in. Cannot delete cloud data.", "error");
+                return;
+            }
+            console.log("Deleting all data from Firestore...");
+            App.auth.updateSyncStatusUI("Deleting cloud data...");
+            try {
+                const batch = AppFirebase.writeBatch(App.state.fb.db);
+                batch.delete(paths.userDocRef);
+                batch.delete(paths.pinCheckRef);
+                await batch.commit();
+                await this.localSaveState('lastSync', null);
+                App.auth.updateSyncStatusUI("Cloud data deleted.");
+                console.log("Firestore data deleted.");
+                App.ui.showAlert("Cloud data deleted successfully.", "success");
+            } catch (e) {
+                console.error("Failed to delete Firestore data:", e);
+                App.ui.showAlert("Error deleting cloud data.", "error");
+                App.auth.updateSyncStatusUI(`Error: ${e.message}`);
+            }
+        },
+        
+        // --- Data Sync Logic ---
+        syncData: async function() {
+            console.log("Starting data sync...");
+            App.auth.updateSyncStatusUI("Syncing...");
+            const cloudData = await this.firestoreLoadAll();
+            const localData = App.state.data;
+            
+            if (!cloudData) {
+                console.log("No cloud data. Uploading local data.");
+                await this.firestoreSaveAll();
+                return;
+            }
+            
+            const localModified = new Date(localData.lastModified || 0);
+            const cloudModified = new Date(cloudData.lastModified || 0);
+            console.log(`Local last modified: ${localModified.toISOString()}`);
+            console.log(`Cloud last modified: ${cloudModified.toISOString()}`);
+            
+            if (localModified > cloudModified) {
+                console.log("Local data is newer. Uploading to cloud.");
+                await this.firestoreSaveAll();
+            } else if (cloudModified > localModified) {
+                console.log("Cloud data is newer. Downloading and saving locally.");
+                App.state.data = cloudData;
+                App.util.mergeWithDefaultData(); 
+                await this.localSaveAll(); 
+                App.navigation.updateViewContent(App.state.ui.currentView);
+                App.auth.updateSyncStatusUI("Up to date");
+            } else {
+                console.log("Data is already in sync.");
+                App.auth.updateSyncStatusUI("Up to date");
+            }
+            await this.localSaveState('lastSync', new Date().toISOString());
+        },
+        forceDownload: async function() {
+            console.log("Forcing download from cloud...");
+            const cloudData = await this.firestoreLoadAll();
+            if (cloudData) {
+                App.state.data = cloudData;
+                App.util.mergeWithDefaultData();
+                await this.localSaveAll();
+                App.navigation.updateViewContent(App.state.ui.currentView);
+                App.ui.showAlert("Data successfully restored from cloud.", "success");
+            } else {
+                App.ui.showAlert("Could not download cloud data. Wrong PIN or no data found.", "error");
+            }
+        }
+    }, // End of App.storage
+
+    /* ================================================================
+    App Logic Part 2: Auth
+    ================================================================
+    */
+    auth: {
+        init: function() {
+            if (!App.state.fb.auth) return;
+            // FIX: Use AppFirebase global
+            AppFirebase.onAuthStateChanged(App.state.fb.auth, (user) => {
+                App.state.ui.authLoading = false;
+                if (user) {
+                    console.log("Auth listener: User is signed in.", user.uid);
+                    App.state.ui.isLoggedIn = true;
+                    if (App.dom.settings.userEmail) {
+                        App.dom.settings.userEmail.textContent = user.email || 'No email';
+                    }
+                } else {
+                    console.log("Auth listener: User is signed out.");
+                    App.state.ui.isLoggedIn = false;
+                    App.state.pin = null; 
+                }
+                if (App.dom.settings.syncLoading) {
+                    this.updateSyncStatusUI();
+                }
+            });
+        },
+        checkPinAndAuthState: async function() {
+            App.util.setSplashMessage("Checking local data...");
+            const hasLocalPinHash = await App.pin.localPinExists();
+            
+            if (!hasLocalPinHash) {
+                console.log("No local PIN found. Starting onboarding.");
+                App.util.hideSplash();
+                App.pin.startOnboarding();
+            } else {
+                console.log("Local PIN found. Checking auth state...");
+                App.util.setSplashMessage("Checking account...");
+                
+                if (App.state.fb.auth) {
+                    try {
+                        // FIX: Use AppFirebase global
+                        const result = await AppFirebase.getRedirectResult(App.state.fb.auth);
+                        if (result && result.user) {
+                            console.log("Handled redirect sign-in.", result.user.uid);
+                            App.state.ui.isLoggedIn = true;
+                        }
+                    } catch (error) {
+                        console.error("Error getting redirect result:", error);
+                    }
+                }
+                
+                await this.waitForAuthInit();
+                
+                if (App.state.ui.isLoggedIn) {
+                    App.util.setSplashMessage("Checking cloud data...");
+                    const hasCloudPin = await App.pin.cloudPinCheckExists();
+                    if (hasCloudPin) {
+                        console.log("User logged in, cloud PIN exists. Showing PIN login.");
+                        App.util.hideSplash();
+                        App.pin.showLockScreen("Enter PIN to unlock and sync.");
+                    } else {
+                        console.warn("Local data/PIN found, but no cloud PIN for this user. Data mismatch!");
+                        App.util.hideSplash();
+                        App.ui.showModal("Account Mismatch", 
+                            "You are logged in as a new user, but local data from another user exists. What would you like to do?",
+                            [
+                                { text: "Log Out", type: "secondary", callback: () => App.auth.signOut() },
+                                { text: "Delete Local Data", type: "danger", callback: () => App.auth.wipeAndRestart() }
+                            ]
+                        );
+                    }
+                } else {
+                    console.log("User not logged in. Showing PIN login for local data.");
+                    App.state.storageDriver = 'local';
+                    App.util.hideSplash();
+                    App.pin.showLockScreen("Enter PIN to unlock local data.");
+                }
+            }
+        },
+        waitForAuthInit: function() {
+            return new Promise((resolve) => {
+                if (!App.state.ui.authLoading) {
+                    resolve();
+                } else {
+                    const interval = setInterval(() => {
+                        if (!App.state.ui.authLoading) {
+                            clearInterval(interval);
+                            resolve();
+                        }
+                    }, 50);
+                }
+            });
+        },
+        signInWithGoogle: async function(isLink = false) {
+            if (!App.state.fb.auth) return;
+            App.util.setSplashMessage("Redirecting to Google...");
+            const provider = App.state.fb.googleProvider;
+            try {
+                if (isLink) {
+                    const user = App.state.fb.auth.currentUser;
+                    if (!user) throw new Error("No user to link.");
+                    await AppFirebase.linkWithRedirect(user, provider);
+                } else {
+                    await AppFirebase.signInWithRedirect(App.state.fb.auth, provider);
+                }
+            } catch (error) {
+                console.error("Google Sign-In redirect error:", error);
+                App.ui.showAlert(`Sign-in failed: ${error.message}`, "error");
+                App.util.hideSplash();
+            }
+        },
+        signOut: async function() {
+            if (!App.state.fb.auth) return;
+            try {
+                await AppFirebase.signOut(App.state.fb.auth);
+                App.state.pin = null; 
+                App.state.data = App.util.getDefaultData(); 
+                App.state.storageDriver = 'local';
+                App.dom.views.forEach(v => v.style.display = 'none');
+                App.dom.loginView.style.display = 'flex';
+                console.log("User signed out.");
+            } catch (error) {
+                console.error("Sign out error:", error);
+                App.ui.showAlert(`Sign out failed: ${error.message}`, "error");
+            }
+        },
+        wipeAndRestart: async function() {
+            console.warn("Wiping all local data and restarting...");
+            await App.storage.localDeleteAll();
+            localStorage.removeItem('hauoraPinHash');
+            localStorage.removeItem('hauoraOnboardComplete');
+            window.location.reload();
+        },
+        updateSyncStatusUI: function(syncStatusText = null) {
+            const { settings } = App.dom;
+            if (!settings.syncLoading) return;
+            settings.syncLoading.style.display = 'none';
+            settings.syncLoggedOut.style.display = 'none';
+            settings.syncLoggedIn.style.display = 'none';
+            settings.syncLocal.style.display = 'none';
+
+            if (App.state.ui.authLoading) {
+                settings.syncLoading.style.display = 'block';
+                return;
+            }
+            
+            if (App.state.storageDriver === 'firebase') {
+                if (App.state.ui.isLoggedIn) {
+                    settings.syncLoggedIn.style.display = 'block';
+                    if (syncStatusText) {
+                        settings.syncStatus.textContent = `Sync status: ${syncStatusText}`;
+                    } else {
+                        App.storage.localLoadState('lastSync').then(lastSync => {
+                            let status = "Not synced yet.";
+                            if (lastSync) {
+                                status = `Last sync: ${new Date(lastSync).toLocaleString()}`;
+                            }
+                            settings.syncStatus.textContent = `Sync status: ${status}`;
+                        });
+                    }
+                } else {
+                    settings.syncLoggedOut.style.display = 'block';
+                }
+            } else {
+                settings.syncLocal.style.display = 'block';
+            }
+        }
+    }, // End of App.auth
+
+    /* ================================================================
+    App Logic Part 3: State, Config, DOM, Utils, PIN
+    ================================================================
+    */
+    state: {
+        db: null, 
+        pin: null, 
+        storageDriver: 'local', 
+        appId: 'default-app-id',
+        fb: {
+            db: null,
+            auth: null,
+            googleProvider: null,
+        },
+        ui: {
+            currentView: 'welcomeView',
+            viewHistory: ['welcomeView'],
+            isLoggedIn: false,
+            authLoading: true, 
+            alertTimer: null,
+            currentOnboardingStep: 1,
+            pinInput: '',
+            pinMode: 'login', 
+            tempPin: '',
+            chart: null,
+        },
+        data: {
+            lastModified: null,
+            checkinHistory: [], 
+            gratitudeHistory: [], 
+            sabbathHistory: [],   
+            ruleOfLife: {
+                vision: '',
+                commitments: '',
+                practices: '',
+                community: ''
+            },
+            ruleOfLifeHistory: [], 
+            userResources: {} 
+        }
+    },
+
+    config: {
+        feelings: [
+            { name: "Grateful", type: "positive" },
+            { name: "Happy", type: "positive" },
+            { name: "Content", type: "positive" },
+            { name: "Hopeful", type: "positive" },
+            { name: "Peaceful", type: "positive" },
+            { name: "Energized", type: "positive" },
+            { name: "Sad", type: "warning" },
+            { name: "Stressed", type: "warning" },
+            { name: "Anxious", type: "warning" },
+            { name: "Tired", type: "warning" },
+            { name: "Overwhelmed", type: "warning" },
+            { name: "Irritable", type: "warning" },
+            { name: "Lonely", type: "warning" },
+            { name: "Numb", type: "warning" }
+        ],
+        // FIX (per Grok): Corrected "sennse" to "sense"
+        burnoutChecklist: {
+            physicalEmotional: [
+                "Feeling tired and drained most of the time",
+                "Feeling helpless, trapped, and/or defeated",
+                "Feeling detached/alone in the world",
+                "Having a cynical or negative outlook",
+                "Self-doubt, procrastinating, and taking longer to get things done"
+            ],
+            mentalCognitive: [
+                "Difficulty concentrating or making decisions",
+                "Forgetfulness",
+                "Constant rumination about work problems, even during time off",
+                "Loss of creativity or motivation",
+                "A sense that you are never \"not working\" mentally"
+            ],
+            relational: [
+                "Withdrawing from responsibilities or relationships",
+                "Isolating yourself from others",
+                "Lashing out at others or feeling increased irritability",
+                "Feeling a lack of support from others",
+                "Difficulty experiencing connection or joy with others"
+            ]
+        }
+    },
+    
+    dom: {
+        splash: {},
+        lockScreen: {},
+        loginView: {},
+        onboarding: {},
+        nav: {},
+        views: [],
+        welcome: {},
+        checkin: {},
+        gratitude: {},
+        sabbath: {},
+        history: {},
+        rule: {},
+        resources: {},
+        settings: {},
+        modal: {},
+        alert: null
+    },
+    
+    util: {
+        
+        cacheDOM: function() {
+            const d = App.dom;
+            
+            d.splash.screen = document.getElementById('splashScreen');
+            d.splash.message = document.getElementById('splashMessage');
+            d.lockScreen.screen = document.getElementById('lockScreen');
+            d.lockScreen.title = document.getElementById('lockScreenTitle');
+            d.lockScreen.message = document.getElementById('lockScreenMessage');
+            d.lockScreen.pinDisplay = document.getElementById('pinDisplay');
+            d.lockScreen.numpad = document.getElementById('numpad');
+            d.lockScreen.numpadDelete = document.getElementById('numpadDelete');
+            d.lockScreen.forgotBtn = document.getElementById('lockScreenForgotBtn');
+            
+            d.loginView = document.getElementById('loginView');
+            
+            d.onboarding.modal = document.getElementById('onboardingModal');
+            d.onboarding.steps = document.querySelectorAll('.onboarding-step');
+            d.onboarding.prevBtn = document.getElementById('onboardingPrevBtn');
+            d.onboarding.nextBtn = document.getElementById('onboardingNextBtn');
+            d.onboarding.finishBtn = document.getElementById('onboardingFinishBtn');
+            d.onboarding.indicatorDots = document.querySelectorAll('#onboardingIndicator .indicator-dot');
+            d.onboarding.pinPrompt = document.getElementById('onboardingPinPrompt');
+            d.onboarding.pinDisplay = document.getElementById('onboardingPinDisplay');
+            d.onboarding.pinError = document.getElementById('onboardingPinError');
+            d.onboarding.numpad = document.getElementById('onboardingNumpad');
+            d.onboarding.numpadDelete = document.getElementById('onboardingNumpadDelete');
+
+            d.views = document.querySelectorAll('#appWrapper .view');
+            d.nav.links = document.querySelectorAll('.nav-link');
+            
+            d.welcome.checkinBtn = document.getElementById('welcomeCheckinBtn');
+            d.welcome.gratitudeBtn = document.getElementById('welcomeGratitudeBtn');
+            d.welcome.sabbathBtn = document.getElementById('welcomeSabbathBtn');
+            d.welcome.dashboardPreview = document.getElementById('dashboardPreview');
+            d.welcome.hauoraChart = document.getElementById('hauoraChart');
+            
+            d.checkin.form = document.getElementById('checkinForm');
+            d.checkin.feelingsContainer = document.getElementById('checkinFeelings');
+            d.checkin.sliders = document.querySelectorAll('#checkinForm .hauora-slider');
+            d.checkin.note = document.getElementById('checkinNote');
+            d.checkin.finishBtn = document.getElementById('finishCheckinBtn');
+            d.checkin.burnoutPromptModal = document.getElementById('burnoutPromptModal');
+            d.checkin.skipBurnoutBtn = document.getElementById('skipBurnoutBtn');
+            d.checkin.startBurnoutBtn = document.getElementById('startBurnoutBtn');
+            d.checkin.burnoutCheckModal = document.getElementById('burnoutCheckModal');
+            d.checkin.closeBurnoutModalBtn = document.getElementById('closeBurnoutModalBtn');
+            d.checkin.burnoutChecklist = document.getElementById('burnoutChecklistContainer');
+            d.checkin.finishBurnoutCheckBtn = document.getElementById('finishBurnoutCheckBtn');
+            d.checkin.burnoutResultsModal = document.getElementById('burnoutResultsModal');
+            d.checkin.closeBurnoutResultsBtn = document.getElementById('closeBurnoutResultsBtn');
+            d.checkin.closeBurnoutResultsBtn2 = document.getElementById('closeBurnoutResultsBtn2');
+            d.checkin.burnoutResultsContainer = document.getElementById('burnoutResultsContainer');
+            
+            d.gratitude.form = document.getElementById('gratitudeForm');
+            d.gratitude.items = [
+                document.getElementById('gratitudeItem1'),
+                document.getElementById('gratitudeItem2'),
+                document.getElementById('gratitudeItem3')
+            ];
+            d.gratitude.note = document.getElementById('gratitudeNote');
+            
+            d.sabbath.form = document.getElementById('sabbathForm');
+            d.sabbath.note = document.getElementById('sabbathNote');
+            d.sabbath.reflection = document.getElementById('sabbathReflection');
+            
+            d.history.container = document.getElementById('historyContainer');
+            
+            d.rule.tabEdit = document.getElementById('ruleTabEdit');
+            d.rule.tabReflect = document.getElementById('ruleTabReflect');
+            d.rule.contentEdit = document.getElementById('ruleEditContent');
+            d.rule.contentReflect = document.getElementById('ruleReflectContent');
+            d.rule.form = document.getElementById('ruleForm');
+            d.rule.inputs = {
+                vision: document.getElementById('ruleVision'),
+                commitments: document.getElementById('ruleCommitments'),
+                practices: document.getElementById('rulePractices'),
+                community: document.getElementById('ruleCommunity')
+            };
+            d.rule.reflectVision = document.getElementById('reflectVision');
+            d.rule.reflectCommitments = document.getElementById('reflectCommitments');
+            d.rule.reflectPractices = document.getElementById('reflectPractices');
+            d.rule.reflectCommunity = document.getElementById('reflectCommunity');
+            d.rule.reflectionForm = document.getElementById('ruleReflectionForm');
+            d.rule.reflectionInput = document.getElementById('ruleReflection');
+            
+            d.resources.container = document.getElementById('resourceContainer');
+            d.resources.addBtn = document.getElementById('addResourceBtn');
+            d.resources.modal = document.getElementById('resourceModal');
+            d.resources.form = document.getElementById('resourceForm');
+            d.resources.idInput = document.getElementById('resourceId');
+            d.resources.titleInput = document.getElementById('resourceTitle');
+            d.resources.linkInput = document.getElementById('resourceLink');
+            d.resources.descriptionInput = document.getElementById('resourceDescription');
+            d.resources.deleteBtn = document.getElementById('resourceDeleteBtn');
+
+            d.settings.syncSection = document.getElementById('syncSection');
+            d.settings.syncLoading = document.getElementById('syncStatusLoading');
+            d.settings.syncLoggedOut = document.getElementById('syncStatusLoggedOut');
+            d.settings.syncLoggedIn = document.getElementById('syncStatusLoggedIn');
+            d.settings.syncLocal = document.getElementById('syncStatusLocal');
+            d.settings.loginBtn = document.getElementById('settingsLoginBtn');
+            d.settings.loginFromLocalBtn = document.getElementById('settingsLoginFromLocalBtn');
+            d.settings.logoutBtn = document.getElementById('settingsLogoutBtn');
+            d.settings.userEmail = document.getElementById('userEmail');
+            d.settings.syncStatus = document.getElementById('syncStatus');
+            d.settings.forceSyncBtn = document.getElementById('forceSyncBtn');
+            d.settings.exportBtn = document.getElementById('exportDataBtn');
+            d.settings.importBtn = document.getElementById('importDataBtn');
+            d.settings.importFile = document.getElementById('importFile');
+            d.settings.changePinBtn = document.getElementById('changePinBtn');
+            d.settings.dangerZoneBtn = document.getElementById('dangerZoneBtn');
+            d.settings.dangerZoneModal = document.getElementById('dangerZoneModal');
+            d.settings.deleteLocalBtn = document.getElementById('deleteLocalDataBtn');
+            d.settings.deleteCloudBtn = document.getElementById('deleteCloudDataBtn');
+            d.settings.deleteAllBtn = document.getElementById('deleteAllDataBtn');
+            
+            d.alert = document.getElementById('alertBox');
+            d.modal.modal = document.getElementById('modal');
+            d.modal.titleEl = document.getElementById('modalTitle');
+            d.modal.messageEl = document.getElementById('modalMessage');
+            d.modal.buttonContainer = document.getElementById('modalButtons');
+        },
+
+        getTodayDate: function() {
+            const d = new Date();
+            const year = d.getFullYear();
+            const month = (d.getMonth() + 1).toString().padStart(2, '0');
+            const day = d.getDate().toString().padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        },
+        
+        formatDate: function(dateString) {
+            try {
+                // FIX (per Grok): Use replace to make it Safari-compatible
+                const safeDateString = dateString.replace(/-/g, '/');
+                const d = new Date(safeDateString);
+                return d.toLocaleDateString(undefined, {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                });
+            } catch (e) {
+                return dateString; 
+            }
+        },
+        
+        hideSplash: function() {
+            App.dom.splash.screen.style.opacity = 0;
+            setTimeout(() => {
+                App.dom.splash.screen.style.display = 'none';
+            }, 300); 
+        },
+        
+        setSplashMessage: function(message) {
+            App.dom.splash.message.textContent = message;
+        },
+        
+        getDefaultData: function() {
+            return {
+                lastModified: new Date().toISOString(),
+                checkinHistory: [],
+                gratitudeHistory: [],
+                sabbathHistory: [],
+                ruleOfLife: {
+                    vision: '', commitments: '', practices: '', community: ''
+                },
+                ruleOfLifeHistory: [],
+                userResources: {}
+            };
+        },
+        
+        mergeWithDefaultData: function() {
+            const defaults = this.getDefaultData();
+            App.state.data = { ...defaults, ...App.state.data };
+            App.state.data.ruleOfLife = { ...defaults.ruleOfLife, ...App.state.data.ruleOfLife };
+        },
+        
+        escapeHTML: function(str) {
+            if (!str) return '';
+            return str.replace(/[&<>"']/g, function(m) {
+                return {
+                    '&': '&amp;',
+                    '<': '&lt;',
+                    '>': '&gt;',
+                    '"': '&quot;',
+                    "'": '&#39;'
+                }[m];
+            });
+        }
+    }, // End of App.util
+
+    
+    pin: {
+        
+        hashPin: function(pin) {
+            const staticSalt = "TokuHauora.PIN.Check.v1";
+            return CryptoJS.PBKDF2(pin, staticSalt, {
+                keySize: 256 / 32,
+                iterations: 5000 
+            }).toString(CryptoJS.enc.Base64);
+        },
+        
+        savePinHashLocally: function(pin) {
+            const hash = this.hashPin(pin);
+            localStorage.setItem('hauoraPinHash', hash);
+        },
+
+        localPinExists: async function() {
+            return !!localStorage.getItem('hauoraPinHash');
+        },
+        
+        verifyLocalPin: function(pin) {
+            const hash = localStorage.getItem('hauoraPinHash');
+            if (!hash) return false;
+            return this.hashPin(pin) === hash;
+        },
+        
+        savePinCheckToCloud: async function(pin) {
+            const paths = App.storage.getFirestorePaths();
+            if (!paths) return;
+            
+            const hash = this.hashPin(pin);
+            try {
+                await AppFirebase.setDoc(paths.pinCheckRef, { hash: hash, version: 1 });
+                console.log("PIN check saved to cloud.");
+            } catch (e) {
+                console.error("Failed to save PIN check to cloud:", e);
+                App.ui.showAlert("Error saving PIN check to cloud.", "error");
+            }
+        },
+        
+        cloudPinCheckExists: async function() {
+            const paths = App.storage.getFirestorePaths();
+            if (!paths) return false;
+            
+            try {
+                const docSnap = await AppFirebase.getDoc(paths.pinCheckRef);
+                return docSnap.exists();
+            } catch (e) {
+                console.error("Error checking for cloud PIN:", e);
+                return false;
+            }
+        },
+
+        // --- PIN UI Flow ---
+        
+        resetPinInput: function(pinDisplayEl) {
+            App.state.ui.pinInput = '';
+            const dots = pinDisplayEl ? pinDisplayEl.children : App.dom.lockScreen.pinDisplay.children;
+            for (const dot of dots) {
+                dot.classList.remove('filled');
+            }
+        },
+
+        updatePinDisplay: function(pinDisplayEl) {
+            const dots = pinDisplayEl ? pinDisplayEl.children : App.dom.lockScreen.pinDisplay.children;
+            for (let i = 0; i < 4; i++) {
+                dots[i].classList.toggle('filled', i < App.state.ui.pinInput.length);
+            }
+        },
+        
+        showPinError: function(pinDisplayEl) {
+            pinDisplayEl = pinDisplayEl || App.dom.lockScreen.pinDisplay;
+            pinDisplayEl.classList.add('animate-shake'); 
+            setTimeout(() => {
+                pinDisplayEl.classList.remove('animate-shake');
+                this.resetPinInput(pinDisplayEl);
+            }, 500);
+        },
+
+        showLockScreen: function(message = "Enter your 4-digit PIN.") {
+            App.state.ui.pinMode = 'login';
+            this.resetPinInput(App.dom.lockScreen.pinDisplay);
+            App.dom.lockScreen.title.textContent = "Enter PIN";
+            App.dom.lockScreen.message.textContent = message;
+            App.dom.lockScreen.screen.style.display = 'flex';
+        },
+        
+        startOnboarding: function() {
+            App.dom.onboarding.modal.style.display = 'flex';
+            
+            // We're at step 1. Listen for "Next"
+            App.dom.onboarding.nextBtn.onclick = () => {
+                if (App.state.ui.currentOnboardingStep === 1) {
+                    App.ui.updateOnboardingStep(1); // Go to step 2
+                    App.dom.onboarding.numpad.style.display = 'grid';
+                    App.state.ui.pinMode = 'create';
+                    App.dom.onboarding.nextBtn.style.display = 'none'; 
+                }
+            };
+            
+            App.dom.onboarding.prevBtn.onclick = () => {
+                if (App.state.ui.currentOnboardingStep === 2) {
+                    App.ui.updateOnboardingStep(-1); // Go back to step 1
+                    App.dom.onboarding.numpad.style.display = 'none';
+                    App.state.ui.pinMode = 'login'; 
+                    App.dom.onboarding.nextBtn.style.display = 'inline-block';
+                }
+            };
+            
+            App.dom.onboarding.numpad.addEventListener('click', (e) => {
+                const btn = e.target.closest('.numpad-btn');
+                if (btn && btn.dataset.key) {
+                    this.handlePinKey(btn.dataset.key, App.dom.onboarding.pinDisplay);
+                }
+            });
+            App.dom.onboarding.numpadDelete.addEventListener('click', () => {
+                this.handlePinKey('delete', App.dom.onboarding.pinDisplay);
+            });
+        },
+        
+        handlePinKey: function(key, pinDisplayEl) {
+            const ui = App.state.ui;
+            
+            if (key === 'delete') {
+                ui.pinInput = ui.pinInput.slice(0, -1);
+            } else if (ui.pinInput.length < 4) {
+                ui.pinInput += key;
+            }
+            
+            this.updatePinDisplay(pinDisplayEl);
+            
+            if (ui.pinInput.length === 4) {
+                this.handlePinEntryComplete(pinDisplayEl);
+            }
+        },
+        
+        handlePinEntryComplete: async function(pinDisplayEl) {
+            const ui = App.state.ui;
+            const pin = ui.pinInput;
+            
+            switch (ui.pinMode) {
+                case 'login':
+                    await this.handlePinLogin(pin, pinDisplayEl);
+                    break;
+                case 'create':
+                    this.handlePinCreate(pin, pinDisplayEl);
+                    break;
+                case 'confirm':
+                    // FIX: Logic moved to handlers.handleOnboardingFinish
+                    this.handlePinConfirm(pin, pinDisplayEl);
+                    break;
+                case 'change':
+                    // await this.handlePinChange(pin, pinDisplayEl);
+                    break;
+            }
+        },
+        
+        handlePinLogin: async function(pin, pinDisplayEl) {
+            if (this.verifyLocalPin(pin)) {
+                console.log("PIN verified.");
+                App.state.pin = pin; 
+                
+                App.dom.lockScreen.screen.style.display = 'none';
+                App.util.setSplashMessage("Loading your data...");
+                App.dom.splash.screen.style.display = 'flex';
+                
+                const localSuccess = await App.storage.localLoadAll();
+                if (!localSuccess) {
+                    console.warn("Local data load failed. This shouldn't happen if PIN was verified.");
+                    App.state.data = App.util.getDefaultData();
+                }
+                
+                if (App.state.ui.isLoggedIn) {
+                    App.state.storageDriver = 'firebase';
+                    App.util.setSplashMessage("Syncing with cloud...");
+                    await App.storage.syncData();
+                }
+                
+                App.util.hideSplash();
+                App.navigation.updateViewContent(App.state.ui.currentView); 
+
+            } else {
+                console.log("Wrong PIN.");
+                this.showPinError(pinDisplayEl);
+                App.dom.lockScreen.message.textContent = "Wrong PIN. Try again.";
+            }
+        },
+        
+        handlePinCreate: function(pin, pinDisplayEl) {
+            App.state.tempPin = pin;
+            App.state.ui.pinMode = 'confirm';
+            this.resetPinInput(pinDisplayEl);
+            App.dom.onboarding.pinPrompt.textContent = "Confirm your PIN";
+            App.dom.onboarding.pinError.textContent = "";
+        },
+        
+        handlePinConfirm: async function(pin, pinDisplayEl) {
+            if (pin === App.state.tempPin) {
+                App.state.pin = pin;
+                this.savePinHashLocally(pin); 
+                
+                App.state.data = App.util.getDefaultData();
+                await App.storage.localSaveAll();
+                
+                App.state.ui.pinMode = 'login'; 
+                App.dom.onboarding.numpad.style.display = 'none';
+                App.ui.updateOnboardingStep(1); // Go to step 3
+                
+            } else {
+                this.showPinError(pinDisplayEl);
+                App.state.ui.pinMode = 'create';
+                App.state.tempPin = '';
+                App.dom.onboarding.pinPrompt.textContent = "PINs didn't match. Try again.";
+                App.dom.onboarding.pinError.textContent = "PINs didn't match.";
+            }
+        },
+        
+        finishOnboarding: async function(didSignIn) {
+            if (didSignIn) {
+                App.state.storageDriver = 'firebase';
+                await this.savePinCheckToCloud(App.state.pin);
+                await App.storage.firestoreSaveAll();
+            } else {
+                App.state.storageDriver = 'local';
+            }
+            
+            localStorage.setItem('hauoraOnboardComplete', 'true');
+            App.dom.onboarding.modal.style.display = 'none';
+            App.util.hideSplash();
+            App.navigation.updateViewContent('welcomeView');
+        }
+        
+    }, // End of App.pin
+
+    /* ================================================================
+    App Logic Part 4: Missing modules
+    ================================================================
+    */
+    
+    /* --- Check-in Module (Grok: was missing) --- */
+    moduleCheckin: {
+        calculateTotals: function(entry) {
+            const warnings = entry.feelings.filter(f => {
+                const config = App.config.feelings.find(cf => cf.name === f);
+                return config && config.type === 'warning';
+            }).length;
+            
+            const positives = entry.feelings.filter(f => {
+                const config = App.config.feelings.find(cf => cf.name === f);
+                return config && config.type === 'positive';
+            }).length;
+            
+            const ratingAvg = Object.values(entry.ratings).reduce((sum, val) => sum + Number(val), 0) / (Object.values(entry.ratings).length || 1);
+            
+            return { warnings, positives, ratingAvg };
+        },
+
+        getBurnoutTriggers: function() {
+            const warningFeelings = App.config.feelings
+                .filter(f => f.type === 'warning')
+                .map(f => f.name);
+            
+            const recentEntries = App.state.data.checkinHistory
+                .slice(-5) // Check last 5 entries
+                .filter(e => e.feelings && e.feelings.length > 0);
+
+            if (recentEntries.length < 3) return null; // Not enough data
+            
+            const triggeredFeelings = new Set();
+            recentEntries.forEach(entry => {
+                entry.feelings.forEach(feeling => {
+                    if (warningFeelings.includes(feeling)) {
+                        triggeredFeelings.add(feeling);
+                    }
+                });
+            });
+            
+            // Trigger if user has reported 3+ different warning feelings in last 5 entries
+            if (triggeredFeelings.size >= 3) {
+                return Array.from(triggeredFeelings);
+            }
+            return null;
+        }
+    },
+
+    /* --- Handlers Module (Grok: was missing) --- */
+    handlers: {
+        init: function() {
+            console.log("Initializing handlers...");
+            const d = App.dom;
+            
+            // Onboarding
+            // FIX: This logic is now in App.pin.handlePinConfirm and this new function
+            d.onboarding.finishBtn.addEventListener('click', () => this.handleOnboardingFinish());
+
+            // Nav
+            d.nav.links.forEach(link => link.addEventListener('click', (e) => {
+                e.preventDefault();
+                App.navigation.navigateTo(link.dataset.view);
+            }));
+            
+            // Welcome
+            d.welcome.checkinBtn.addEventListener('click', () => App.navigation.navigateTo('checkinView'));
+            d.welcome.gratitudeBtn.addEventListener('click', () => App.navigation.navigateTo('gratitudeView'));
+            d.welcome.sabbathBtn.addEventListener('click', () => App.navigation.navigateTo('sabbathView'));
+
+            // Back buttons
+            document.querySelectorAll('.btn-back').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    App.navigation.goBack(btn.dataset.back || 'welcomeView');
+                });
+            });
+            
+            // Forms
+            d.checkin.form.addEventListener('submit', (e) => this.saveCheckin(e));
+            d.gratitude.form.addEventListener('submit', (e) => this.saveGratitude(e));
+            d.sabbath.form.addEventListener('submit', (e) => this.saveSabbath(e));
+            d.rule.form.addEventListener('submit', (e) => this.saveRuleOfLife(e));
+            d.rule.reflectionForm.addEventListener('submit', (e) => this.saveRuleReflection(e));
+            // FIX: Add (e) parameter
+            d.resources.form.addEventListener('submit', (e) => this.saveResource(e));
+
+            // Check-in Modals
+            d.checkin.skipBurnoutBtn.addEventListener('click', () => this.finishCheckin());
+            d.checkin.startBurnoutBtn.addEventListener('click', () => this.startBurnoutCheck());
+            d.checkin.closeBurnoutModalBtn.addEventListener('click', () => App.ui.hideBurnoutCheckModal());
+            d.checkin.finishBurnoutCheckBtn.addEventListener('click', () => this.showBurnoutResults());
+            d.checkin.closeBurnoutResultsBtn.addEventListener('click', () => this.finishCheckin());
+            d.checkin.closeBurnoutResultsBtn2.addEventListener('click', () => this.finishCheckin());
+            
+            // Rule Tabs
+            d.rule.tabEdit.addEventListener('click', () => App.ui.updateRuleTabs('edit'));
+            d.rule.tabReflect.addEventListener('click', () => App.ui.updateRuleTabs('reflect'));
+            
+            // Resources
+            d.resources.addBtn.addEventListener('click', () => App.ui.showResourceModal());
+            
+            // Settings: Auth
+            d.settings.loginBtn.addEventListener('click', () => App.auth.signInWithGoogle(false));
+            d.settings.loginFromLocalBtn.addEventListener('click', () => App.auth.signInWithGoogle(true)); // Link account
+            d.settings.logoutBtn.addEventListener('click', () => App.auth.signOut());
+            
+            // Settings: Data
+            d.settings.forceSyncBtn.addEventListener('click', () => App.storage.forceDownload());
+            d.settings.exportBtn.addEventListener('click', () => this.exportData());
+            d.settings.importBtn.addEventListener('click', () => d.settings.importFile.click());
+            d.settings.importFile.addEventListener('change', (e) => this.importData(e));
+            
+            // Settings: Security
+            d.settings.changePinBtn.addEventListener('click', () => alert("Change PIN not yet implemented.")); // Placeholder
+            d.settings.dangerZoneBtn.addEventListener('click', () => App.ui.showDangerZone());
+            d.settings.dangerZoneModal.querySelector('.close-button').addEventListener('click', () => App.ui.hideDangerZone());
+            d.settings.deleteLocalBtn.addEventListener('click', () => this.deleteLocalData());
+            d.settings.deleteCloudBtn.addEventListener('click', () => this.deleteCloudData());
+            d.settings.deleteAllBtn.addEventListener('click', () => this.deleteAllData());
+
+            // Lock Screen
+            d.lockScreen.numpad.addEventListener('click', (e) => {
+                const btn = e.target.closest('.numpad-btn');
+                if (btn && btn.dataset.key) {
+                    App.pin.handlePinKey(btn.dataset.key, App.dom.lockScreen.pinDisplay);
+                }
+            });
+            d.lockScreen.numpadDelete.addEventListener('click', () => {
+                App.pin.handlePinKey('delete', App.dom.lockScreen.pinDisplay);
+            });
+            d.lockScreen.forgotBtn.addEventListener('click', () => {
+                App.ui.showModal("Forgot PIN?", 
+                    "If you set up cloud sync, you can log out, delete the app's local data (in browser settings), and re-install. When you log in, you will be prompted to create a new PIN. If you did not set up cloud sync, your encrypted data cannot be recovered.",
+                    [{ text: "OK", type: "primary" }]
+                );
+            });
+        },
+
+        handleOnboardingFinish: function() {
+            // FIX: This function now holds the logic from the old handlePinConfirm
+            localStorage.setItem('hauoraOnboardComplete', 'true');
+            App.dom.onboarding.modal.style.display = 'none';
+            
+            if (App.state.fb.auth) {
+                App.ui.showModal("Enable Sync?", 
+                    "Would you like to sign in with Google to securely sync your encrypted data? Your PIN will be required on new devices.",
+                    [
+                        { text: "Not Now", type: "secondary", callback: () => App.pin.finishOnboarding(false) },
+                        // FIX: Call signInWithGoogle directly
+                        { text: "Sign In", type: "primary", callback: () => App.auth.signInWithGoogle(false) }
+                    ]
+                );
+            } else {
+                // No Firebase, just finish
+                App.pin.finishOnboarding(false);
+            }
+        },
+
+        saveCheckin: function(e) {
+            e.preventDefault();
+            const { checkin } = App.dom;
+            const today = App.util.getTodayDate();
+            
+            const feelings = Array.from(checkin.feelingsContainer.querySelectorAll('.feeling-toggle.selected'))
+                .map(btn => btn.dataset.feeling);
+                
+            const ratings = {};
+            checkin.sliders.forEach(slider => {
+                const key = slider.id.split('-')[1]; // 'physical'
+                ratings[key] = slider.value;
+            });
+            
+            const note = checkin.note.value;
+            
+            const entry = { date: today, feelings, ratings, note };
+            
+            // Remove today's entry if it exists, then add new one
+            App.state.data.checkinHistory = App.state.data.checkinHistory.filter(e => e.date !== today);
+            App.state.data.checkinHistory.push(entry);
+            App.state.data.lastModified = new Date().toISOString();
+            
+            App.storage.localSaveAll();
+            
+            // Check for burnout
+            const triggers = App.moduleCheckin.getBurnoutTriggers();
+            if (triggers) {
+                App.ui.showBurnoutPrompt(triggers);
+            } else {
+                this.finishCheckin();
+            }
+        },
+        finishCheckin: function() {
+            App.ui.hideBurnoutPrompt();
+            App.ui.hideBurnoutCheckModal();
+            App.ui.hideBurnoutResultsModal();
+            App.ui.showAlert("Check-in saved!", "success");
+            App.navigation.navigateTo('welcomeView');
+        },
+        startBurnoutCheck: function() {
+            App.ui.hideBurnoutPrompt();
+            App.ui.showBurnoutCheckModal();
+        },
+        showBurnoutResults: function() {
+            App.ui.hideBurnoutCheckModal();
+            App.ui.showBurnoutResultsModal();
+        },
+
+        saveGratitude: function(e) {
+            e.preventDefault();
+            const { gratitude } = App.dom;
+            const today = App.util.getTodayDate();
+            
+            const items = gratitude.items.map(input => input.value);
+            const note = gratitude.note.value;
+            
+            const entry = { date: today, items, note };
+            
+            App.state.data.gratitudeHistory = App.state.data.gratitudeHistory.filter(e => e.date !== today);
+            App.state.data.gratitudeHistory.push(entry);
+            App.state.data.lastModified = new Date().toISOString();
+            
+            App.storage.localSaveAll();
+            App.ui.showAlert("Gratitude saved!", "success");
+            App.navigation.navigateTo('welcomeView');
+        },
+        
+        saveSabbath: function(e) {
+            e.preventDefault();
+            const { sabbath } = App.dom;
+            const today = App.util.getTodayDate();
+            
+            const entry = {
+                date: today,
+                note: sabbath.note.value,
+                reflection: sabbath.reflection.value
+            };
+            
+            App.state.data.sabbathHistory = App.state.data.sabbathHistory.filter(e => e.date !== today);
+            App.state.data.sabbathHistory.push(entry);
+            App.state.data.lastModified = new Date().toISOString();
+            
+            App.storage.localSaveAll();
+            App.ui.showAlert("Sabbath reflection saved!", "success");
+            App.navigation.navigateTo('welcomeView');
+        },
+        
+        saveRuleOfLife: function(e) {
+            e.preventDefault();
+            const { inputs } = App.dom.rule;
+            App.state.data.ruleOfLife = {
+                vision: inputs.vision.value,
+                commitments: inputs.commitments.value,
+                practices: inputs.practices.value,
+                community: inputs.community.value
+            };
+            App.state.data.lastModified = new Date().toISOString();
+            App.storage.localSaveAll();
+            App.ui.showAlert("Rule of Life saved!", "success");
+            // Update the reflect tab immediately
+            App.ui.updateRuleOfLifeView();
+            App.ui.updateRuleTabs('reflect');
+        },
+        
+        saveRuleReflection: function(e) {
+            e.preventDefault();
+            const { reflectionInput } = App.dom.rule;
+            if (!reflectionInput.value) return;
+            
+            const entry = {
+                date: App.util.getTodayDate(),
+                reflection: reflectionInput.value
+            };
+            
+            App.state.data.ruleOfLifeHistory.push(entry);
+            App.state.data.lastModified = new Date().toISOString();
+            App.storage.localSaveAll();
+            
+            reflectionInput.value = ''; // Clear input
+            App.ui.showAlert("Reflection saved to history!", "success");
+            App.navigation.navigateTo('historyView');
+        },
+
+        // FIX: Add (e) parameter and preventDefault
+        saveResource: async (e) => {
+            e.preventDefault();
+            const { form, idInput, titleInput, linkInput, descriptionInput } = App.dom.resources;
+            const id = idInput.value;
+            
+            const resource = {
+                id: id,
+                title: titleInput.value,
+                link: linkInput.value,
+                description: descriptionInput.value
+            };
+            
+            App.state.data.userResources[id] = resource;
+            App.state.data.lastModified = new Date().toISOString();
+            
+            await App.storage.localSaveAll();
+            
+            App.ui.hideResourceModal();
+            App.ui.updateResourcesView(); // Refresh list
+            App.ui.showAlert("Resource saved!", "success");
+        },
+        
+        deleteResource: function(id) {
+            App.ui.showModal("Delete Resource?", "Are you sure you want to delete this resource?", [
+                { text: "Cancel", type: "secondary" },
+                { text: "Delete", type: "danger", callback: async () => {
+                    delete App.state.data.userResources[id];
+                    App.state.data.lastModified = new Date().toISOString();
+                    await App.storage.localSaveAll();
+                    App.ui.hideResourceModal();
+                    App.ui.updateResourcesView();
+                    App.ui.showAlert("Resource deleted.", "success");
+                }}
+            ]);
+        },
+        
+        exportData: function() {
+            if (!App.state.pin) {
+                App.ui.showAlert("Please log in to export data.", "error");
+                return;
+            }
+            // We export the *encrypted* blob for security
+            App.state.db.userData.get('data').then(encryptedData => {
+                if (!encryptedData) {
+                    App.ui.showAlert("No data to export.", "error");
+                    return;
+                }
+                const dataStr = JSON.stringify(encryptedData);
+                const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
+                const link = document.createElement('a');
+                link.setAttribute('href', dataUri);
+                link.setAttribute('download', 'toku_hauora_export.json');
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            });
+        },
+        
+        importData: function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                try {
+                    const encryptedData = JSON.parse(event.target.result);
+                    if (!encryptedData.ciphertext || !encryptedData.salt || !encryptedData.iv) {
+                        throw new Error("Invalid file format.");
+                    }
+                    
+                    App.ui.showModal("Import Data?", 
+                        "This will overwrite your current local data. This action cannot be undone. Are you sure?",
+                        [
+                            { text: "Cancel", type: "secondary" },
+                            { text: "Overwrite", type: "danger", callback: async () => {
+                                await App.state.db.userData.put({ key: 'data', ...encryptedData });
+                                await App.storage.localSaveState('hasData', true);
+                                // Force user to re-login to decrypt new data
+                                App.ui.showAlert("Import successful! Please re-enter your PIN.", "success");
+                                window.location.reload();
+                            }}
+                        ]
+                    );
+                    
+                } catch (err) {
+                    App.ui.showAlert(`Import failed: ${err.message}`, "error");
+                }
+            };
+            reader.readAsText(file);
+            e.target.value = null; // Clear file input
+        },
+        
+        deleteLocalData: function() {
+            App.ui.showModal("Delete Local Data?", 
+                "Are you sure? All local, un-synced data will be lost.",
+                [
+                    { text: "Cancel", type: "secondary" },
+                    { text: "Delete", type: "danger", callback: async () => {
+                        await App.storage.localDeleteAll();
+                        localStorage.removeItem('hauoraPinHash');
+                        App.ui.showAlert("Local data deleted. App will reload.", "success");
+                        setTimeout(() => window.location.reload(), 1000);
+                    }}
+                ]
+            );
+        },
+        
+        deleteCloudData: function() {
+            if (!App.state.ui.isLoggedIn) {
+                App.ui.showAlert("You must be logged in to delete cloud data.", "error");
+                return;
+            }
+            App.ui.showModal("Delete Cloud Data?", 
+                "Are you sure? All data in your cloud account will be permanently deleted.",
+                [
+                    { text: "Cancel", type: "secondary" },
+                    { text: "Delete", type: "danger", callback: () => App.storage.firestoreDeleteAll() }
+                ]
+            );
+        },
+        
+        deleteAllData: function() {
+            App.ui.showModal("Delete ALL Data?", 
+                "This will delete all local AND cloud data, then log you out. This is permanent.",
+                [
+                    { text: "Cancel", type: "secondary" },
+                    { text: "Delete All", type: "danger", callback: async () => {
+                        if (App.state.ui.isLoggedIn) {
+                            await App.storage.firestoreDeleteAll();
+                        }
+                        await App.storage.localDeleteAll();
+                        localStorage.removeItem('hauoraPinHash');
+                        App.ui.showAlert("All data deleted. App will reload.", "success");
+                        setTimeout(() => window.location.reload(), 1000);
+                    }}
+                ]
+            );
+        }
+        
+    }, // End of App.handlers
+    
+    /* ================================================================
+    App Logic Part 4: UI, Navigation, and Init
+    ================================================================
+    */
+    ui: {
+        init: function() {
+            this.initModals();
+        },
+
+        initModals: function() {
+            // --- General Modal ---
+            const modal = App.dom.modal.modal;
+            modal.querySelector('.close-button').addEventListener('click', () => this.hideModal());
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) this.hideModal();
+            });
+            
+            // --- Resource Modal ---
+            const resModal = App.dom.resources.modal;
+            resModal.querySelector('.close-button').addEventListener('click', () => this.hideResourceModal());
+            resModal.addEventListener('click', (e) => {
+                if (e.target === resModal) this.hideResourceModal();
+            });
+        },
+        
+        updateOnboardingStep: function(direction) {
+            const { steps, prevBtn, nextBtn, indicatorDots, finishBtn } = App.dom.onboarding;
+            let { currentOnboardingStep } = App.state.ui;
+            
+            const newStep = currentOnboardingStep + direction;
+            
+            if (newStep < 1 || newStep > steps.length) {
+                return;
+            }
+
+            App.state.ui.currentOnboardingStep = newStep;
+            currentOnboardingStep = newStep; 
+
+            steps.forEach(step => step.style.display = 'none');
+            steps[currentOnboardingStep - 1].style.display = 'block';
+
+            indicatorDots.forEach((dot, index) => {
+                dot.classList.toggle('active', index === currentOnboardingStep - 1);
+            });
+
+            prevBtn.style.display = currentOnboardingStep > 1 ? 'inline-block' : 'none';
+            nextBtn.style.display = currentOnboardingStep < steps.length ? 'inline-block' : 'none';
+            finishBtn.style.display = currentOnboardingStep === steps.length ? 'inline-block' : 'none';
+        },
+
+        showAlert: function(message, type = 'info', duration = 3000) {
+            const alertBox = App.dom.alert;
+            alertBox.textContent = message;
+            alertBox.className = 'alert-box'; 
+            alertBox.classList.add(type); 
+            
+            // FIX: Use display: block to show
+            alertBox.style.display = 'block';
+            setTimeout(() => alertBox.classList.add('visible'), 10);
+
+            if (App.state.ui.alertTimer) {
+                clearTimeout(App.state.ui.alertTimer);
+            }
+            
+            App.state.ui.alertTimer = setTimeout(() => {
+                alertBox.classList.remove('visible');
+                // FIX: Use display: none to hide after transition
+                setTimeout(() => alertBox.style.display = 'none', 300);
+            }, duration);
+        },
+
+        showModal: function(title, message, buttons = []) {
+            const { modal, titleEl, messageEl, buttonContainer } = App.dom.modal;
+            
+            titleEl.textContent = title;
+            messageEl.textContent = message;
+            buttonContainer.innerHTML = '';
+            
+            if (buttons.length > 0) {
+                buttons.forEach(btn => {
+                    const button = document.createElement('button');
+                    button.textContent = btn.text;
+                    button.className = `btn btn-${btn.type || 'primary'}`; 
+                    button.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        if(btn.callback) btn.callback();
+                        if(btn.autoClose !== false) this.hideModal();
+                    });
+                    buttonContainer.appendChild(button);
+                });
+                buttonContainer.style.display = 'flex';
+            } else {
+                const okButton = document.createElement('button');
+                okButton.textContent = "OK";
+                okButton.className = "btn btn-primary";
+                okButton.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    this.hideModal();
+                });
+                buttonContainer.appendChild(okButton);
+                buttonContainer.style.display = 'flex';
+            }
+            
+            modal.style.display = 'flex';
+            setTimeout(() => modal.classList.add('visible'), 10);
+        },
+
+        hideModal: function() {
+            const { modal } = App.dom.modal;
+            modal.classList.remove('visible');
+            setTimeout(() => {
+                modal.style.display = 'none';
+                App.dom.modal.titleEl.textContent = '';
+                App.dom.modal.messageEl.textContent = '';
+                App.dom.modal.buttonContainer.innerHTML = '';
+            }, 300); 
+        },
+
+        showResourceModal: function(resource = null) {
+            const { modal, form, idInput, titleInput, linkInput, descriptionInput, deleteBtn } = App.dom.resources;
+            
+            form.reset();
+            if (resource) {
+                idInput.value = resource.id;
+                titleInput.value = resource.title;
+                linkInput.value = resource.link;
+                descriptionInput.value = resource.description;
+                deleteBtn.style.display = 'inline-block';
+                deleteBtn.onclick = () => App.handlers.deleteResource(resource.id);
+            } else {
+                idInput.value = `res_${Date.now()}`;
+                deleteBtn.style.display = 'none';
+                deleteBtn.onclick = null;
+            }
+            
+            modal.style.display = 'flex';
+            setTimeout(() => modal.classList.add('visible'), 10);
+        },
+        
+        hideResourceModal: function() {
+            const { modal } = App.dom.resources;
+            modal.classList.remove('visible');
+            setTimeout(() => modal.style.display = 'none', 300);
+        },
+        
+        showDangerZone: function() {
+            const modal = App.dom.settings.dangerZoneModal;
+            modal.style.display = 'flex';
+            setTimeout(() => modal.classList.add('visible'), 10);
+        },
+        hideDangerZone: function() {
+            const modal = App.dom.settings.dangerZoneModal;
+            modal.classList.remove('visible');
+            setTimeout(() => modal.style.display = 'none', 300);
+        },
+        
+        // --- Dynamic Content Updaters ---
+        
+        updateWelcomeView: function() {
+            const { welcome } = App.dom;
+            const today = App.util.getTodayDate();
+            
+            const hasCheckedIn = App.state.data.checkinHistory.some(e => e.date === today);
+            const hasGratitude = App.state.data.gratitudeHistory.some(e => e.date === today);
+            const hasSabbath = App.state.data.sabbathHistory.some(e => e.date === today);
+            
+            welcome.checkinBtn.classList.toggle('complete', hasCheckedIn);
+            welcome.checkinBtn.querySelector('.welcome-btn-icon').innerHTML = hasCheckedIn ? '&#10003;' : '&rarr;';
+            
+            welcome.gratitudeBtn.classList.toggle('complete', hasGratitude);
+            welcome.gratitudeBtn.querySelector('.welcome-btn-icon').innerHTML = hasGratitude ? '&#10003;' : '&rarr;';
+            
+            welcome.sabbathBtn.classList.toggle('complete', hasSabbath);
+            welcome.sabbathBtn.querySelector('.welcome-btn-icon').innerHTML = hasSabbath ? '&#10003;' : '&rarr;';
+            
+            this.renderDashboardPreview();
+        },
+        
+        renderDashboardPreview: function() {
+            const { dashboardPreview, hauoraChart } = App.dom.welcome;
+            const lastEntry = App.state.data.checkinHistory[App.state.data.checkinHistory.length - 1];
+            
+            if (!lastEntry) {
+                dashboardPreview.style.display = 'block';
+                hauoraChart.style.display = 'none';
+                return;
+            }
+            
+            dashboardPreview.style.display = 'none';
+            hauoraChart.style.display = 'block';
+
+            // FIX (per Grok): Use moduleCheckin.calculateTotals
+            const { ratings } = lastEntry;
+            const labels = ['Physical', 'Mental', 'Social', 'Spiritual'];
+            const data = [
+                ratings.physical || 0,
+                ratings.mental || 0,
+                ratings.social || 0,
+                ratings.spiritual || 0
+            ];
+            
+            if (App.state.ui.chart) {
+                App.state.ui.chart.data.datasets[0].data = data;
+                App.state.ui.chart.update();
+            } else {
+                const ctx = hauoraChart.getContext('2d');
+                App.state.ui.chart = new Chart(ctx, {
+                    type: 'radar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Hauora',
+                            data: data,
+                            fill: true,
+                            backgroundColor: 'rgba(79, 70, 229, 0.2)', // indigo-600
+                            borderColor: 'rgb(79, 70, 229)',
+                            pointBackgroundColor: 'rgb(79, 70, 229)',
+                            pointBorderColor: '#fff',
+                            pointHoverBackgroundColor: '#fff',
+                            pointHoverBorderColor: 'rgb(79, 70, 229)'
+                        }]
+                    },
+                    options: {
+                        elements: {
+                            line: {
+                                borderWidth: 3
+                            }
+                        },
+                        scales: {
+                            r: {
+                                angleLines: {
+                                    display: false
+                                },
+                                suggestedMin: 0,
+                                suggestedMax: 10,
+                                pointLabels: {
+                                    font: {
+                                        size: 14,
+                                        family: 'Inter'
+                                    }
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        }
+                    }
+                });
+            }
+        },
+        
+        updateCheckinView: function() {
+            const today = App.util.getTodayDate();
+            const { checkin } = App.dom;
+            
+            const entry = App.state.data.checkinHistory.find(e => e.date === today) || {
+                date: today, feelings: [], note: '', ratings: {}
+            };
+            
+            checkin.form.reset();
+            checkin.note.value = entry.note;
+            
+            // Create feeling toggles
+            checkin.feelingsContainer.innerHTML = App.config.feelings.map(f => 
+                `<button type="button" class="feeling-toggle" data-feeling="${f.name}" data-type="${f.type}">${f.name}</button>`
+            ).join('');
+            
+            checkin.feelingsContainer.querySelectorAll('.feeling-toggle').forEach(btn => {
+                btn.classList.toggle('selected', entry.feelings.includes(btn.dataset.feeling));
+                btn.addEventListener('click', () => btn.classList.toggle('selected'));
+            });
+            
+            checkin.sliders.forEach(slider => {
+                const key = slider.id.split('-')[1]; 
+                slider.value = entry.ratings[key] || 5; 
+            });
+        },
+        
+        updateGratitudeView: function() {
+            const today = App.util.getTodayDate();
+            const { gratitude } = App.dom;
+            
+            const entry = App.state.data.gratitudeHistory.find(e => e.date === today) || {
+                date: today, items: ['', '', ''], note: ''
+            };
+            
+            gratitude.form.reset();
+            gratitude.items[0].value = entry.items[0] || '';
+            gratitude.items[1].value = entry.items[1] || '';
+            gratitude.items[2].value = entry.items[2] || '';
+            gratitude.note.value = entry.note || '';
+        },
+        
+        updateSabbathView: function() {
+            const today = App.util.getTodayDate();
+            const { sabbath } = App.dom;
+            
+            const entry = App.state.data.sabbathHistory.find(e => e.date === today) || {
+                date: today, note: '', reflection: ''
+            };
+            
+            sabbath.form.reset();
+            sabbath.note.value = entry.note;
+            sabbath.reflection.value = entry.reflection;
+        },
+        
+        updateHistoryView: function() {
+            const { history } = App.dom;
+            history.container.innerHTML = 'Loading history...';
+            
+            const allEntries = [
+                ...App.state.data.checkinHistory.map(e => ({...e, type: 'Check-in'})),
+                ...App.state.data.gratitudeHistory.map(e => ({...e, type: 'Gratitude'})),
+                ...App.state.data.sabbathHistory.map(e => ({...e, type: 'Sabbath'})),
+                ...App.state.data.ruleOfLifeHistory.map(e => ({...e, type: 'Rule of Life'}))
+            ];
+            
+            allEntries.sort((a, b) => b.date.localeCompare(a.date));
+            
+            if (allEntries.length === 0) {
+                history.container.innerHTML = '<p class="text-center text-gray-500 mt-8">No history entries yet.</p>';
+                return;
+            }
+            
+            history.container.innerHTML = allEntries.map(entry => {
+                let content = '';
+                switch (entry.type) {
+                    case 'Check-in':
+                        content = `
+                            <p><strong>Feelings:</strong> ${entry.feelings.join(', ') || 'None'}</p>
+                            <p><strong>Ratings:</strong> ${Object.entries(entry.ratings).map(([k,v]) => `${k}: ${v}`).join(', ')}</p>
+                            <p><strong>Note:</strong> ${App.util.escapeHTML(entry.note) || '...'}</p>
+                        `;
+                        break;
+                    case 'Gratitude':
+                        content = `
+                            <ol class="list-decimal list-inside">
+                                ${entry.items.map(item => `<li>${App.util.escapeHTML(item) || '...'}</li>`).join('')}
+                            </ol>
+                            <p><strong>Note:</strong> ${App.util.escapeHTML(entry.note) || '...'}</p>
+                        `;
+                        break;
+                    case 'Sabbath':
+                        content = `
+                            <p><strong>Practice:</strong> ${App.util.escapeHTML(entry.note) || '...'}</p>
+                            <p><strong>Reflection:</strong> ${App.util.escapeHTML(entry.reflection) || '...'}</p>
+                        `;
+                        break;
+                    case 'Rule of Life':
+                        content = `
+                            <p><strong>Reflection:</strong> ${App.util.escapeHTML(entry.reflection) || '...'}</p>
+                        `;
+                        break;
+                }
+                
+                return `
+                    <div class="history-entry card !p-4 !mb-4">
+                        <h4 class="font-semibold text-lg text-indigo-700">${entry.type}</h4>
+                        <p class="text-sm text-gray-500 mb-2">${App.util.formatDate(entry.date)}</p>
+                        <div class="text-sm space-y-1">${content}</div>
+                    </div>
+                `;
+            }).join('');
+        },
+        
+        updateRuleOfLifeView: function() {
+            const { rule } = App.dom;
+            const data = App.state.data.ruleOfLife || {};
+            
+            rule.form.reset();
+            rule.inputs.vision.value = data.vision || '';
+            rule.inputs.commitments.value = data.commitments || '';
+            rule.inputs.practices.value = data.practices || '';
+            rule.inputs.community.value = data.community || '';
+            
+            rule.reflectVision.textContent = data.vision || '...';
+            rule.reflectCommitments.textContent = data.commitments || '...';
+            rule.reflectPractices.textContent = data.practices || '...';
+            rule.reflectCommunity.textContent = data.community || '...';
+        },
+        
+        updateRuleTabs: function(activeTab) {
+            const { rule } = App.dom;
+            if (activeTab === 'edit') {
+                rule.tabEdit.classList.add('active');
+                rule.tabReflect.classList.remove('active');
+                rule.contentEdit.style.display = 'block';
+                rule.contentReflect.style.display = 'none';
+            } else {
+                rule.tabReflect.classList.add('active');
+                rule.tabEdit.classList.remove('active');
+                rule.contentReflect.style.display = 'block';
+                rule.contentEdit.style.display = 'none';
+            }
+        },
+        
+        updateResourcesView: function() {
+            const { resources } = App.dom;
+            const data = App.state.data.userResources || {};
+            const resourceList = Object.values(data);
+            
+            if (resourceList.length === 0) {
+                resources.container.innerHTML = '<p class="text-center text-gray-500 mt-8">No saved resources yet.</p>';
+                return;
+            }
+            
+            resources.container.innerHTML = resourceList.map(res => `
+                <div class="card !p-4 flex flex-col resource-card">
+                    <h4 class="font-semibold text-lg">${App.util.escapeHTML(res.title)}</h4>
+                    <p class="text-sm text-gray-600 mb-2 flex-grow">${App.util.escapeHTML(res.description) || '...'}</p>
+                    <div class="flex gap-2 mt-auto pt-2">
+                        <a href="${App.util.escapeHTML(res.link)}" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm">Open Link</a>
+                        <button class="btn btn-outline btn-sm" data-id="${res.id}">Edit</button>
+                    </div>
+                </div>
+            `).join('');
+            
+            resources.container.querySelectorAll('.btn-outline').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const res = App.state.data.userResources[btn.dataset.id];
+                    if (res) this.showResourceModal(res);
+                });
+            });
+        },
+        
+        updateSettingsView: function() {
+            App.auth.updateSyncStatusUI();
+        },
+        
+        showBurnoutPrompt: function(triggers) {
+            // App.dom.checkin.finishBtn.style.display = 'block'; // This is now handled by the checkin save function
+            App.dom.checkin.burnoutPromptModal.style.display = 'flex';
+            setTimeout(() => App.dom.checkin.burnoutPromptModal.classList.add('visible'), 10);
+        },
+        hideBurnoutPrompt: function() {
+            const modal = App.dom.checkin.burnoutPromptModal;
+            modal.classList.remove('visible');
+            setTimeout(() => modal.style.display = 'none', 300);
+        },
+        showBurnoutCheckModal: function() {
+            const { burnoutChecklist } = App.dom.checkin;
+            burnoutChecklist.innerHTML = ''; // Clear
+            
+            for (const category in App.config.burnoutChecklist) {
+                let itemsHtml = App.config.burnoutChecklist[category].map(item => `
+                    <label class="flex items-start p-3 rounded-lg hover:bg-gray-50">
+                        <input type="checkbox" class="h-5 w-5 rounded text-indigo-600 focus:ring-indigo-500 border-gray-300 mt-1" data-item="${App.util.escapeHTML(item)}">
+                        <span class="ml-3 text-gray-700">${App.util.escapeHTML(item)}</span>
+                    </label>
+                `).join('');
+                
+                let categoryTitle = category.replace(/([A-Z])/g, ' $1');
+                categoryTitle = categoryTitle.charAt(0).toUpperCase() + categoryTitle.slice(1);
+                
+                burnoutChecklist.innerHTML += `
+                    <div class="mb-6">
+                        <h3 class="text-lg font-semibold text-indigo-700 mb-2">${categoryTitle} Signs</h3>
+                        <div class="space-y-2">${itemsHtml}</div>
+                    </div>
+                `;
+            }
+            
+            const modal = App.dom.checkin.burnoutCheckModal;
+            modal.style.display = 'flex';
+            setTimeout(() => modal.classList.add('visible'), 10);
+        },
+        hideBurnoutCheckModal: function() {
+            const modal = App.dom.checkin.burnoutCheckModal;
+            modal.classList.remove('visible');
+            setTimeout(() => modal.style.display = 'none', 300);
+        },
+        showBurnoutResultsModal: function() {
+            const { burnoutChecklist, burnoutResultsContainer } = App.dom.checkin;
+            const checkedItems = Array.from(burnoutChecklist.querySelectorAll('input:checked'))
+                .map(input => input.dataset.item);
+                
+            if (checkedItems.length === 0) {
+                burnoutResultsContainer.innerHTML = '<p>You didn\'t flag any specific items, which is great! Remember to continue practicing self-care.</p>';
+            } else {
+                burnoutResultsContainer.innerHTML = checkedItems.map(item => `
+                    <div class="p-3 bg-indigo-50 rounded-lg">
+                        <p class="text-gray-800">${App.util.escapeHTML(item)}</p>
+                    </div>
+                `).join('');
+            }
+            
+            const modal = App.dom.checkin.burnoutResultsModal;
+            modal.style.display = 'flex';
+            setTimeout(() => modal.classList.add('visible'), 10);
+        },
+        hideBurnoutResultsModal: function() {
+            const modal = App.dom.checkin.burnoutResultsModal;
+            modal.classList.remove('visible');
+            setTimeout(() => modal.style.display = 'none', 300);
+        }
+    }, // End of App.ui
+    
+    
+    navigation: {
+        init: function() {
+            // This is handled by App.handlers.init
+        },
+        
+        navigateTo: function(viewId) {
+            console.log(`Navigating to: ${viewId}`);
+            
+            App.dom.views.forEach(view => {
+                view.style.display = 'none';
+            });
+            
+            const targetView = document.getElementById(viewId);
+            if (targetView) {
+                targetView.style.display = 'block';
+                window.scrollTo(0, 0); // Scroll to top
+                App.state.ui.currentView = viewId;
+                
+                if (App.state.ui.viewHistory[App.state.ui.viewHistory.length - 1] !== viewId) {
+                    App.state.ui.viewHistory.push(viewId);
+                }
+                
+                this.updateViewContent(viewId);
+                this.updateNavActiveState(viewId);
+                
+            } else {
+                console.error(`View not found: ${viewId}`);
+                App.dom.views[0].style.display = 'block'; 
+            }
+        },
+        
+        goBack: function(defaultView = 'welcomeView') {
+            App.state.ui.viewHistory.pop(); 
+            let lastView = App.state.ui.viewHistory.pop(); 
+            
+            if (!lastView) {
+                lastView = defaultView;
+            }
+            
+            this.navigateTo(lastView);
+        },
+        
+        updateViewContent: function(viewId) {
+            switch (viewId) {
+                case 'welcomeView':
+                    App.ui.updateWelcomeView();
+                    break;
+                case 'checkinView':
+                    App.ui.updateCheckinView();
+                    break;
+                case 'gratitudeView':
+                    App.ui.updateGratitudeView();
+                    break;
+                case 'sabbathView':
+                    App.ui.updateSabbathView();
+                    break;
+                case 'historyView':
+                    App.ui.updateHistoryView();
+                    break;
+                case 'ruleView':
+                    App.ui.updateRuleOfLifeView();
+                    break;
+                case 'resourcesView':
+                    App.ui.updateResourcesView();
+                    break;
+                case 'settingsView':
+                    App.ui.updateSettingsView();
+                    break;
+            }
+        },
+        
+        updateNavActiveState: function(viewId) {
+            App.dom.nav.links.forEach(link => {
+                link.classList.toggle('active', link.dataset.view === viewId);
+            });
+        }
+    }, // End of App.navigation
+
+    
+    /* ================================================================
+    App Init
+    ================================================================
+    */
+    
+    init: async function() {
+        try {
+            console.log("App.init started...");
+            
+            this.util.cacheDOM();
+            
+            // FIX: Use AppFirebase global, not App.Firebase
+            if (window.AppFirebase) {
+                console.log("Firebase services found, initializing...");
+                this.state.fb.db = AppFirebase.getFirestore(AppFirebase.app);
+                this.state.fb.auth = AppFirebase.getAuth(AppFirebase.app);
+                this.state.fb.googleProvider = new AppFirebase.GoogleAuthProvider();
+                
+                // FIX: Use AppFirebase global
+                await AppFirebase.setPersistence(this.state.fb.auth, AppFirebase.browserLocalPersistence);
+                this.state.appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+                
+                this.auth.init(); // Start auth listener
+            } else {
+                console.warn("Firebase modules not loaded. App will run in local-only mode.");
+                this.state.storageDriver = 'local';
+                if (App.dom.settings.syncSection) {
+                    App.dom.settings.syncSection.style.display = 'none';
+                }
+            }
+        } catch (e) {
+            console.error("Firebase state initialization error:", e);
+            console.warn("Firebase services (Firestore/Auth) could not be set. App will run in local-only mode.");
+            this.state.storageDriver = 'local';
+            if (App.dom.settings.syncSection) {
+                App.dom.settings.syncSection.style.display = 'none';
+            }
+        }
+        
+        this.state.db = await this.storage.initDB();
+        if (!this.state.db) {
+            this.ui.showAlert("Critical Error: Could not initialize local database. App cannot save data.", "error", 10000);
+            return;
+        }
+        console.log("IndexedDB initialized.");
+
+        this.ui.init();
+        this.handlers.init();
+        this.navigation.init(); 
+        
+        await this.auth.checkPinAndAuthState();
+        
+        console.log("App.init finished.");
+        
+    }
+}); // End of App object
+
+// --- Start the App ---
+// FIX: Remove DOMContentLoaded, call init directly
+App.init();
