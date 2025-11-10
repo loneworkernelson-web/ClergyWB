@@ -860,12 +860,15 @@
     <script type="module">
 /*
 ================================================================
-APP JAVASCRIPT - PART 2A (Core Logic)
+APP JAVASCRIPT - Complete & Merged
 ================================================================
 */
 
 // --- Firebase Init ---
+// FIX: Moved from <head> to run synchronously before App.init
+// This resolves the race condition.
 try {
+    // 1. Prioritize window.firebaseConfig (from config.js)
     const envConfig = typeof __firebase_config !== 'undefined' ? __firebase_config : '{}';
     let configToParse = envConfig;
     
@@ -884,10 +887,12 @@ try {
         const { getAuth, setPersistence, browserLocalPersistence, GoogleAuthProvider, onAuthStateChanged, signInWithRedirect, getRedirectResult, signOut, linkWithRedirect, unlink } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js");
         const { getFirestore, doc, setDoc, getDoc, runTransaction, writeBatch, collection, onSnapshot, query, where, getDocs, deleteDoc } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js");
 
+        // Initialize the Firebase App
         const fbApp = initializeApp(firebaseConfig);
 
+        // Make modules AND the app instance available globally
         window.AppFirebase = {
-            app: fbApp,
+            app: fbApp, // Save the app instance
             getAuth, setPersistence, browserLocalPersistence, GoogleAuthProvider, onAuthStateChanged, signInWithRedirect, getRedirectResult, signOut, linkWithRedirect, unlink,
             getFirestore, doc, setDoc, getDoc, runTransaction, writeBatch, collection, onSnapshot, query, where, getDocs, deleteDoc
         };
@@ -908,7 +913,7 @@ window.App = window.App || {};
 Object.assign(window.App, {
 
     /* ================================================================
-    App Logic: Storage & Auth
+    App Logic Part 2: Storage & Auth
     ================================================================
     */
     storage: {
@@ -916,8 +921,8 @@ Object.assign(window.App, {
         initDB: async function() {
             const db = new Dexie("TokuHauoraDB");
             db.version(1).stores({
-                appState: 'key', 
-                userData: 'key' 
+                appState: 'key', // For simple key-value pairs (like lastSync)
+                userData: 'key'  // For encrypted data blobs (e.g., 'data', 'salt', 'iv')
             });
             
             try {
@@ -938,10 +943,11 @@ Object.assign(window.App, {
         },
         encryptData: function(textData, pin) {
             try {
-                const salt = CryptoJS.lib.WordArray.random(128 / 8); 
-                const iv = CryptoJS.lib.WordArray.random(96 / 8);     
+                const salt = CryptoJS.lib.WordArray.random(128 / 8); // 16 bytes
+                const iv = CryptoJS.lib.WordArray.random(96 / 8);     // 12 bytes (GCM recommended)
                 const key = this.deriveKey(pin, salt);
                 
+                // FIX: Use CryptoJS.pad.NoPadding for GCM
                 const encrypted = CryptoJS.AES.encrypt(textData, key, {
                     iv: iv,
                     mode: CryptoJS.mode.GCM,
@@ -976,6 +982,7 @@ Object.assign(window.App, {
                 const ciphertext = combinedCiphertext.clone();
                 ciphertext.sigBytes = combinedCiphertext.sigBytes - 16;
                 
+                // FIX: Use CryptoJS.pad.NoPadding for GCM
                 const decrypted = CryptoJS.AES.decrypt({ ciphertext: ciphertext }, key, {
                     iv: iv,
                     mode: CryptoJS.mode.GCM,
@@ -1402,7 +1409,7 @@ Object.assign(window.App, {
     }, 
 
     /* ================================================================
-    App Logic: State, Config, DOM, Utils
+    App Logic Part 3: State, Config, DOM, Utils, PIN
     ================================================================
     */
     state: {
@@ -1468,6 +1475,7 @@ Object.assign(window.App, {
                 "Having a cynical or negative outlook",
                 "Self-doubt, procrastinating, and taking longer to get things done"
             ],
+            // FIX (per Grok): Corrected "sennse" to "sense"
             mentalCognitive: [
                 "Difficulty concentrating or making decisions",
                 "Forgetfulness",
@@ -1694,9 +1702,8 @@ Object.assign(window.App, {
                 }[m];
             });
         }
-    },
-    // ... (existing App.util code from Part 2a) ...
-    }, 
+    }, // End of App.util  
+    }, // End of App.util
     
     /* ================================================================
     App Logic: PIN Module
@@ -2015,6 +2022,7 @@ Object.assign(window.App, {
             d.sabbath.form.addEventListener('submit', (e) => this.saveSabbath(e));
             d.rule.form.addEventListener('submit', (e) => this.saveRuleOfLife(e));
             d.rule.reflectionForm.addEventListener('submit', (e) => this.saveRuleReflection(e));
+            // FIX: Add (e) parameter and preventDefault
             d.resources.form.addEventListener('submit', (e) => this.saveResource(e));
 
             // Check-in Modals
@@ -2070,6 +2078,7 @@ Object.assign(window.App, {
         },
 
         handleOnboardingFinish: function() {
+            // FIX: This function now holds the logic from the old handlePinConfirm
             localStorage.setItem('hauoraOnboardComplete', 'true');
             App.dom.onboarding.modal.style.display = 'none';
             
@@ -2078,7 +2087,7 @@ Object.assign(window.App, {
                     "Would you like to sign in with Google to securely sync your encrypted data? Your PIN will be required on new devices.",
                     [
                         { text: "Not Now", type: "secondary", callback: () => App.pin.finishOnboarding(false) },
-                        { text: "Sign In", type: "primary", callback: () => App.auth.signInWithGoogle(false) } // Was: App.pin.finishOnboarding(true)
+                        { text: "Sign In", type: "primary", callback: () => App.auth.signInWithGoogle(false) } // Was (true)
                     ]
                 );
             } else {
@@ -2105,12 +2114,14 @@ Object.assign(window.App, {
             
             const entry = { date: today, feelings, ratings, note };
             
+            // Remove today's entry if it exists, then add new one
             App.state.data.checkinHistory = App.state.data.checkinHistory.filter(e => e.date !== today);
             App.state.data.checkinHistory.push(entry);
             App.state.data.lastModified = new Date().toISOString();
             
             App.storage.localSaveAll();
             
+            // Check for burnout
             const triggers = App.moduleCheckin.getBurnoutTriggers();
             if (triggers) {
                 App.ui.showBurnoutPrompt(triggers);
@@ -2185,6 +2196,7 @@ Object.assign(window.App, {
             App.state.data.lastModified = new Date().toISOString();
             App.storage.localSaveAll();
             App.ui.showAlert("Rule of Life saved!", "success");
+            // Update the reflect tab immediately
             App.ui.updateRuleOfLifeView();
             App.ui.updateRuleTabs('reflect');
         },
@@ -2208,6 +2220,7 @@ Object.assign(window.App, {
             App.navigation.navigateTo('historyView');
         },
 
+        // FIX: Add (e) parameter and preventDefault
         saveResource: async (e) => {
             e.preventDefault();
             const { form, idInput, titleInput, linkInput, descriptionInput } = App.dom.resources;
@@ -2249,6 +2262,7 @@ Object.assign(window.App, {
                 App.ui.showAlert("Please log in to export data.", "error");
                 return;
             }
+            // We export the *encrypted* blob for security
             App.state.db.userData.get('data').then(encryptedData => {
                 if (!encryptedData) {
                     App.ui.showAlert("No data to export.", "error");
@@ -2284,6 +2298,7 @@ Object.assign(window.App, {
                             { text: "Overwrite", type: "danger", callback: async () => {
                                 await App.state.db.userData.put({ key: 'data', ...encryptedData });
                                 await App.storage.localSaveState('hasData', true);
+                                // Force user to re-login to decrypt new data
                                 App.ui.showAlert("Import successful! Please re-enter your PIN.", "success");
                                 window.location.reload();
                             }}
@@ -2346,8 +2361,7 @@ Object.assign(window.App, {
         }
         
     }, // End of App.handlers
-        // ... (existing App.handlers code from Part 2b) ...
-    }, // End of App.handlers
+        }, // End of App.handlers
     
     /* ================================================================
     App Logic Part 4: UI, Navigation, and Init
@@ -2408,7 +2422,7 @@ Object.assign(window.App, {
             alertBox.className = 'alert-box'; 
             alertBox.classList.add(type); 
             
-            // FIX: Use display: block
+            // FIX: Use display: block to show
             alertBox.style.display = 'block';
             setTimeout(() => alertBox.classList.add('visible'), 10);
 
@@ -2418,7 +2432,7 @@ Object.assign(window.App, {
             
             App.state.ui.alertTimer = setTimeout(() => {
                 alertBox.classList.remove('visible');
-                // FIX: Use display: none
+                // FIX: Use display: none to hide after transition
                 setTimeout(() => alertBox.style.display = 'none', 300);
             }, duration);
         },
@@ -2428,7 +2442,6 @@ Object.assign(window.App, {
             
             titleEl.textContent = title;
             messageEl.textContent = message;
-            
             buttonContainer.innerHTML = '';
             
             if (buttons.length > 0) {
@@ -2508,7 +2521,7 @@ Object.assign(window.App, {
             modal.classList.remove('visible');
             setTimeout(() => modal.style.display = 'none', 300);
         },
-
+        
         // --- Dynamic Content Updaters ---
         
         updateWelcomeView: function() {
@@ -2760,7 +2773,7 @@ Object.assign(window.App, {
             }
             
             resources.container.innerHTML = resourceList.map(res => `
-                <div class="card resource-card !p-4">
+                <div class="card !p-4 flex flex-col">
                     <h4 class="font-semibold text-lg">${App.util.escapeHTML(res.title)}</h4>
                     <p class="text-sm text-gray-600 mb-2 flex-grow">${App.util.escapeHTML(res.description) || '...'}</p>
                     <div class="flex gap-2 mt-auto pt-2">
@@ -2783,7 +2796,7 @@ Object.assign(window.App, {
         },
         
         showBurnoutPrompt: function(triggers) {
-            App.dom.checkin.finishBtn.style.display = 'block';
+            // App.dom.checkin.finishBtn.style.display = 'block'; // No, this is handled by handler
             App.dom.checkin.burnoutPromptModal.style.display = 'flex';
             setTimeout(() => App.dom.checkin.burnoutPromptModal.classList.add('visible'), 10);
         },
@@ -2794,7 +2807,7 @@ Object.assign(window.App, {
         },
         showBurnoutCheckModal: function() {
             const { burnoutChecklist } = App.dom.checkin;
-            burnoutChecklist.innerHTML = ''; 
+            burnoutChecklist.innerHTML = ''; // Clear
             
             for (const category in App.config.burnoutChecklist) {
                 let itemsHtml = App.config.burnoutChecklist[category].map(item => `
@@ -2853,7 +2866,7 @@ Object.assign(window.App, {
     
     navigation: {
         init: function() {
-            // Handled by App.handlers.init
+            // All event listeners are now in App.handlers.init
         },
         
         navigateTo: function(viewId) {
@@ -2929,7 +2942,6 @@ Object.assign(window.App, {
         }
     }, // End of App.navigation
 
-    
     /* ================================================================
     App Init
     ================================================================
@@ -2975,12 +2987,11 @@ Object.assign(window.App, {
 
         this.ui.init();
         this.handlers.init();
-        this.navigation.init(); 
+        this.navigation.init();
         
         await this.auth.checkPinAndAuthState();
         
         console.log("App.init finished.");
-        
     }
 }); // End of Object.assign
 
