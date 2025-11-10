@@ -902,6 +902,7 @@ Object.assign(window.App, {
     storage: {
         
         initDB: async function() {
+            // Use Dexie, which is loaded in <head>
             const db = new Dexie("TokuHauoraDB");
             db.version(1).stores({
                 appState: 'key', // For simple key-value pairs (like lastSync)
@@ -925,22 +926,23 @@ Object.assign(window.App, {
             });
         },
         
-        // FIX: Switched to CBC mode, which is included in crypto-js.min.js
-        // Removed GCM, NoPadding, and AuthTag logic.
+        /**
+         * Encrypts data using AES-CBC (which is built-in).
+         */
         encryptData: function(textData, pin) {
             try {
-                const salt = CryptoJS.lib.WordArray.random(128 / 8); // 16 bytes
-                const iv = CryptoJS.lib.WordArray.random(128 / 8);     // 16 bytes for CBC
+                const salt = CryptoJS.lib.WordArray.random(128 / 8);
+                const iv = CryptoJS.lib.WordArray.random(128 / 8); // 128 bits for CBC
                 const key = this.deriveKey(pin, salt);
                 
+                // Use default CBC mode and Pkcs7 padding (which are built-in)
                 const encrypted = CryptoJS.AES.encrypt(textData, key, {
-                    iv: iv,
-                    mode: CryptoJS.mode.CBC,
-                    padding: CryptoJS.pad.Pkcs7 // Default padding
+                    iv: iv
                 });
                 
+                // No authTag in CBC
                 return {
-                    ciphertext: CryptoJS.enc.Base64.stringify(encrypted.ciphertext),
+                    ciphertext: CryptoJS.enc.Base64.stringify(encrypted.ciphertext), // Just ciphertext
                     salt: CryptoJS.enc.Base64.stringify(salt),
                     iv: CryptoJS.enc.Base64.stringify(iv)
                 };
@@ -950,20 +952,21 @@ Object.assign(window.App, {
             }
         },
         
-        // FIX: Switched to CBC mode
+        /**
+         * Decrypts data using AES-CBC.
+         */
         decryptData: function(b64Ciphertext, pin, b64Salt, b64Iv) {
             try {
                 const salt = CryptoJS.enc.Base64.parse(b64Salt);
                 const iv = CryptoJS.enc.Base64.parse(b64Iv);
                 const key = this.deriveKey(pin, salt);
-                
-                // Decrypt using Base64-encoded ciphertext
+
+                // The ciphertext is just the ciphertext, no authTag
+                // We pass the Base64 string directly, as AES.decrypt handles it
                 const decrypted = CryptoJS.AES.decrypt(b64Ciphertext, key, {
-                    iv: iv,
-                    mode: CryptoJS.mode.CBC,
-                    padding: CryptoJS.pad.Pkcs7
+                    iv: iv
                 });
-                
+
                 const decryptedText = decrypted.toString(CryptoJS.enc.Utf8);
                 
                 if (!decryptedText) {
@@ -1220,9 +1223,8 @@ Object.assign(window.App, {
     }, 
 
     auth: {
-        // FIX: This function is now "defensive"
-        // It will always set authLoading = false, even if Firebase isn't loaded.
         init: function() {
+            // FIX: This function is now "defensive"
             if (!App.state.fb.auth) {
                 // If Firebase isn't loaded, just set authLoading to false and exit.
                 App.state.ui.authLoading = false;
@@ -1274,30 +1276,12 @@ Object.assign(window.App, {
                 
                 await this.waitForAuthInit();
                 
-                if (App.state.ui.isLoggedIn) {
-                    App.util.setSplashMessage("Checking cloud data...");
-                    const hasCloudPin = await App.pin.cloudPinCheckExists();
-                    if (hasCloudPin) {
-                        console.log("User logged in, cloud PIN exists. Showing PIN login.");
-                        App.util.hideSplash();
-                        App.pin.showLockScreen("Enter PIN to unlock and sync.");
-                    } else {
-                        console.warn("Local data/PIN found, but no cloud PIN for this user. Data mismatch!");
-                        App.util.hideSplash();
-                        App.ui.showModal("Account Mismatch", 
-                            "You are logged in as a new user, but local data from another user exists. What would you like to do?",
-                            [
-                                { text: "Log Out", type: "secondary", callback: () => App.auth.signOut() },
-                                { text: "Delete Local Data", type: "danger", callback: () => App.auth.wipeAndRestart() }
-                            ]
-                        );
-                    }
-                } else {
-                    console.log("User not logged in. Showing PIN login for local data.");
-                    App.state.storageDriver = 'local';
-                    App.util.hideSplash();
-                    App.pin.showLockScreen("Enter PIN to unlock local data.");
-                }
+                // *** FIX ***
+                // Simplified logic. We just show the lock screen.
+                // The `handlePinLogin` function will now handle all cases.
+                console.log("Local PIN exists. Showing lock screen.");
+                App.util.hideSplash();
+                App.pin.showLockScreen("Enter PIN to unlock.");
             }
         },
         waitForAuthInit: function() {
@@ -1457,6 +1441,7 @@ Object.assign(window.App, {
                 "Having a cynical or negative outlook",
                 "Self-doubt, procrastinating, and taking longer to get things done"
             ],
+            // FIX (per Grok): Corrected "sennse" to "sense"
             mentalCognitive: [
                 "Difficulty concentrating or making decisions",
                 "Forgetfulness",
@@ -1628,6 +1613,7 @@ Object.assign(window.App, {
         
         formatDate: function(dateString) {
             try {
+                // FIX (per Grok): Use replace to make it Safari-compatible
                 const safeDateString = dateString.replace(/-/g, '/');
                 const d = new Date(safeDateString);
                 return d.toLocaleDateString(undefined, {
@@ -1636,7 +1622,7 @@ Object.assign(window.App, {
                     day: 'numeric'
                 });
             } catch (e) {
-                return dateString; 
+                return dateString; // Fallback
             }
         },
         
@@ -1644,7 +1630,7 @@ Object.assign(window.App, {
             App.dom.splash.screen.style.opacity = 0;
             setTimeout(() => {
                 App.dom.splash.screen.style.display = 'none';
-            }, 300); 
+            }, 300); // Match CSS transition
         },
         
         setSplashMessage: function(message) {
@@ -1668,6 +1654,7 @@ Object.assign(window.App, {
         mergeWithDefaultData: function() {
             const defaults = this.getDefaultData();
             App.state.data = { ...defaults, ...App.state.data };
+            // Ensure nested objects are also merged
             App.state.data.ruleOfLife = { ...defaults.ruleOfLife, ...App.state.data.ruleOfLife };
         },
         
@@ -1851,10 +1838,27 @@ pin: {
                     App.state.data = App.util.getDefaultData();
                 }
                 
+                // *** FIX FOR FIRST-TIME SYNC ***
                 if (App.state.ui.isLoggedIn) {
-                    App.state.storageDriver = 'firebase';
-                    App.util.setSplashMessage("Syncing with cloud...");
-                    await App.storage.syncData();
+                    App.util.setSplashMessage("Checking cloud data...");
+                    const hasCloudPin = await App.pin.cloudPinCheckExists();
+                    
+                    if (hasCloudPin) {
+                        // This is a normal, already-synced login
+                        console.log("Cloud PIN found. Syncing data...");
+                        App.state.storageDriver = 'firebase';
+                        await App.storage.syncData();
+                    } else {
+                        // This is a "FIRST-TIME SYNC" (e.g., local user clicked "Sign in")
+                        console.log("No cloud PIN found. Performing first-time sync...");
+                        App.state.storageDriver = 'firebase';
+                        App.util.setSplashMessage("Performing first-time sync...");
+                        // 1. Upload their PIN check hash
+                        await App.pin.savePinCheckToCloud(pin);
+                        // 2. Upload their local data
+                        await App.storage.firestoreSaveAll(); 
+                        console.log("First-time sync complete.");
+                    }
                 }
                 
                 App.util.hideSplash();
@@ -1898,17 +1902,17 @@ pin: {
         
         finishOnboarding: async function(didSignIn) {
             if (didSignIn) {
-                App.state.storageDriver = 'firebase';
-                await this.savePinCheckToCloud(App.state.pin);
-                await App.storage.firestoreSaveAll();
+                // User clicked "Sign In"
+                App.auth.signInWithGoogle(false); // This will redirect
+                // The `handlePinLogin` will now handle the first-time sync when they return
             } else {
+                // User clicked "Not Now"
                 App.state.storageDriver = 'local';
+                localStorage.setItem('hauoraOnboardComplete', 'true');
+                App.dom.onboarding.modal.style.display = 'none';
+                App.util.hideSplash();
+                App.navigation.updateViewContent('welcomeView');
             }
-            
-            localStorage.setItem('hauoraOnboardComplete', 'true');
-            App.dom.onboarding.modal.style.display = 'none';
-            App.util.hideSplash();
-            App.navigation.updateViewContent('welcomeView');
         }
     }, // End of App.pin
 
@@ -2016,12 +2020,8 @@ pin: {
             
             // Settings: Auth
             d.settings.loginBtn.addEventListener('click', () => App.auth.signInWithGoogle(false));
-            
-            // ****** THIS IS THE FIX ******
-            // "No user to link" error occurred because this was 'true'.
-            // Set to 'false' to perform a fresh sign-in, which is correct for local-only mode.
-            d.settings.loginFromLocalBtn.addEventListener('click', () => App.auth.signInWithGoogle(false)); 
-            
+            // *** FIX for "No user to link" error ***
+            d.settings.loginFromLocalBtn.addEventListener('click', () => App.auth.signInWithGoogle(false)); // Was `true`
             d.settings.logoutBtn.addEventListener('click', () => App.auth.signOut());
             
             // Settings: Data
@@ -2057,6 +2057,8 @@ pin: {
         },
 
         handleOnboardingFinish: function() {
+            // FIX: This logic is now in App.pin.handlePinConfirm
+            // This function now asks the user *what* they want to do.
             localStorage.setItem('hauoraOnboardComplete', 'true');
             App.dom.onboarding.modal.style.display = 'none';
             
@@ -2065,7 +2067,7 @@ pin: {
                     "Would you like to sign in with Google to securely sync your encrypted data? Your PIN will be required on new devices.",
                     [
                         { text: "Not Now", type: "secondary", callback: () => App.pin.finishOnboarding(false) },
-                        { text: "Sign In", type: "primary", callback: () => App.auth.signInWithGoogle(false) } // Use 'false' for fresh sign-in
+                        { text: "Sign In", type: "primary", callback: () => App.pin.finishOnboarding(true) }
                     ]
                 );
             } else {
