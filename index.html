@@ -1712,3 +1712,652 @@ Object.assign(window.App, {
             });
         }
     }, // End of App.util
+pin: {
+        
+        hashPin: function(pin) {
+            const staticSalt = "TokuHauora.PIN.Check.v1";
+            return CryptoJS.PBKDF2(pin, staticSalt, {
+                keySize: 256 / 32,
+                iterations: 5000 
+            }).toString(CryptoJS.enc.Base64);
+        },
+        
+        savePinHashLocally: function(pin) {
+            const hash = this.hashPin(pin);
+            localStorage.setItem('hauoraPinHash', hash);
+        },
+
+        localPinExists: async function() {
+            return !!localStorage.getItem('hauoraPinHash');
+        },
+        
+        verifyLocalPin: function(pin) {
+            const hash = localStorage.getItem('hauoraPinHash');
+            if (!hash) return false;
+            return this.hashPin(pin) === hash;
+        },
+        
+        savePinCheckToCloud: async function(pin) {
+            const paths = App.storage.getFirestorePaths();
+            if (!paths) return;
+            
+            const hash = this.hashPin(pin);
+            try {
+                await AppFirebase.setDoc(paths.pinCheckRef, { hash: hash, version: 1 });
+                console.log("PIN check saved to cloud.");
+            } catch (e) {
+                console.error("Failed to save PIN check to cloud:", e);
+                App.ui.showAlert("Error saving PIN check to cloud.", "error");
+            }
+        },
+        
+        cloudPinCheckExists: async function() {
+            const paths = App.storage.getFirestorePaths();
+            if (!paths) return false;
+            
+            try {
+                const docSnap = await AppFirebase.getDoc(paths.pinCheckRef);
+                return docSnap.exists();
+            } catch (e) {
+                console.error("Error checking for cloud PIN:", e);
+                return false;
+            }
+        },
+
+        resetPinInput: function(pinDisplayEl) {
+            App.state.ui.pinInput = '';
+            const dots = pinDisplayEl ? pinDisplayEl.children : App.dom.lockScreen.pinDisplay.children;
+            for (const dot of dots) {
+                dot.classList.remove('filled');
+            }
+        },
+
+        updatePinDisplay: function(pinDisplayEl) {
+            const dots = pinDisplayEl ? pinDisplayEl.children : App.dom.lockScreen.pinDisplay.children;
+            for (let i = 0; i < 4; i++) {
+                dots[i].classList.toggle('filled', i < App.state.ui.pinInput.length);
+            }
+        },
+        
+        showPinError: function(pinDisplayEl) {
+            pinDisplayEl = pinDisplayEl || App.dom.lockScreen.pinDisplay;
+            pinDisplayEl.classList.add('animate-shake'); 
+            setTimeout(() => {
+                pinDisplayEl.classList.remove('animate-shake');
+                this.resetPinInput(pinDisplayEl);
+            }, 500);
+        },
+
+        showLockScreen: function(message = "Enter your 4-digit PIN.") {
+            App.state.ui.pinMode = 'login';
+            this.resetPinInput(App.dom.lockScreen.pinDisplay);
+            App.dom.lockScreen.title.textContent = "Enter PIN";
+            App.dom.lockScreen.message.textContent = message;
+            App.dom.lockScreen.screen.style.display = 'flex';
+        },
+        
+        startOnboarding: function() {
+            App.dom.onboarding.modal.style.display = 'flex';
+            
+            App.dom.onboarding.nextBtn.onclick = () => {
+                if (App.state.ui.currentOnboardingStep === 1) {
+                    App.ui.updateOnboardingStep(1); // Go to step 2
+                    App.dom.onboarding.numpad.style.display = 'grid';
+                    App.state.ui.pinMode = 'create';
+                    App.dom.onboarding.nextBtn.style.display = 'none'; 
+                }
+            };
+            
+            App.dom.onboarding.prevBtn.onclick = () => {
+                if (App.state.ui.currentOnboardingStep === 2) {
+                    App.ui.updateOnboardingStep(-1); // Go back to step 1
+                    App.dom.onboarding.numpad.style.display = 'none';
+                    App.state.ui.pinMode = 'login'; 
+                    App.dom.onboarding.nextBtn.style.display = 'inline-block';
+                }
+            };
+            
+            App.dom.onboarding.numpad.addEventListener('click', (e) => {
+                const btn = e.target.closest('.numpad-btn');
+                if (btn && btn.dataset.key) {
+                    this.handlePinKey(btn.dataset.key, App.dom.onboarding.pinDisplay);
+                }
+            });
+            App.dom.onboarding.numpadDelete.addEventListener('click', () => {
+                this.handlePinKey('delete', App.dom.onboarding.pinDisplay);
+            });
+        },
+        
+        handlePinKey: function(key, pinDisplayEl) {
+            const ui = App.state.ui;
+            
+            if (key === 'delete') {
+                ui.pinInput = ui.pinInput.slice(0, -1);
+            } else if (ui.pinInput.length < 4) {
+                ui.pinInput += key;
+            }
+            
+            this.updatePinDisplay(pinDisplayEl);
+            
+            if (ui.pinInput.length === 4) {
+                this.handlePinEntryComplete(pinDisplayEl);
+            }
+        },
+        
+        handlePinEntryComplete: async function(pinDisplayEl) {
+            const ui = App.state.ui;
+            const pin = ui.pinInput;
+
+            switch (ui.pinMode) {
+                case 'login':
+                    await this.handlePinLogin(pin, pinDisplayEl);
+                    break;
+                case 'create':
+                    this.handlePinCreate(pin, pinDisplayEl);
+                    break;
+                case 'confirm':
+                    await this.handlePinConfirm(pin, pinDisplayEl);
+                    break;
+                case 'change':
+                    // await this.handlePinChange(pin, pinDisplayEl);
+                    break;
+            }
+        },
+        
+        handlePinLogin: async function(pin, pinDisplayEl) {
+            if (this.verifyLocalPin(pin)) {
+                console.log("PIN verified.");
+                App.state.pin = pin; 
+                
+                App.dom.lockScreen.screen.style.display = 'none';
+                App.util.setSplashMessage("Loading your data...");
+                App.dom.splash.screen.style.display = 'flex';
+                
+                const localSuccess = await App.storage.localLoadAll();
+                if (!localSuccess) {
+                    console.warn("Local data load failed.");
+                    App.state.data = App.util.getDefaultData();
+                }
+                
+                if (App.state.ui.isLoggedIn) {
+                    App.state.storageDriver = 'firebase';
+                    App.util.setSplashMessage("Syncing with cloud...");
+                    await App.storage.syncData();
+                }
+                
+                App.util.hideSplash();
+                App.navigation.updateViewContent(App.state.ui.currentView); 
+
+            } else {
+                console.log("Wrong PIN.");
+                this.showPinError(pinDisplayEl);
+                App.dom.lockScreen.message.textContent = "Wrong PIN. Try again.";
+            }
+        },
+        
+        handlePinCreate: function(pin, pinDisplayEl) {
+            App.state.tempPin = pin;
+            App.state.ui.pinMode = 'confirm';
+            this.resetPinInput(pinDisplayEl);
+            App.dom.onboarding.pinPrompt.textContent = "Confirm your PIN";
+            App.dom.onboarding.pinError.textContent = "";
+        },
+        
+        handlePinConfirm: async function(pin, pinDisplayEl) {
+            if (pin === App.state.tempPin) {
+                App.state.pin = pin;
+                this.savePinHashLocally(pin); 
+                
+                App.state.data = App.util.getDefaultData();
+                await App.storage.localSaveAll();
+                
+                App.state.ui.pinMode = 'login'; 
+                App.dom.onboarding.numpad.style.display = 'none';
+                App.ui.updateOnboardingStep(1); // Go to step 3
+                
+            } else {
+                this.showPinError(pinDisplayEl);
+                App.state.ui.pinMode = 'create';
+                App.state.tempPin = '';
+                App.dom.onboarding.pinPrompt.textContent = "PINs didn't match. Try again.";
+                App.dom.onboarding.pinError.textContent = "PINs didn't match.";
+            }
+        },
+        
+        finishOnboarding: async function(didSignIn) {
+            if (didSignIn) {
+                App.state.storageDriver = 'firebase';
+                await this.savePinCheckToCloud(App.state.pin);
+                await App.storage.firestoreSaveAll();
+            } else {
+                App.state.storageDriver = 'local';
+            }
+            
+            localStorage.setItem('hauoraOnboardComplete', 'true');
+            App.dom.onboarding.modal.style.display = 'none';
+            App.util.hideSplash();
+            App.navigation.updateViewContent('welcomeView');
+        }
+    }, // End of App.pin
+    
+    /* ================================================================
+    App Logic Part 4: Missing modules
+    ================================================================
+    */
+    
+    /* --- Check-in Module (Grok: was missing) --- */
+    moduleCheckin: {
+        calculateTotals: function(entry) {
+            const warnings = entry.feelings.filter(f => {
+                const config = App.config.feelings.find(cf => cf.name === f);
+                return config && config.type === 'warning';
+            }).length;
+            
+            const positives = entry.feelings.filter(f => {
+                const config = App.config.feelings.find(cf => cf.name === f);
+                return config && config.type === 'positive';
+            }).length;
+            
+            const ratingAvg = Object.values(entry.ratings).reduce((sum, val) => sum + Number(val), 0) / (Object.values(entry.ratings).length || 1);
+            
+            return { warnings, positives, ratingAvg };
+        },
+
+        getBurnoutTriggers: function() {
+            const warningFeelings = App.config.feelings
+                .filter(f => f.type === 'warning')
+                .map(f => f.name);
+            
+            const recentEntries = App.state.data.checkinHistory
+                .slice(-5) // Check last 5 entries
+                .filter(e => e.feelings && e.feelings.length > 0);
+
+            if (recentEntries.length < 3) return null; // Not enough data
+            
+            const triggeredFeelings = new Set();
+            recentEntries.forEach(entry => {
+                entry.feelings.forEach(feeling => {
+                    if (warningFeelings.includes(feeling)) {
+                        triggeredFeelings.add(feeling);
+                    }
+                });
+            });
+            
+            // Trigger if user has reported 3+ different warning feelings in last 5 entries
+            if (triggeredFeelings.size >= 3) {
+                return Array.from(triggeredFeelings);
+            }
+            return null;
+        }
+    },
+
+    /* --- Handlers Module (Grok: was missing) --- */
+    handlers: {
+        init: function() {
+            console.log("Initializing handlers...");
+            const d = App.dom;
+            
+            // Onboarding
+            d.onboarding.finishBtn.addEventListener('click', () => this.handleOnboardingFinish());
+
+            // Nav
+            d.nav.links.forEach(link => link.addEventListener('click', (e) => {
+                e.preventDefault();
+                App.navigation.navigateTo(link.dataset.view);
+            }));
+            
+            // Welcome
+            d.welcome.checkinBtn.addEventListener('click', () => App.navigation.navigateTo('checkinView'));
+            d.welcome.gratitudeBtn.addEventListener('click', () => App.navigation.navigateTo('gratitudeView'));
+            d.welcome.sabbathBtn.addEventListener('click', () => App.navigation.navigateTo('sabbathView'));
+
+            // Back buttons
+            document.querySelectorAll('.btn-back').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    App.navigation.goBack(btn.dataset.back || 'welcomeView');
+                });
+            });
+            
+            // Forms
+            d.checkin.form.addEventListener('submit', (e) => this.saveCheckin(e));
+            d.gratitude.form.addEventListener('submit', (e) => this.saveGratitude(e));
+            d.sabbath.form.addEventListener('submit', (e) => this.saveSabbath(e));
+            d.rule.form.addEventListener('submit', (e) => this.saveRuleOfLife(e));
+            d.rule.reflectionForm.addEventListener('submit', (e) => this.saveRuleReflection(e));
+            d.resources.form.addEventListener('submit', (e) => this.saveResource(e));
+
+            // Check-in Modals
+            d.checkin.skipBurnoutBtn.addEventListener('click', () => this.finishCheckin());
+            d.checkin.startBurnoutBtn.addEventListener('click', () => this.startBurnoutCheck());
+            d.checkin.closeBurnoutModalBtn.addEventListener('click', () => App.ui.hideBurnoutCheckModal());
+            d.checkin.finishBurnoutCheckBtn.addEventListener('click', () => this.showBurnoutResults());
+            d.checkin.closeBurnoutResultsBtn.addEventListener('click', () => this.finishCheckin());
+            d.checkin.closeBurnoutResultsBtn2.addEventListener('click', () => this.finishCheckin());
+            
+            // Rule Tabs
+            d.rule.tabEdit.addEventListener('click', () => App.ui.updateRuleTabs('edit'));
+            d.rule.tabReflect.addEventListener('click', () => App.ui.updateRuleTabs('reflect'));
+            
+            // Resources
+            d.resources.addBtn.addEventListener('click', () => App.ui.showResourceModal());
+            
+            // Settings: Auth
+            d.settings.loginBtn.addEventListener('click', () => App.auth.signInWithGoogle(false));
+            d.settings.loginFromLocalBtn.addEventListener('click', () => App.auth.signInWithGoogle(true)); // Link account
+            d.settings.logoutBtn.addEventListener('click', () => App.auth.signOut());
+            
+            // Settings: Data
+            d.settings.forceSyncBtn.addEventListener('click', () => App.storage.forceDownload());
+            d.settings.exportBtn.addEventListener('click', () => this.exportData());
+            d.settings.importBtn.addEventListener('click', () => d.settings.importFile.click());
+            d.settings.importFile.addEventListener('change', (e) => this.importData(e));
+            
+            // Settings: Security
+            d.settings.changePinBtn.addEventListener('click', () => alert("Change PIN not yet implemented.")); // Placeholder
+            d.settings.dangerZoneBtn.addEventListener('click', () => App.ui.showDangerZone());
+            d.settings.dangerZoneModal.querySelector('.close-button').addEventListener('click', () => App.ui.hideDangerZone());
+            d.settings.deleteLocalBtn.addEventListener('click', () => this.deleteLocalData());
+            d.settings.deleteCloudBtn.addEventListener('click', () => this.deleteCloudData());
+            d.settings.deleteAllBtn.addEventListener('click', () => this.deleteAllData());
+
+            // Lock Screen
+            d.lockScreen.numpad.addEventListener('click', (e) => {
+                const btn = e.target.closest('.numpad-btn');
+                if (btn && btn.dataset.key) {
+                    App.pin.handlePinKey(btn.dataset.key, App.dom.lockScreen.pinDisplay);
+                }
+            });
+            d.lockScreen.numpadDelete.addEventListener('click', () => {
+                App.pin.handlePinKey('delete', App.dom.lockScreen.pinDisplay);
+            });
+            d.lockScreen.forgotBtn.addEventListener('click', () => {
+                App.ui.showModal("Forgot PIN?", 
+                    "If you set up cloud sync, you can log out, delete the app's local data (in browser settings), and re-install. When you log in, you will be prompted to create a new PIN. If you did not set up cloud sync, your encrypted data cannot be recovered.",
+                    [{ text: "OK", type: "primary" }]
+                );
+            });
+        },
+
+        handleOnboardingFinish: function() {
+            localStorage.setItem('hauoraOnboardComplete', 'true');
+            App.dom.onboarding.modal.style.display = 'none';
+            
+            if (App.state.fb.auth) {
+                App.ui.showModal("Enable Sync?", 
+                    "Would you like to sign in with Google to securely sync your encrypted data? Your PIN will be required on new devices.",
+                    [
+                        { text: "Not Now", type: "secondary", callback: () => App.pin.finishOnboarding(false) },
+                        { text: "Sign In", type: "primary", callback: () => App.auth.signInWithGoogle(false) } // Was true (link), changed to false (sign-in)
+                    ]
+                );
+            } else {
+                // No Firebase, just finish
+                App.pin.finishOnboarding(false);
+            }
+        },
+
+        saveCheckin: function(e) {
+            e.preventDefault();
+            const { checkin } = App.dom;
+            const today = App.util.getTodayDate();
+            
+            const feelings = Array.from(checkin.feelingsContainer.querySelectorAll('.feeling-toggle.selected'))
+                .map(btn => btn.dataset.feeling);
+                
+            const ratings = {};
+            checkin.sliders.forEach(slider => {
+                const key = slider.id.split('-')[1]; // 'physical'
+                ratings[key] = slider.value;
+            });
+            
+            const note = checkin.note.value;
+            
+            const entry = { date: today, feelings, ratings, note };
+            
+            // Remove today's entry if it exists, then add new one
+            App.state.data.checkinHistory = App.state.data.checkinHistory.filter(e => e.date !== today);
+            App.state.data.checkinHistory.push(entry);
+            App.state.data.lastModified = new Date().toISOString();
+            
+            App.storage.localSaveAll();
+            
+            // Check for burnout
+            const triggers = App.moduleCheckin.getBurnoutTriggers();
+            if (triggers) {
+                App.ui.showBurnoutPrompt(triggers);
+            } else {
+                this.finishCheckin();
+            }
+        },
+        finishCheckin: function() {
+            App.ui.hideBurnoutPrompt();
+            App.ui.hideBurnoutCheckModal();
+            App.ui.hideBurnoutResultsModal();
+            App.ui.showAlert("Check-in saved!", "success");
+            App.navigation.navigateTo('welcomeView');
+        },
+        startBurnoutCheck: function() {
+            App.ui.hideBurnoutPrompt();
+            App.ui.showBurnoutCheckModal();
+        },
+        showBurnoutResults: function() {
+            App.ui.hideBurnoutCheckModal();
+            App.ui.showBurnoutResultsModal();
+        },
+
+        saveGratitude: function(e) {
+            e.preventDefault();
+            const { gratitude } = App.dom;
+            const today = App.util.getTodayDate();
+            
+            const items = gratitude.items.map(input => input.value);
+            const note = gratitude.note.value;
+            
+            const entry = { date: today, items, note };
+            
+            App.state.data.gratitudeHistory = App.state.data.gratitudeHistory.filter(e => e.date !== today);
+            App.state.data.gratitudeHistory.push(entry);
+            App.state.data.lastModified = new Date().toISOString();
+            
+            App.storage.localSaveAll();
+            App.ui.showAlert("Gratitude saved!", "success");
+            App.navigation.navigateTo('welcomeView');
+        },
+        
+        saveSabbath: function(e) {
+            e.preventDefault();
+            const { sabbath } = App.dom;
+            const today = App.util.getTodayDate();
+            
+            const entry = {
+                date: today,
+                note: sabbath.note.value,
+                reflection: sabbath.reflection.value
+            };
+            
+            App.state.data.sabbathHistory = App.state.data.sabbathHistory.filter(e => e.date !== today);
+            App.state.data.sabbathHistory.push(entry);
+            App.state.data.lastModified = new Date().toISOString();
+            
+            App.storage.localSaveAll();
+            App.ui.showAlert("Sabbath reflection saved!", "success");
+            App.navigation.navigateTo('welcomeView');
+        },
+        
+        saveRuleOfLife: function(e) {
+            e.preventDefault();
+            const { inputs } = App.dom.rule;
+            App.state.data.ruleOfLife = {
+                vision: inputs.vision.value,
+                commitments: inputs.commitments.value,
+                practices: inputs.practices.value,
+                community: inputs.community.value
+            };
+            App.state.data.lastModified = new Date().toISOString();
+            App.storage.localSaveAll();
+            App.ui.showAlert("Rule of Life saved!", "success");
+            // Update the reflect tab immediately
+            App.ui.updateRuleOfLifeView();
+            App.ui.updateRuleTabs('reflect');
+        },
+        
+        saveRuleReflection: function(e) {
+            e.preventDefault();
+            const { reflectionInput } = App.dom.rule;
+            if (!reflectionInput.value) return;
+            
+            const entry = {
+                date: App.util.getTodayDate(),
+                reflection: reflectionInput.value
+            };
+            
+            App.state.data.ruleOfLifeHistory.push(entry);
+            App.state.data.lastModified = new Date().toISOString();
+            App.storage.localSaveAll();
+            
+            reflectionInput.value = ''; // Clear input
+            App.ui.showAlert("Reflection saved to history!", "success");
+            App.navigation.navigateTo('historyView');
+        },
+
+        saveResource: async (e) => {
+            // FIX: Already prevented default in init
+            const { form, idInput, titleInput, linkInput, descriptionInput } = App.dom.resources;
+            const id = idInput.value;
+            
+            const resource = {
+                id: id,
+                title: titleInput.value,
+                link: linkInput.value,
+                description: descriptionInput.value
+            };
+            
+            App.state.data.userResources[id] = resource;
+            App.state.data.lastModified = new Date().toISOString();
+            
+            await App.storage.localSaveAll();
+            
+            App.ui.hideResourceModal();
+            App.ui.updateResourcesView(); // Refresh list
+            App.ui.showAlert("Resource saved!", "success");
+        },
+        
+        deleteResource: function(id) {
+            App.ui.showModal("Delete Resource?", "Are you sure you want to delete this resource?", [
+                { text: "Cancel", type: "secondary" },
+                { text: "Delete", type: "danger", callback: async () => {
+                    delete App.state.data.userResources[id];
+                    App.state.data.lastModified = new Date().toISOString();
+                    await App.storage.localSaveAll();
+                    App.ui.hideResourceModal();
+                    App.ui.updateResourcesView();
+                    App.ui.showAlert("Resource deleted.", "success");
+                }}
+            ]);
+        },
+        
+        exportData: function() {
+            if (!App.state.pin) {
+                App.ui.showAlert("Please log in to export data.", "error");
+                return;
+            }
+            // We export the *encrypted* blob for security
+            App.state.db.userData.get('data').then(encryptedData => {
+                if (!encryptedData) {
+                    App.ui.showAlert("No data to export.", "error");
+                    return;
+                }
+                const dataStr = JSON.stringify(encryptedData);
+                const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
+                const link = document.createElement('a');
+                link.setAttribute('href', dataUri);
+                link.setAttribute('download', 'toku_hauora_export.json');
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            });
+        },
+        
+        importData: function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                try {
+                    const encryptedData = JSON.parse(event.target.result);
+                    if (!encryptedData.ciphertext || !encryptedData.salt || !encryptedData.iv) {
+                        throw new Error("Invalid file format.");
+                    }
+                    
+                    App.ui.showModal("Import Data?", 
+                        "This will overwrite your current local data. This action cannot be undone. Are you sure?",
+                        [
+                            { text: "Cancel", type: "secondary" },
+                            { text: "Overwrite", type: "danger", callback: async () => {
+                                await App.state.db.userData.put({ key: 'data', ...encryptedData });
+                                await App.storage.localSaveState('hasData', true);
+                                // Force user to re-login to decrypt new data
+                                App.ui.showAlert("Import successful! Please re-enter your PIN.", "success");
+                                window.location.reload();
+                            }}
+                        ]
+                    );
+                    
+                } catch (err) {
+                    App.ui.showAlert(`Import failed: ${err.message}`, "error");
+                }
+            };
+            reader.readAsText(file);
+            e.target.value = null; // Clear file input
+        },
+        
+        deleteLocalData: function() {
+            App.ui.showModal("Delete Local Data?", 
+                "Are you sure? All local, un-synced data will be lost.",
+                [
+                    { text: "Cancel", type: "secondary" },
+                    { text: "Delete", type: "danger", callback: async () => {
+                        await App.storage.localDeleteAll();
+                        localStorage.removeItem('hauoraPinHash');
+                        App.ui.showAlert("Local data deleted. App will reload.", "success");
+                        setTimeout(() => window.location.reload(), 1000);
+                    }}
+                ]
+            );
+        },
+        
+        deleteCloudData: function() {
+            if (!App.state.ui.isLoggedIn) {
+                App.ui.showAlert("You must be logged in to delete cloud data.", "error");
+                return;
+            }
+            App.ui.showModal("Delete Cloud Data?", 
+                "Are you sure? All data in your cloud account will be permanently deleted.",
+                [
+                    { text: "Cancel", type: "secondary" },
+                    { text: "Delete", type: "danger", callback: () => App.storage.firestoreDeleteAll() }
+                ]
+            );
+        },
+        
+        deleteAllData: function() {
+            App.ui.showModal("Delete ALL Data?", 
+                "This will delete all local AND cloud data, then log you out. This is permanent.",
+                [
+                    { text: "Cancel", type: "secondary" },
+                    { text: "Delete All", type: "danger", callback: async () => {
+                        if (App.state.ui.isLoggedIn) {
+                            await App.storage.firestoreDeleteAll();
+                        }
+                        await App.storage.localDeleteAll();
+                        localStorage.removeItem('hauoraPinHash');
+                        App.ui.showAlert("All data deleted. App will reload.", "success");
+                        setTimeout(() => window.location.reload(), 1000);
+                    }}
+                ]
+            );
+        }
+        
+    }, // End of App.handlers
