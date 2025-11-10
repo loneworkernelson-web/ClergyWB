@@ -896,7 +896,7 @@ window.App = window.App || {};
 Object.assign(window.App, {
 
     /* ================================================================
-    App Logic Part 2: Storage & Auth
+    App Logic: Storage & Auth
     ================================================================
     */
     storage: {
@@ -1250,40 +1250,40 @@ Object.assign(window.App, {
                 }
             });
         },
+        
+        // FIX: Simplified this function
         checkPinAndAuthState: async function() {
             App.util.setSplashMessage("Checking local data...");
             const hasLocalPinHash = await App.pin.localPinExists();
             
+            // Wait for auth to settle
+            if (App.state.fb.auth) {
+                try {
+                    const result = await AppFirebase.getRedirectResult(App.state.fb.auth);
+                    if (result && result.user) {
+                        console.log("Handled redirect sign-in.", result.user.uid);
+                        App.state.ui.isLoggedIn = true;
+                    }
+                } catch (error) {
+                    console.error("Error getting redirect result:", error);
+                }
+            }
+            await this.waitForAuthInit();
+
+            
             if (!hasLocalPinHash) {
+                // --- 1. First time user (no local PIN) ---
                 console.log("No local PIN found. Starting onboarding.");
                 App.util.hideSplash();
                 App.pin.startOnboarding();
             } else {
-                console.log("Local PIN found. Checking auth state...");
-                App.util.setSplashMessage("Checking account...");
-                
-                if (App.state.fb.auth) {
-                    try {
-                        const result = await AppFirebase.getRedirectResult(App.state.fb.auth);
-                        if (result && result.user) {
-                            console.log("Handled redirect sign-in.", result.user.uid);
-                            App.state.ui.isLoggedIn = true;
-                        }
-                    } catch (error) {
-                        console.error("Error getting redirect result:", error);
-                    }
-                }
-                
-                await this.waitForAuthInit();
-                
-                // *** FIX ***
-                // Simplified logic. We just show the lock screen.
-                // The `handlePinLogin` function will now handle all cases.
-                console.log("Local PIN exists. Showing lock screen.");
+                // --- 2. Returning user (has local PIN) ---
+                console.log("Local PIN found. Showing PIN login.");
                 App.util.hideSplash();
-                App.pin.showLockScreen("Enter PIN to unlock.");
+                App.pin.showLockScreen("Enter PIN to continue.");
             }
         },
+
         waitForAuthInit: function() {
             return new Promise((resolve) => {
                 if (!App.state.ui.authLoading) {
@@ -1375,7 +1375,7 @@ Object.assign(window.App, {
     }, 
 
     /* ================================================================
-    App Logic Part 3: State, Config, DOM, Utils, PIN
+    App Logic: State, Config, DOM, Utils
     ================================================================
     */
     state: {
@@ -1550,7 +1550,7 @@ Object.assign(window.App, {
             d.rule.tabEdit = document.getElementById('ruleTabEdit');
             d.rule.tabReflect = document.getElementById('ruleTabReflect');
             d.rule.contentEdit = document.getElementById('ruleEditContent');
-            d.rule.contentReflect = document.getElementById('ruleReflectContent');
+d.rule.contentReflect = document.getElementById('ruleReflectContent');
             d.rule.form = document.getElementById('ruleForm');
             d.rule.inputs = {
                 vision: document.getElementById('ruleVision'),
@@ -1838,27 +1838,12 @@ pin: {
                     App.state.data = App.util.getDefaultData();
                 }
                 
-                // *** FIX FOR FIRST-TIME SYNC ***
+                // REVERTED FIX: This is the "golden state" logic.
+                // It does NOT handle the "first-time sync" yet.
                 if (App.state.ui.isLoggedIn) {
-                    App.util.setSplashMessage("Checking cloud data...");
-                    const hasCloudPin = await App.pin.cloudPinCheckExists();
-                    
-                    if (hasCloudPin) {
-                        // This is a normal, already-synced login
-                        console.log("Cloud PIN found. Syncing data...");
-                        App.state.storageDriver = 'firebase';
-                        await App.storage.syncData();
-                    } else {
-                        // This is a "FIRST-TIME SYNC" (e.g., local user clicked "Sign in")
-                        console.log("No cloud PIN found. Performing first-time sync...");
-                        App.state.storageDriver = 'firebase';
-                        App.util.setSplashMessage("Performing first-time sync...");
-                        // 1. Upload their PIN check hash
-                        await App.pin.savePinCheckToCloud(pin);
-                        // 2. Upload their local data
-                        await App.storage.firestoreSaveAll(); 
-                        console.log("First-time sync complete.");
-                    }
+                    App.state.storageDriver = 'firebase';
+                    App.util.setSplashMessage("Syncing with cloud...");
+                    await App.storage.syncData();
                 }
                 
                 App.util.hideSplash();
@@ -1902,17 +1887,17 @@ pin: {
         
         finishOnboarding: async function(didSignIn) {
             if (didSignIn) {
-                // User clicked "Sign In"
-                App.auth.signInWithGoogle(false); // This will redirect
-                // The `handlePinLogin` will now handle the first-time sync when they return
+                App.state.storageDriver = 'firebase';
+                await this.savePinCheckToCloud(App.state.pin);
+                await App.storage.firestoreSaveAll();
             } else {
-                // User clicked "Not Now"
                 App.state.storageDriver = 'local';
-                localStorage.setItem('hauoraOnboardComplete', 'true');
-                App.dom.onboarding.modal.style.display = 'none';
-                App.util.hideSplash();
-                App.navigation.updateViewContent('welcomeView');
             }
+            
+            localStorage.setItem('hauoraOnboardComplete', 'true');
+            App.dom.onboarding.modal.style.display = 'none';
+            App.util.hideSplash();
+            App.navigation.updateViewContent('welcomeView');
         }
     }, // End of App.pin
 
@@ -2020,8 +2005,10 @@ pin: {
             
             // Settings: Auth
             d.settings.loginBtn.addEventListener('click', () => App.auth.signInWithGoogle(false));
-            // *** FIX for "No user to link" error ***
-            d.settings.loginFromLocalBtn.addEventListener('click', () => App.auth.signInWithGoogle(false)); // Was `true`
+            
+            // FIX for "No user to link" error
+            d.settings.loginFromLocalBtn.addEventListener('click', () => App.auth.signInWithGoogle(false)); // Was true
+            
             d.settings.logoutBtn.addEventListener('click', () => App.auth.signOut());
             
             // Settings: Data
@@ -2057,7 +2044,7 @@ pin: {
         },
 
         handleOnboardingFinish: function() {
-            // This function is now responsible for showing the "Enable Sync?" modal.
+            // FIX: This function now holds the logic from the old handlePinConfirm
             localStorage.setItem('hauoraOnboardComplete', 'true');
             App.dom.onboarding.modal.style.display = 'none';
             
@@ -2066,7 +2053,7 @@ pin: {
                     "Would you like to sign in with Google to securely sync your encrypted data? Your PIN will be required on new devices.",
                     [
                         { text: "Not Now", type: "secondary", callback: () => App.pin.finishOnboarding(false) },
-                        { text: "Sign In", type: "primary", callback: () => App.pin.finishOnboarding(true) }
+                        { text: "Sign In", type: "primary", callback: () => App.auth.signInWithGoogle(false) } // Was: App.pin.finishOnboarding(true)
                     ]
                 );
             } else {
@@ -2339,24 +2326,18 @@ pin: {
         }
         
     }, // End of App.handlers
-    /* ================================================================
-    App Logic Part 4: UI, Navigation, and Init
-    ================================================================
-    */
     ui: {
         init: function() {
             this.initModals();
         },
 
         initModals: function() {
-            // --- General Modal ---
-            const modal = App.dom.modal.modal;
+            const { modal } = App.dom.modal;
             modal.querySelector('.close-button').addEventListener('click', () => this.hideModal());
             modal.addEventListener('click', (e) => {
                 if (e.target === modal) this.hideModal();
             });
             
-            // --- Resource Modal ---
             const resModal = App.dom.resources.modal;
             resModal.querySelector('.close-button').addEventListener('click', () => this.hideResourceModal());
             resModal.addEventListener('click', (e) => {
@@ -2364,11 +2345,36 @@ pin: {
             });
         },
         
+        updateOnboardingStep: function(direction) {
+            const { steps, prevBtn, nextBtn, indicatorDots, finishBtn } = App.dom.onboarding;
+            let { currentOnboardingStep } = App.state.ui;
+            
+            const newStep = currentOnboardingStep + direction;
+            
+            if (newStep < 1 || newStep > steps.length) {
+                return;
+            }
+
+            App.state.ui.currentOnboardingStep = newStep;
+            currentOnboardingStep = newStep; 
+
+            steps.forEach(step => step.style.display = 'none');
+            steps[currentOnboardingStep - 1].style.display = 'block';
+
+            indicatorDots.forEach((dot, index) => {
+                dot.classList.toggle('active', index === currentOnboardingStep - 1);
+            });
+
+            prevBtn.style.display = currentOnboardingStep > 1 ? 'inline-block' : 'none';
+            nextBtn.style.display = currentOnboardingStep < steps.length ? 'inline-block' : 'none';
+            finishBtn.style.display = currentOnboardingStep === steps.length ? 'inline-block' : 'none';
+        },
+
         showAlert: function(message, type = 'info', duration = 3000) {
             const alertBox = App.dom.alert;
             alertBox.textContent = message;
-            alertBox.className = 'alert-box'; // Reset classes
-            alertBox.classList.add(type); // 'info', 'success', 'error'
+            alertBox.className = 'alert-box'; 
+            alertBox.classList.add(type); 
             
             // FIX: Use display: block to show
             alertBox.style.display = 'block';
@@ -2417,7 +2423,6 @@ pin: {
                 buttonContainer.style.display = 'flex';
             }
             
-            // FIX: Use display: flex to show
             modal.style.display = 'flex';
             setTimeout(() => modal.classList.add('visible'), 10);
         },
@@ -2426,7 +2431,6 @@ pin: {
             const { modal } = App.dom.modal;
             modal.classList.remove('visible');
             setTimeout(() => {
-                // FIX: Use display: none to hide
                 modal.style.display = 'none';
                 App.dom.modal.titleEl.textContent = '';
                 App.dom.modal.messageEl.textContent = '';
@@ -2471,7 +2475,7 @@ pin: {
             modal.classList.remove('visible');
             setTimeout(() => modal.style.display = 'none', 300);
         },
-
+        
         // --- Dynamic Content Updaters ---
         
         updateWelcomeView: function() {
@@ -2482,7 +2486,6 @@ pin: {
             const hasGratitude = App.state.data.gratitudeHistory.some(e => e.date === today);
             const hasSabbath = App.state.data.sabbathHistory.some(e => e.date === today);
             
-            // UI POLISH: Update welcome button icon
             welcome.checkinBtn.classList.toggle('complete', hasCheckedIn);
             welcome.checkinBtn.querySelector('.welcome-btn-icon').innerHTML = hasCheckedIn ? '&#10003;' : '&rarr;';
             
@@ -2580,7 +2583,6 @@ pin: {
             checkin.form.reset();
             checkin.note.value = entry.note;
             
-            // UI POLISH: Add data-type to toggles
             checkin.feelingsContainer.innerHTML = App.config.feelings.map(f => 
                 `<button type="button" class="feeling-toggle" data-feeling="${f.name}" data-type="${f.type}">${f.name}</button>`
             ).join('');
@@ -2753,9 +2755,8 @@ pin: {
         
         showBurnoutPrompt: function(triggers) {
             App.dom.checkin.finishBtn.style.display = 'block';
-            const modal = App.dom.checkin.burnoutPromptModal;
-            modal.style.display = 'flex';
-            setTimeout(() => modal.classList.add('visible'), 10);
+            App.dom.checkin.burnoutPromptModal.style.display = 'flex';
+            setTimeout(() => App.dom.checkin.burnoutPromptModal.classList.add('visible'), 10);
         },
         hideBurnoutPrompt: function() {
             const modal = App.dom.checkin.burnoutPromptModal;
@@ -2909,11 +2910,11 @@ pin: {
         try {
             console.log("App.init started...");
             
-            // 1. DOM Caching
             this.util.cacheDOM();
-
-            // 2. Initialize Firebase State
-            // (Actual module loading happened at top of script)
+            
+            // FIX for "stuck on loading" - Part 2
+            // this.auth.init() is now called *after* IndexedDB init
+            
             if (window.AppFirebase) {
                 console.log("Firebase services found, initializing...");
                 this.state.fb.db = AppFirebase.getFirestore(AppFirebase.app);
@@ -2923,10 +2924,11 @@ pin: {
                 await AppFirebase.setPersistence(this.state.fb.auth, AppFirebase.browserLocalPersistence);
                 this.state.appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
                 
+                // this.auth.init(); // <-- Removed from here
             } else {
                 console.warn("Firebase modules not loaded. App will run in local-only mode.");
                 this.state.storageDriver = 'local';
-                if (App.dom.settings.syncSection) App.dom.settings.syncSection.style.display = 'none';
+                App.dom.settings.syncSection.style.display = 'none';
             }
         } catch (e) {
             console.error("Firebase state initialization error:", e);
@@ -2937,7 +2939,6 @@ pin: {
             }
         }
         
-        // 3. Initialize Local DB (IndexedDB)
         this.state.db = await this.storage.initDB();
         if (!this.state.db) {
             this.ui.showAlert("Critical Error: Could not initialize local database. App cannot save data.", "error", 10000);
@@ -2945,14 +2946,14 @@ pin: {
         }
         console.log("IndexedDB initialized.");
 
-        // 4. Initialize Core Modules
-        // FIX: Call auth.init() *before* ui.init() and handlers.init()
+        // FIX for "stuck on loading" - Part 2
+        // Call auth.init() here, *after* DB is ready, but *before* handlers and checkPinAndAuthState
         this.auth.init(); 
+        
         this.ui.init();
         this.handlers.init();
-        // this.navigation.init(); // This is redundant, handlers.init() does it
+        this.navigation.init();
         
-        // 5. Check PIN & Auth State (This is the main app entry point)
         await this.auth.checkPinAndAuthState();
         
         console.log("App.init finished.");
@@ -2961,631 +2962,8 @@ pin: {
 }); // End of Object.assign
 
 // --- Start the App ---
-// FIX: Call init directly, do not wait for DOMContentLoaded
-App.init();/* ================================================================
-    App Logic Part 4: UI, Navigation, and Init
-    ================================================================
-    */
-    ui: {
-        init: function() {
-            this.initModals();
-        },
-
-        initModals: function() {
-            // --- General Modal ---
-            const modal = App.dom.modal.modal;
-            modal.querySelector('.close-button').addEventListener('click', () => this.hideModal());
-            modal.addEventListener('click', (e) => {
-                if (e.target === modal) this.hideModal();
-            });
-            
-            // --- Resource Modal ---
-            const resModal = App.dom.resources.modal;
-            resModal.querySelector('.close-button').addEventListener('click', () => this.hideResourceModal());
-            resModal.addEventListener('click', (e) => {
-                if (e.target === resModal) this.hideResourceModal();
-            });
-        },
-        
-        showAlert: function(message, type = 'info', duration = 3000) {
-            const alertBox = App.dom.alert;
-            alertBox.textContent = message;
-            alertBox.className = 'alert-box'; // Reset classes
-            alertBox.classList.add(type); // 'info', 'success', 'error'
-            
-            // FIX: Use display: block to show
-            alertBox.style.display = 'block';
-            setTimeout(() => alertBox.classList.add('visible'), 10);
-
-            if (App.state.ui.alertTimer) {
-                clearTimeout(App.state.ui.alertTimer);
-            }
-            
-            App.state.ui.alertTimer = setTimeout(() => {
-                alertBox.classList.remove('visible');
-                // FIX: Use display: none to hide after transition
-                setTimeout(() => alertBox.style.display = 'none', 300);
-            }, duration);
-        },
-
-        showModal: function(title, message, buttons = []) {
-            const { modal, titleEl, messageEl, buttonContainer } = App.dom.modal;
-            
-            titleEl.textContent = title;
-            messageEl.textContent = message;
-            buttonContainer.innerHTML = '';
-            
-            if (buttons.length > 0) {
-                buttons.forEach(btn => {
-                    const button = document.createElement('button');
-                    button.textContent = btn.text;
-                    button.className = `btn btn-${btn.type || 'primary'}`; 
-                    button.addEventListener('click', (e) => {
-                        e.stopPropagation();
-                        if(btn.callback) btn.callback();
-                        if(btn.autoClose !== false) this.hideModal();
-                    });
-                    buttonContainer.appendChild(button);
-                });
-                buttonContainer.style.display = 'flex';
-            } else {
-                const okButton = document.createElement('button');
-                okButton.textContent = "OK";
-                okButton.className = "btn btn-primary";
-                okButton.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    this.hideModal();
-                });
-                buttonContainer.appendChild(okButton);
-                buttonContainer.style.display = 'flex';
-            }
-            
-            // FIX: Use display: flex to show
-            modal.style.display = 'flex';
-            setTimeout(() => modal.classList.add('visible'), 10);
-        },
-
-        hideModal: function() {
-            const { modal } = App.dom.modal;
-            modal.classList.remove('visible');
-            setTimeout(() => {
-                // FIX: Use display: none to hide
-                modal.style.display = 'none';
-                App.dom.modal.titleEl.textContent = '';
-                App.dom.modal.messageEl.textContent = '';
-                App.dom.modal.buttonContainer.innerHTML = '';
-            }, 300); 
-        },
-
-        showResourceModal: function(resource = null) {
-            const { modal, form, idInput, titleInput, linkInput, descriptionInput, deleteBtn } = App.dom.resources;
-            
-            form.reset();
-            if (resource) {
-                idInput.value = resource.id;
-                titleInput.value = resource.title;
-                linkInput.value = resource.link;
-                descriptionInput.value = resource.description;
-                deleteBtn.style.display = 'inline-block';
-                deleteBtn.onclick = () => App.handlers.deleteResource(resource.id);
-            } else {
-                idInput.value = `res_${Date.now()}`;
-                deleteBtn.style.display = 'none';
-                deleteBtn.onclick = null;
-            }
-            
-            modal.style.display = 'flex';
-            setTimeout(() => modal.classList.add('visible'), 10);
-        },
-        
-        hideResourceModal: function() {
-            const { modal } = App.dom.resources;
-            modal.classList.remove('visible');
-            setTimeout(() => modal.style.display = 'none', 300);
-        },
-        
-        showDangerZone: function() {
-            const modal = App.dom.settings.dangerZoneModal;
-            modal.style.display = 'flex';
-            setTimeout(() => modal.classList.add('visible'), 10);
-        },
-        hideDangerZone: function() {
-            const modal = App.dom.settings.dangerZoneModal;
-            modal.classList.remove('visible');
-            setTimeout(() => modal.style.display = 'none', 300);
-        },
-
-        // --- Dynamic Content Updaters ---
-        
-        updateWelcomeView: function() {
-            const { welcome } = App.dom;
-            const today = App.util.getTodayDate();
-            
-            const hasCheckedIn = App.state.data.checkinHistory.some(e => e.date === today);
-            const hasGratitude = App.state.data.gratitudeHistory.some(e => e.date === today);
-            const hasSabbath = App.state.data.sabbathHistory.some(e => e.date === today);
-            
-            // UI POLISH: Update welcome button icon
-            welcome.checkinBtn.classList.toggle('complete', hasCheckedIn);
-            welcome.checkinBtn.querySelector('.welcome-btn-icon').innerHTML = hasCheckedIn ? '&#10003;' : '&rarr;';
-            
-            welcome.gratitudeBtn.classList.toggle('complete', hasGratitude);
-            welcome.gratitudeBtn.querySelector('.welcome-btn-icon').innerHTML = hasGratitude ? '&#10003;' : '&rarr;';
-            
-            welcome.sabbathBtn.classList.toggle('complete', hasSabbath);
-            welcome.sabbathBtn.querySelector('.welcome-btn-icon').innerHTML = hasSabbath ? '&#10003;' : '&rarr;';
-            
-            this.renderDashboardPreview();
-        },
-        
-        renderDashboardPreview: function() {
-            const { dashboardPreview, hauoraChart } = App.dom.welcome;
-            const lastEntry = App.state.data.checkinHistory[App.state.data.checkinHistory.length - 1];
-            
-            if (!lastEntry) {
-                dashboardPreview.style.display = 'block';
-                hauoraChart.style.display = 'none';
-                return;
-            }
-            
-            dashboardPreview.style.display = 'none';
-            hauoraChart.style.display = 'block';
-
-            const { ratings } = lastEntry;
-            const labels = ['Physical', 'Mental', 'Social', 'Spiritual'];
-            const data = [
-                ratings.physical || 0,
-                ratings.mental || 0,
-                ratings.social || 0,
-                ratings.spiritual || 0
-            ];
-            
-            if (App.state.ui.chart) {
-                App.state.ui.chart.data.datasets[0].data = data;
-                App.state.ui.chart.update();
-            } else {
-                const ctx = hauoraChart.getContext('2d');
-                App.state.ui.chart = new Chart(ctx, {
-                    type: 'radar',
-                    data: {
-                        labels: labels,
-                        datasets: [{
-                            label: 'Hauora',
-                            data: data,
-                            fill: true,
-                            backgroundColor: 'rgba(79, 70, 229, 0.2)', // indigo-600
-                            borderColor: 'rgb(79, 70, 229)',
-                            pointBackgroundColor: 'rgb(79, 70, 229)',
-                            pointBorderColor: '#fff',
-                            pointHoverBackgroundColor: '#fff',
-                            pointHoverBorderColor: 'rgb(79, 70, 229)'
-                        }]
-                    },
-                    options: {
-                        elements: {
-                            line: {
-                                borderWidth: 3
-                            }
-                        },
-                        scales: {
-                            r: {
-                                angleLines: {
-                                    display: false
-                                },
-                                suggestedMin: 0,
-                                suggestedMax: 10,
-                                pointLabels: {
-                                    font: {
-                                        size: 14,
-                                        family: 'Inter'
-                                    }
-                                }
-                            }
-                        },
-                        plugins: {
-                            legend: {
-                                display: false
-                            }
-                        }
-                    }
-                });
-            }
-        },
-        
-        updateCheckinView: function() {
-            const today = App.util.getTodayDate();
-            const { checkin } = App.dom;
-            
-            const entry = App.state.data.checkinHistory.find(e => e.date === today) || {
-                date: today, feelings: [], note: '', ratings: {}
-            };
-            
-            checkin.form.reset();
-            checkin.note.value = entry.note;
-            
-            // UI POLISH: Add data-type to toggles
-            checkin.feelingsContainer.innerHTML = App.config.feelings.map(f => 
-                `<button type="button" class="feeling-toggle" data-feeling="${f.name}" data-type="${f.type}">${f.name}</button>`
-            ).join('');
-            
-            checkin.feelingsContainer.querySelectorAll('.feeling-toggle').forEach(btn => {
-                btn.classList.toggle('selected', entry.feelings.includes(btn.dataset.feeling));
-                btn.addEventListener('click', () => btn.classList.toggle('selected'));
-            });
-            
-            checkin.sliders.forEach(slider => {
-                const key = slider.id.split('-')[1]; 
-                slider.value = entry.ratings[key] || 5; 
-            });
-        },
-        
-        updateGratitudeView: function() {
-            const today = App.util.getTodayDate();
-            const { gratitude } = App.dom;
-            
-            const entry = App.state.data.gratitudeHistory.find(e => e.date === today) || {
-                date: today, items: ['', '', ''], note: ''
-            };
-            
-            gratitude.form.reset();
-            gratitude.items[0].value = entry.items[0] || '';
-            gratitude.items[1].value = entry.items[1] || '';
-            gratitude.items[2].value = entry.items[2] || '';
-            gratitude.note.value = entry.note || '';
-        },
-        
-        updateSabbathView: function() {
-            const today = App.util.getTodayDate();
-            const { sabbath } = App.dom;
-            
-            const entry = App.state.data.sabbathHistory.find(e => e.date === today) || {
-                date: today, note: '', reflection: ''
-            };
-            
-            sabbath.form.reset();
-            sabbath.note.value = entry.note;
-            sabbath.reflection.value = entry.reflection;
-        },
-        
-        updateHistoryView: function() {
-            const { history } = App.dom;
-            history.container.innerHTML = 'Loading history...';
-            
-            const allEntries = [
-                ...App.state.data.checkinHistory.map(e => ({...e, type: 'Check-in'})),
-                ...App.state.data.gratitudeHistory.map(e => ({...e, type: 'Gratitude'})),
-                ...App.state.data.sabbathHistory.map(e => ({...e, type: 'Sabbath'})),
-                ...App.state.data.ruleOfLifeHistory.map(e => ({...e, type: 'Rule of Life'}))
-            ];
-            
-            allEntries.sort((a, b) => b.date.localeCompare(a.date));
-            
-            if (allEntries.length === 0) {
-                history.container.innerHTML = '<p class="text-center text-gray-500 mt-8">No history entries yet.</p>';
-                return;
-            }
-            
-            history.container.innerHTML = allEntries.map(entry => {
-                let content = '';
-                switch (entry.type) {
-                    case 'Check-in':
-                        content = `
-                            <p><strong>Feelings:</strong> ${entry.feelings.join(', ') || 'None'}</p>
-                            <p><strong>Ratings:</strong> ${Object.entries(entry.ratings).map(([k,v]) => `${k}: ${v}`).join(', ')}</p>
-                            <p><strong>Note:</strong> ${App.util.escapeHTML(entry.note) || '...'}</p>
-                        `;
-                        break;
-                    case 'Gratitude':
-                        content = `
-                            <ol class="list-decimal list-inside">
-                                ${entry.items.map(item => `<li>${App.util.escapeHTML(item) || '...'}</li>`).join('')}
-                            </ol>
-                            <p><strong>Note:</strong> ${App.util.escapeHTML(entry.note) || '...'}</p>
-                        `;
-                        break;
-                    case 'Sabbath':
-                        content = `
-                            <p><strong>Practice:</strong> ${App.util.escapeHTML(entry.note) || '...'}</p>
-                            <p><strong>Reflection:</strong> ${App.util.escapeHTML(entry.reflection) || '...'}</p>
-                        `;
-                        break;
-                    case 'Rule of Life':
-                        content = `
-                            <p><strong>Reflection:</strong> ${App.util.escapeHTML(entry.reflection) || '...'}</p>
-                        `;
-                        break;
-                }
-                
-                return `
-                    <div class="history-entry card !p-4 !mb-4">
-                        <h4 class="font-semibold text-lg text-indigo-700">${entry.type}</h4>
-                        <p class="text-sm text-gray-500 mb-2">${App.util.formatDate(entry.date)}</p>
-                        <div class="text-sm space-y-1">${content}</div>
-                    </div>
-                `;
-            }).join('');
-        },
-        
-        updateRuleOfLifeView: function() {
-            const { rule } = App.dom;
-            const data = App.state.data.ruleOfLife || {};
-            
-            rule.form.reset();
-            rule.inputs.vision.value = data.vision || '';
-            rule.inputs.commitments.value = data.commitments || '';
-            rule.inputs.practices.value = data.practices || '';
-            rule.inputs.community.value = data.community || '';
-            
-            rule.reflectVision.textContent = data.vision || '...';
-            rule.reflectCommitments.textContent = data.commitments || '...';
-            rule.reflectPractices.textContent = data.practices || '...';
-            rule.reflectCommunity.textContent = data.community || '...';
-        },
-        
-        updateRuleTabs: function(activeTab) {
-            const { rule } = App.dom;
-            if (activeTab === 'edit') {
-                rule.tabEdit.classList.add('border-indigo-600', 'text-indigo-600');
-                rule.tabEdit.classList.remove('text-gray-500');
-                rule.tabReflect.classList.remove('border-indigo-600', 'text-indigo-600');
-                rule.tabReflect.classList.add('text-gray-500');
-                rule.contentEdit.style.display = 'block';
-                rule.contentReflect.style.display = 'none';
-            } else {
-                rule.tabReflect.classList.add('border-indigo-600', 'text-indigo-600');
-                rule.tabReflect.classList.remove('text-gray-500');
-                rule.tabEdit.classList.remove('border-indigo-600', 'text-indigo-600');
-                rule.tabEdit.classList.add('text-gray-500');
-                rule.contentReflect.style.display = 'block';
-                rule.contentEdit.style.display = 'none';
-            }
-        },
-        
-        updateResourcesView: function() {
-            const { resources } = App.dom;
-            const data = App.state.data.userResources || {};
-            const resourceList = Object.values(data);
-            
-            if (resourceList.length === 0) {
-                resources.container.innerHTML = '<p class="text-center text-gray-500 mt-8">No saved resources yet.</p>';
-                return;
-            }
-            
-            resources.container.innerHTML = resourceList.map(res => `
-                <div class="card !p-4 flex flex-col">
-                    <h4 class="font-semibold text-lg">${App.util.escapeHTML(res.title)}</h4>
-                    <p class="text-sm text-gray-600 mb-2 flex-grow">${App.util.escapeHTML(res.description) || '...'}</p>
-                    <div class="flex gap-2 mt-auto pt-2">
-                        <a href="${App.util.escapeHTML(res.link)}" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm">Open Link</a>
-                        <button class="btn btn-outline btn-sm" data-id="${res.id}">Edit</button>
-                    </div>
-                </div>
-            `).join('');
-            
-            resources.container.querySelectorAll('.btn-outline').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    const res = App.state.data.userResources[btn.dataset.id];
-                    if (res) this.showResourceModal(res);
-                });
-            });
-        },
-        
-        updateSettingsView: function() {
-            App.auth.updateSyncStatusUI();
-        },
-        
-        showBurnoutPrompt: function(triggers) {
-            App.dom.checkin.finishBtn.style.display = 'block';
-            const modal = App.dom.checkin.burnoutPromptModal;
-            modal.style.display = 'flex';
-            setTimeout(() => modal.classList.add('visible'), 10);
-        },
-        hideBurnoutPrompt: function() {
-            const modal = App.dom.checkin.burnoutPromptModal;
-            modal.classList.remove('visible');
-            setTimeout(() => modal.style.display = 'none', 300);
-        },
-        showBurnoutCheckModal: function() {
-            const { burnoutChecklist } = App.dom.checkin;
-            burnoutChecklist.innerHTML = ''; // Clear
-            
-            for (const category in App.config.burnoutChecklist) {
-                let itemsHtml = App.config.burnoutChecklist[category].map(item => `
-                    <label class="flex items-start p-3 rounded-lg hover:bg-gray-50">
-                        <input type="checkbox" class="h-5 w-5 rounded text-indigo-600 focus:ring-indigo-500 border-gray-300 mt-1" data-item="${App.util.escapeHTML(item)}">
-                        <span class="ml-3 text-gray-700">${App.util.escapeHTML(item)}</span>
-                    </label>
-                `).join('');
-                
-                let categoryTitle = category.replace(/([A-Z])/g, ' $1');
-                categoryTitle = categoryTitle.charAt(0).toUpperCase() + categoryTitle.slice(1);
-                
-                burnoutChecklist.innerHTML += `
-                    <div class="mb-6">
-                        <h3 class="text-lg font-semibold text-indigo-700 mb-2">${categoryTitle} Signs</h3>
-                        <div class="space-y-2">${itemsHtml}</div>
-                    </div>
-                `;
-            }
-            
-            const modal = App.dom.checkin.burnoutCheckModal;
-            modal.style.display = 'flex';
-            setTimeout(() => modal.classList.add('visible'), 10);
-        },
-        hideBurnoutCheckModal: function() {
-            const modal = App.dom.checkin.burnoutCheckModal;
-            modal.classList.remove('visible');
-            setTimeout(() => modal.style.display = 'none', 300);
-        },
-        showBurnoutResultsModal: function() {
-            const { burnoutChecklist, burnoutResultsContainer } = App.dom.checkin;
-            const checkedItems = Array.from(burnoutChecklist.querySelectorAll('input:checked'))
-                .map(input => input.dataset.item);
-                
-            if (checkedItems.length === 0) {
-                burnoutResultsContainer.innerHTML = '<p>You didn\'t flag any specific items, which is great! Remember to continue practicing self-care.</p>';
-            } else {
-                burnoutResultsContainer.innerHTML = checkedItems.map(item => `
-                    <div class="p-3 bg-indigo-50 rounded-lg">
-                        <p class="text-gray-800">${App.util.escapeHTML(item)}</p>
-                    </div>
-                `).join('');
-            }
-            
-            const modal = App.dom.checkin.burnoutResultsModal;
-            modal.style.display = 'flex';
-            setTimeout(() => modal.classList.add('visible'), 10);
-        },
-        hideBurnoutResultsModal: function() {
-            const modal = App.dom.checkin.burnoutResultsModal;
-            modal.classList.remove('visible');
-            setTimeout(() => modal.style.display = 'none', 300);
-        }
-    }, // End of App.ui
-    
-    
-    navigation: {
-        init: function() {
-            // This is now handled by App.handlers.init
-        },
-        
-        navigateTo: function(viewId) {
-            console.log(`Navigating to: ${viewId}`);
-            
-            App.dom.views.forEach(view => {
-                view.style.display = 'none';
-            });
-            
-            const targetView = document.getElementById(viewId);
-            if (targetView) {
-                targetView.style.display = 'block';
-                window.scrollTo(0, 0); // Scroll to top
-                App.state.ui.currentView = viewId;
-                
-                if (App.state.ui.viewHistory[App.state.ui.viewHistory.length - 1] !== viewId) {
-                    App.state.ui.viewHistory.push(viewId);
-                }
-                
-                this.updateViewContent(viewId);
-                this.updateNavActiveState(viewId);
-                
-            } else {
-                console.error(`View not found: ${viewId}`);
-                App.dom.views[0].style.display = 'block'; 
-            }
-        },
-        
-        goBack: function(defaultView = 'welcomeView') {
-            App.state.ui.viewHistory.pop(); // Remove current view
-            let lastView = App.state.ui.viewHistory.pop(); // Get previous view
-            
-            if (!lastView) {
-                lastView = defaultView;
-            }
-            
-            this.navigateTo(lastView);
-        },
-        
-        updateViewContent: function(viewId) {
-            switch (viewId) {
-                case 'welcomeView':
-                    App.ui.updateWelcomeView();
-                    break;
-                case 'checkinView':
-                    App.ui.updateCheckinView();
-                    break;
-                case 'gratitudeView':
-                    App.ui.updateGratitudeView();
-                    break;
-                case 'sabbathView':
-                    App.ui.updateSabbathView();
-                    break;
-                case 'historyView':
-                    App.ui.updateHistoryView();
-                    break;
-                case 'ruleView':
-                    App.ui.updateRuleOfLifeView();
-                    break;
-                case 'resourcesView':
-                    App.ui.updateResourcesView();
-                    break;
-                case 'settingsView':
-                    App.ui.updateSettingsView();
-                    break;
-            }
-        },
-        
-        updateNavActiveState: function(viewId) {
-            App.dom.nav.links.forEach(link => {
-                link.classList.toggle('active', link.dataset.view === viewId);
-            });
-        }
-    }, // End of App.navigation
-
-    
-    /* ================================================================
-    App Init
-    ================================================================
-    */
-    
-    init: async function() {
-        try {
-            console.log("App.init started...");
-            
-            // 1. DOM Caching
-            this.util.cacheDOM();
-
-            // 2. Initialize Firebase State
-            // (Actual module loading happened at top of script)
-            if (window.AppFirebase) {
-                console.log("Firebase services found, initializing...");
-                this.state.fb.db = AppFirebase.getFirestore(AppFirebase.app);
-                this.state.fb.auth = AppFirebase.getAuth(AppFirebase.app);
-                this.state.fb.googleProvider = new AppFirebase.GoogleAuthProvider();
-                
-                await AppFirebase.setPersistence(this.state.fb.auth, AppFirebase.browserLocalPersistence);
-                this.state.appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-                
-            } else {
-                console.warn("Firebase modules not loaded. App will run in local-only mode.");
-                this.state.storageDriver = 'local';
-                if (App.dom.settings.syncSection) App.dom.settings.syncSection.style.display = 'none';
-            }
-        } catch (e) {
-            console.error("Firebase state initialization error:", e);
-            console.warn("Firebase services (Firestore/Auth) could not be set. App will run in local-only mode.");
-            this.state.storageDriver = 'local';
-            if (App.dom.settings.syncSection) {
-                App.dom.settings.syncSection.style.display = 'none';
-            }
-        }
-        
-        // 3. Initialize Local DB (IndexedDB)
-        this.state.db = await this.storage.initDB();
-        if (!this.state.db) {
-            this.ui.showAlert("Critical Error: Could not initialize local database. App cannot save data.", "error", 10000);
-            return;
-        }
-        console.log("IndexedDB initialized.");
-
-        // 4. Initialize Core Modules
-        // FIX: Call auth.init() *before* ui.init() and handlers.init()
-        this.auth.init(); 
-        this.ui.init();
-        this.handlers.init();
-        // this.navigation.init(); // This is redundant, handlers.init() does it
-        
-        // 5. Check PIN & Auth State (This is the main app entry point)
-        await this.auth.checkPinAndAuthState();
-        
-        console.log("App.init finished.");
-        
-    }
-}); // End of Object.assign
-
-// --- Start the App ---
-// FIX: Call init directly, do not wait for DOMContentLoaded
+// FIX: Remove DOMContentLoaded, call init directly
 App.init();
-    </script>
+         </script>
 </body>
 </html>
