@@ -2361,3 +2361,657 @@ pin: {
         }
         
     }, // End of App.handlers
+ui: {
+        init: function() {
+            this.initModals();
+        },
+
+        initModals: function() {
+            // --- General Modal ---
+            const modal = App.dom.modal.modal;
+            const closeBtn = modal.querySelector('.close-button');
+            
+            closeBtn.addEventListener('click', () => this.hideModal());
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) this.hideModal();
+            });
+            
+            // --- Resource Modal ---
+            const resModal = App.dom.resources.modal;
+            const resClose = resModal.querySelector('.close-button');
+            resClose.addEventListener('click', () => this.hideResourceModal());
+            resModal.addEventListener('click', (e) => {
+                if (e.target === resModal) this.hideResourceModal();
+            });
+            
+            App.dom.resources.form.addEventListener('submit', (e) => {
+                e.preventDefault(); 
+                App.handlers.saveResource(e);
+            });
+        },
+        
+        updateOnboardingStep: function(direction) {
+            const { steps, prevBtn, nextBtn, indicatorDots, finishBtn } = App.dom.onboarding;
+            let { currentOnboardingStep } = App.state.ui;
+            
+            const newStep = currentOnboardingStep + direction;
+            
+            if (newStep < 1 || newStep > steps.length) {
+                return;
+            }
+
+            App.state.ui.currentOnboardingStep = newStep;
+            currentOnboardingStep = newStep; 
+
+            steps.forEach(step => step.style.display = 'none');
+            steps[currentOnboardingStep - 1].style.display = 'block';
+
+            indicatorDots.forEach((dot, index) => {
+                dot.classList.toggle('active', index === currentOnboardingStep - 1);
+            });
+
+            prevBtn.style.display = currentOnboardingStep > 1 ? 'inline-block' : 'none';
+            nextBtn.style.display = currentOnboardingStep < steps.length ? 'inline-block' : 'none';
+            finishBtn.style.display = currentOnboardingStep === steps.length ? 'inline-block' : 'none';
+        },
+
+        showAlert: function(message, type = 'info', duration = 3000) {
+            const alertBox = App.dom.alert;
+            alertBox.textContent = message;
+            alertBox.className = 'alert-box'; 
+            alertBox.classList.add(type); 
+            
+            alertBox.style.display = 'block';
+            setTimeout(() => alertBox.classList.add('visible'), 10);
+
+            if (App.state.ui.alertTimer) {
+                clearTimeout(App.state.ui.alertTimer);
+            }
+            
+            App.state.ui.alertTimer = setTimeout(() => {
+                alertBox.classList.remove('visible');
+                setTimeout(() => alertBox.style.display = 'none', 300);
+            }, duration);
+        },
+
+        showModal: function(title, message, buttons = []) {
+            const { modal, titleEl, messageEl, buttonContainer } = App.dom.modal;
+            
+            titleEl.textContent = title;
+            messageEl.textContent = message;
+            
+            buttonContainer.innerHTML = '';
+            
+            if (buttons.length > 0) {
+                buttons.forEach(btn => {
+                    const button = document.createElement('button');
+                    button.textContent = btn.text;
+                    button.className = `btn btn-${btn.type || 'primary'}`; 
+                    button.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        if(btn.callback) btn.callback();
+                        if(btn.autoClose !== false) this.hideModal();
+                    });
+                    buttonContainer.appendChild(button);
+                });
+                buttonContainer.style.display = 'flex';
+            } else {
+                const okButton = document.createElement('button');
+                okButton.textContent = "OK";
+                okButton.className = "btn btn-primary";
+                okButton.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    this.hideModal();
+                });
+                buttonContainer.appendChild(okButton);
+                buttonContainer.style.display = 'flex';
+            }
+            
+            modal.style.display = 'flex';
+            setTimeout(() => modal.classList.add('visible'), 10);
+        },
+
+        hideModal: function() {
+            const { modal } = App.dom.modal;
+            modal.classList.remove('visible');
+            setTimeout(() => {
+                modal.style.display = 'none';
+                App.dom.modal.titleEl.textContent = '';
+                App.dom.modal.messageEl.textContent = '';
+                App.dom.modal.buttonContainer.innerHTML = '';
+            }, 300); 
+        },
+
+        showResourceModal: function(resource = null) {
+            const { modal, form, idInput, titleInput, linkInput, descriptionInput, deleteBtn } = App.dom.resources;
+            
+            form.reset();
+            if (resource) {
+                idInput.value = resource.id;
+                titleInput.value = resource.title;
+                linkInput.value = resource.link;
+                descriptionInput.value = resource.description;
+                deleteBtn.style.display = 'inline-block';
+                deleteBtn.onclick = () => App.handlers.deleteResource(resource.id);
+            } else {
+                idInput.value = `res_${Date.now()}`;
+                deleteBtn.style.display = 'none';
+                deleteBtn.onclick = null;
+            }
+            
+            modal.style.display = 'flex';
+            setTimeout(() => modal.classList.add('visible'), 10);
+        },
+        
+        hideResourceModal: function() {
+            const { modal } = App.dom.resources;
+            modal.classList.remove('visible');
+            setTimeout(() => modal.style.display = 'none', 300);
+        },
+
+        showDangerZone: function() {
+            const modal = App.dom.settings.dangerZoneModal;
+            modal.style.display = 'flex';
+            setTimeout(() => modal.classList.add('visible'), 10);
+        },
+        hideDangerZone: function() {
+            const modal = App.dom.settings.dangerZoneModal;
+            modal.classList.remove('visible');
+            setTimeout(() => modal.style.display = 'none', 300);
+        },
+        
+        // --- Dynamic Content Updaters ---
+        
+        updateWelcomeView: function() {
+            const { welcome } = App.dom;
+            const today = App.util.getTodayDate();
+            
+            const hasCheckedIn = App.state.data.checkinHistory.some(e => e.date === today);
+            const hasGratitude = App.state.data.gratitudeHistory.some(e => e.date === today);
+            const hasSabbath = App.state.data.sabbathHistory.some(e => e.date === today);
+            
+            welcome.checkinBtn.classList.toggle('complete', hasCheckedIn);
+            welcome.checkinBtn.querySelector('.welcome-btn-icon').innerHTML = hasCheckedIn ? '&#10003;' : '&rarr;';
+            
+            welcome.gratitudeBtn.classList.toggle('complete', hasGratitude);
+            welcome.gratitudeBtn.querySelector('.welcome-btn-icon').innerHTML = hasGratitude ? '&#10003;' : '&rarr;';
+            
+            welcome.sabbathBtn.classList.toggle('complete', hasSabbath);
+            welcome.sabbathBtn.querySelector('.welcome-btn-icon').innerHTML = hasSabbath ? '&#10003;' : '&rarr;';
+            
+            this.renderDashboardPreview();
+        },
+        
+        renderDashboardPreview: function() {
+            const { dashboardPreview, hauoraChart } = App.dom.welcome;
+            const lastEntry = App.state.data.checkinHistory[App.state.data.checkinHistory.length - 1];
+            
+            if (!lastEntry) {
+                dashboardPreview.style.display = 'block';
+                hauoraChart.style.display = 'none';
+                return;
+            }
+            
+            dashboardPreview.style.display = 'none';
+            hauoraChart.style.display = 'block';
+
+            const { ratings } = lastEntry;
+            const labels = ['Physical', 'Mental', 'Social', 'Spiritual'];
+            const data = [
+                ratings.physical || 0,
+                ratings.mental || 0,
+                ratings.social || 0,
+                ratings.spiritual || 0
+            ];
+            
+            if (App.state.ui.chart) {
+                App.state.ui.chart.data.datasets[0].data = data;
+                App.state.ui.chart.update();
+            } else {
+                const ctx = hauoraChart.getContext('2d');
+                App.state.ui.chart = new Chart(ctx, {
+                    type: 'radar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Hauora',
+                            data: data,
+                            fill: true,
+                            backgroundColor: 'rgba(79, 70, 229, 0.2)', // indigo-600
+                            borderColor: 'rgb(79, 70, 229)',
+                            pointBackgroundColor: 'rgb(79, 70, 229)',
+                            pointBorderColor: '#fff',
+                            pointHoverBackgroundColor: '#fff',
+                            pointHoverBorderColor: 'rgb(79, 70, 229)'
+                        }]
+                    },
+                    options: {
+                        elements: {
+                            line: {
+                                borderWidth: 3
+                            }
+                        },
+                        scales: {
+                            r: {
+                                angleLines: {
+                                    display: false
+                                },
+                                suggestedMin: 0,
+                                suggestedMax: 10,
+                                pointLabels: {
+                                    font: {
+                                        size: 14,
+                                        family: 'Inter'
+                                    }
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        }
+                    }
+                });
+            }
+        },
+        
+        updateCheckinView: function() {
+            const today = App.util.getTodayDate();
+            const { checkin } = App.dom;
+            
+            const entry = App.state.data.checkinHistory.find(e => e.date === today) || {
+                date: today, feelings: [], note: '', ratings: {}
+            };
+            
+            checkin.form.reset();
+            checkin.note.value = entry.note;
+            
+            checkin.feelingsContainer.innerHTML = App.config.feelings.map(f => 
+                `<button type="button" class="feeling-toggle" data-feeling="${f.name}" data-type="${f.type}">${f.name}</button>`
+            ).join('');
+            
+            checkin.feelingsContainer.querySelectorAll('.feeling-toggle').forEach(btn => {
+                btn.classList.toggle('selected', entry.feelings.includes(btn.dataset.feeling));
+                btn.addEventListener('click', () => btn.classList.toggle('selected'));
+            });
+            
+            checkin.sliders.forEach(slider => {
+                const key = slider.id.split('-')[1]; 
+                slider.value = entry.ratings[key] || 5; 
+            });
+        },
+        
+        updateGratitudeView: function() {
+            const today = App.util.getTodayDate();
+            const { gratitude } = App.dom;
+            
+            const entry = App.state.data.gratitudeHistory.find(e => e.date === today) || {
+                date: today, items: ['', '', ''], note: ''
+            };
+            
+            gratitude.form.reset();
+            gratitude.items[0].value = entry.items[0] || '';
+            gratitude.items[1].value = entry.items[1] || '';
+            gratitude.items[2].value = entry.items[2] || '';
+            gratitude.note.value = entry.note || '';
+        },
+        
+        updateSabbathView: function() {
+            const today = App.util.getTodayDate();
+            const { sabbath } = App.dom;
+            
+            const entry = App.state.data.sabbathHistory.find(e => e.date === today) || {
+                date: today, note: '', reflection: ''
+            };
+            
+            sabbath.form.reset();
+            sabbath.note.value = entry.note;
+            sabbath.reflection.value = entry.reflection;
+        },
+        
+        updateHistoryView: function() {
+            const { history } = App.dom;
+            history.container.innerHTML = 'Loading history...';
+            
+            const allEntries = [
+                ...App.state.data.checkinHistory.map(e => ({...e, type: 'Check-in'})),
+                ...App.state.data.gratitudeHistory.map(e => ({...e, type: 'Gratitude'})),
+                ...App.state.data.sabbathHistory.map(e => ({...e, type: 'Sabbath'})),
+                ...App.state.data.ruleOfLifeHistory.map(e => ({...e, type: 'Rule of Life'}))
+            ];
+            
+            allEntries.sort((a, b) => b.date.localeCompare(a.date));
+            
+            if (allEntries.length === 0) {
+                history.container.innerHTML = '<p class="text-center text-gray-500 mt-8">No history entries yet.</p>';
+                return;
+            }
+            
+            history.container.innerHTML = allEntries.map(entry => {
+                let content = '';
+                switch (entry.type) {
+                    case 'Check-in':
+                        content = `
+                            <p><strong>Feelings:</strong> ${entry.feelings.join(', ') || 'None'}</p>
+                            <p><strong>Ratings:</strong> ${Object.entries(entry.ratings).map(([k,v]) => `${k}: ${v}`).join(', ')}</p>
+                            <p><strong>Note:</strong> ${App.util.escapeHTML(entry.note) || '...'}</p>
+                        `;
+                        break;
+                    case 'Gratitude':
+                        content = `
+                            <ol class="list-decimal list-inside">
+                                ${entry.items.map(item => `<li>${App.util.escapeHTML(item) || '...'}</li>`).join('')}
+                            </ol>
+                            <p><strong>Note:</strong> ${App.util.escapeHTML(entry.note) || '...'}</p>
+                        `;
+                        break;
+                    case 'Sabbath':
+                        content = `
+                            <p><strong>Practice:</strong> ${App.util.escapeHTML(entry.note) || '...'}</p>
+                            <p><strong>Reflection:</strong> ${App.util.escapeHTML(entry.reflection) || '...'}</p>
+                        `;
+                        break;
+                    case 'Rule of Life':
+                        content = `
+                            <p><strong>Reflection:</strong> ${App.util.escapeHTML(entry.reflection) || '...'}</p>
+                        `;
+                        break;
+                }
+                
+                return `
+                    <div class="history-entry card !p-4 !mb-4">
+                        <h4 class="font-semibold text-lg text-indigo-700">${entry.type}</h4>
+                        <p class="text-sm text-gray-500 mb-2">${App.util.formatDate(entry.date)}</p>
+                        <div class="text-sm space-y-1">${content}</div>
+                    </div>
+                `;
+            }).join('');
+        },
+        
+        updateRuleOfLifeView: function() {
+            const { rule } = App.dom;
+            const data = App.state.data.ruleOfLife || {};
+            
+            rule.form.reset();
+            rule.inputs.vision.value = data.vision || '';
+            rule.inputs.commitments.value = data.commitments || '';
+            rule.inputs.practices.value = data.practices || '';
+            rule.inputs.community.value = data.community || '';
+            
+            rule.reflectVision.textContent = data.vision || '...';
+            rule.reflectCommitments.textContent = data.commitments || '...';
+            rule.reflectPractices.textContent = data.practices || '...';
+            rule.reflectCommunity.textContent = data.community || '...';
+        },
+        
+        updateRuleTabs: function(activeTab) {
+            const { rule } = App.dom;
+            if (activeTab === 'edit') {
+                rule.tabEdit.classList.add('active');
+                rule.tabReflect.classList.remove('active');
+                rule.contentEdit.style.display = 'block';
+                rule.contentReflect.style.display = 'none';
+            } else {
+                rule.tabReflect.classList.add('active');
+                rule.tabEdit.classList.remove('active');
+                rule.contentReflect.style.display = 'block';
+                rule.contentEdit.style.display = 'none';
+            }
+        },
+        
+        updateResourcesView: function() {
+            const { resources } = App.dom;
+            const data = App.state.data.userResources || {};
+            const resourceList = Object.values(data);
+            
+            if (resourceList.length === 0) {
+                resources.container.innerHTML = '<p class="text-center text-gray-500 mt-8">No saved resources yet.</p>';
+                return;
+            }
+            
+            resources.container.innerHTML = resourceList.map(res => `
+                <div class="card !p-4 flex flex-col">
+                    <h4 class="font-semibold text-lg">${App.util.escapeHTML(res.title)}</h4>
+                    <p class="text-sm text-gray-600 mb-2 flex-grow">${App.util.escapeHTML(res.description) || '...'}</p>
+                    <div class="flex gap-2 mt-auto pt-2">
+                        <a href="${App.util.escapeHTML(res.link)}" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm">Open Link</a>
+                        <button class="btn btn-outline btn-sm" data-id="${res.id}">Edit</button>
+                    </div>
+                </div>
+            `).join('');
+            
+            resources.container.querySelectorAll('.btn-outline').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const res = App.state.data.userResources[btn.dataset.id];
+                    if (res) this.showResourceModal(res);
+                });
+            });
+        },
+        
+        updateSettingsView: function() {
+            App.auth.updateSyncStatusUI();
+        },
+        
+        showBurnoutPrompt: function(triggers) {
+            App.dom.checkin.finishBtn.style.display = 'block';
+            App.dom.checkin.burnoutPromptModal.style.display = 'flex';
+            setTimeout(() => App.dom.checkin.burnoutPromptModal.classList.add('visible'), 10);
+        },
+        hideBurnoutPrompt: function() {
+            const modal = App.dom.checkin.burnoutPromptModal;
+            modal.classList.remove('visible');
+            setTimeout(() => modal.style.display = 'none', 300);
+        },
+        showBurnoutCheckModal: function() {
+            const { burnoutChecklist } = App.dom.checkin;
+            burnoutChecklist.innerHTML = ''; // Clear
+            
+            for (const category in App.config.burnoutChecklist) {
+                let itemsHtml = App.config.burnoutChecklist[category].map(item => `
+                    <label class="flex items-start p-3 rounded-lg hover:bg-gray-50">
+                        <input type="checkbox" class="h-5 w-5 rounded text-indigo-600 focus:ring-indigo-500 border-gray-300 mt-1" data-item="${App.util.escapeHTML(item)}">
+                        <span class="ml-3 text-gray-700">${App.util.escapeHTML(item)}</span>
+                    </label>
+                `).join('');
+                
+                let categoryTitle = category.replace(/([A-Z])/g, ' $1');
+                categoryTitle = categoryTitle.charAt(0).toUpperCase() + categoryTitle.slice(1);
+                
+                burnoutChecklist.innerHTML += `
+                    <div class="mb-6">
+                        <h3 class="text-lg font-semibold text-indigo-700 mb-2">${categoryTitle} Signs</h3>
+                        <div class="space-y-2">${itemsHtml}</div>
+                    </div>
+                `;
+            }
+            
+            const modal = App.dom.checkin.burnoutCheckModal;
+            modal.style.display = 'flex';
+            setTimeout(() => modal.classList.add('visible'), 10);
+        },
+        hideBurnoutCheckModal: function() {
+            const modal = App.dom.checkin.burnoutCheckModal;
+            modal.classList.remove('visible');
+            setTimeout(() => modal.style.display = 'none', 300);
+        },
+        showBurnoutResultsModal: function() {
+            const { burnoutChecklist, burnoutResultsContainer } = App.dom.checkin;
+            const checkedItems = Array.from(burnoutChecklist.querySelectorAll('input:checked'))
+                .map(input => input.dataset.item);
+                
+            if (checkedItems.length === 0) {
+                burnoutResultsContainer.innerHTML = '<p>You didn\'t flag any specific items, which is great! Remember to continue practicing self-care.</p>';
+            } else {
+                burnoutResultsContainer.innerHTML = checkedItems.map(item => `
+                    <div class="p-3 bg-indigo-50 rounded-lg">
+                        <p class="text-gray-800">${App.util.escapeHTML(item)}</p>
+                    </div>
+                `).join('');
+            }
+            
+            const modal = App.dom.checkin.burnoutResultsModal;
+            modal.style.display = 'flex';
+            setTimeout(() => modal.classList.add('visible'), 10);
+        },
+        hideBurnoutResultsModal: function() {
+            const modal = App.dom.checkin.burnoutResultsModal;
+            modal.classList.remove('visible');
+            setTimeout(() => modal.style.display = 'none', 300);
+        }
+    }, // End of App.ui
+    
+    
+    /* ================================================================
+    App Logic: Navigation Module
+    ================================================================
+    */
+    navigation: {
+        init: function() {
+            // All event listeners are now in App.handlers.init
+        },
+        
+        navigateTo: function(viewId) {
+            console.log(`Navigating to: ${viewId}`);
+            
+            App.dom.views.forEach(view => {
+                view.style.display = 'none';
+            });
+            
+            const targetView = document.getElementById(viewId);
+            if (targetView) {
+                targetView.style.display = 'block';
+                window.scrollTo(0, 0); // Scroll to top
+                App.state.ui.currentView = viewId;
+                
+                if (App.state.ui.viewHistory[App.state.ui.viewHistory.length - 1] !== viewId) {
+                    App.state.ui.viewHistory.push(viewId);
+                }
+                
+                this.updateViewContent(viewId);
+                this.updateNavActiveState(viewId);
+                
+            } else {
+                console.error(`View not found: ${viewId}`);
+                App.dom.views[0].style.display = 'block'; 
+            }
+        },
+        
+        goBack: function(defaultView = 'welcomeView') {
+            App.state.ui.viewHistory.pop(); 
+            let lastView = App.state.ui.viewHistory.pop(); 
+            
+            if (!lastView) {
+                lastView = defaultView;
+            }
+            
+            this.navigateTo(lastView);
+        },
+        
+        updateViewContent: function(viewId) {
+            switch (viewId) {
+                case 'welcomeView':
+                    App.ui.updateWelcomeView();
+                    break;
+                case 'checkinView':
+                    App.ui.updateCheckinView();
+                    break;
+                case 'gratitudeView':
+                    App.ui.updateGratitudeView();
+                    break;
+                case 'sabbathView':
+                    App.ui.updateSabbathView();
+                    break;
+                case 'historyView':
+                    App.ui.updateHistoryView();
+                    break;
+                case 'ruleView':
+                    App.ui.updateRuleOfLifeView();
+                    break;
+                case 'resourcesView':
+                    App.ui.updateResourcesView();
+                    break;
+                case 'settingsView':
+                    App.ui.updateSettingsView();
+                    break;
+            }
+        },
+        
+        updateNavActiveState: function(viewId) {
+            App.dom.nav.links.forEach(link => {
+                link.classList.toggle('active', link.dataset.view === viewId);
+            });
+        }
+    }, // End of App.navigation
+
+    
+    /* ================================================================
+    App Init
+    ================================================================
+    */
+    
+    init: async function() {
+        try {
+            console.log("App.init started...");
+            
+            // 1. DOM Caching
+            this.util.cacheDOM();
+            
+            // 2. Initialize Firebase (must happen before Auth Init)
+            // This code block is from the top of the <script>
+            // We just need to set the state here
+            if (window.AppFirebase) {
+                console.log("Firebase services found, setting state...");
+                this.state.fb.db = AppFirebase.getFirestore(AppFirebase.app);
+                this.state.fb.auth = AppFirebase.getAuth(AppFirebase.app);
+                this.state.fb.googleProvider = new AppFirebase.GoogleAuthProvider();
+                
+                await AppFirebase.setPersistence(this.state.fb.auth, AppFirebase.browserLocalPersistence);
+                this.state.appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+                
+            } else {
+                console.warn("Firebase modules not loaded. App will run in local-only mode.");
+                this.state.storageDriver = 'local';
+                App.dom.settings.syncSection.style.display = 'none';
+            }
+        } catch (e) {
+            console.error("Firebase state initialization error:", e);
+            console.warn("Firebase services (Firestore/Auth) could not be set. App will run in local-only mode.");
+            this.state.storageDriver = 'local';
+            if (App.dom.settings.syncSection) {
+                App.dom.settings.syncSection.style.display = 'none';
+            }
+        }
+        
+        // 3. Initialize Local DB
+        this.state.db = await this.storage.initDB();
+        if (!this.state.db) {
+            this.ui.showAlert("Critical Error: Could not initialize local database. App cannot save data.", "error", 10000);
+            return;
+        }
+        console.log("IndexedDB initialized.");
+
+        // 4. FIX FOR "STUCK ON LOADING": Call auth.init() HERE
+        // This ensures authLoading is set to false *before* we await it.
+        this.auth.init(); 
+        
+        // 5. Initialize UI (modals, etc.)
+        this.ui.init();
+        
+        // 6. Initialize Event Handlers
+        this.handlers.init();
+        
+        // 7. Initialize Navigation
+        this.navigation.init();
+        
+        // 8. Check PIN & Auth State (this will now wait correctly)
+        await this.auth.checkPinAndAuthState();
+        
+        console.log("App.init finished.");
+        
+    }
+}); // End of Object.assign
+
+// --- Start the App ---
+// FIX: Remove DOMContentLoaded, call init directly
+App.init();
