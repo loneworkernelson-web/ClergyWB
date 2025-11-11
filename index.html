@@ -646,7 +646,7 @@
                     <div class="card">
                         <label for="ruleCommunity" class="block text-xl font-semibold mb-2">Community</label>
                         <p class="text-sm text-gray-500 mb-4">Who keeps you accountable? (e.g., "My spiritual director, small group")</p>
-                        <textarea id="ruleCommunity" rows="3" class.e.g.("w-full p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"></textarea>
+                        <textarea id="ruleCommunity" rows="3" class="w-full p-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"></textarea>
                     </div>
                     <button type="submit" class="btn btn-primary btn-lg w-full">Save Rule of Life</button>
                 </form>
@@ -730,7 +730,7 @@
             </div>
 
             <!-- Security Card -->
-            <div classB="card">
+            <div class="card">
                 <h2 class="text-xl font-semibold mb-4">Security</h2>
                 <button id="changePinBtn" class="btn btn-secondary w-full mb-3">Change PIN</button>
                 <button id="dangerZoneBtn" class="btn btn-outline !border-red-500 !text-red-500 w-full">Danger Zone</button>
@@ -764,7 +764,7 @@
     <div id="alertBox" class="alert-box">Alert message</div>
 
     <!-- --- Generic Modal --- -->
-    <div id="modal" class-="modal">
+    <div id="modal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
                 <h2 id="modalTitle" class="text-xl font-semibold">Modal Title</h2>
@@ -823,23 +823,7 @@
         </a>
         <a href="#" class="nav-link" data-view="ruleView">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-            <span>Rule</span>
-        </a>
-        <a href="#" class="nav-link" data-view="resourcesView">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 18.75a6 6 0 006-6v-1.5m-6 7.5a6 6 0 01-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 01-3-3V4.5a3 3 0 116 0v8.25a3 3 0 01-3 3z" /></svg>
-            <span>Resources</span>
-        </a>
-        <a href="#" class="nav-link" data-view="settingsView">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-1.003 1.11-1.226.55-.223 1.156-.223 1.706 0 .55.223 1.02.684 1.11 1.226M10.344 18.06c.09.542.56 1.003 1.11 1.226.55.223 1.156.223 1.706 0 .55-.223 1.02-.684 1.11 1.226m-4.662-5.748c.09-.542.56-1.003 1.11-1.226.55-.223 1.156-.223 1.706 0 .55.223 1.02-.684 1.11-1.226M18 10.344c.09.542.56 1.003 1.11 1.226.55.223 1.156.223 1.706 0 .55-.223 1.02-.684 1.11-1.226M10.344 6c.09-.542.56-1.003 1.11-1.226.55-.223 1.156-.223 1.706 0 .55.223 1.02-.684 1.11-1.226M6 10.344c.09.542.56 1.003 1.11 1.226.55.223 1.156-.223 1.706 0 .55.223 1.02-.684 1.11-1.226M12 6.75a2.25 2.25 0 100 4.5 2.25 2.25 0 000-4.5zM12 12.75a2.25 2.25 0 100 4.5 2.25 2.25 0 000-4.5z" /></svg>
-            <span>Settings</span>
-        </a>
-    </nav>
-    
-    <!-- 
-    ================================================================
-    APP JAVASCRIPT
-    ================================================================
-    -->
+MAIN-LOGIC
     <script type="module">
 /*
 ================================================================
@@ -1838,12 +1822,27 @@ pin: {
                     App.state.data = App.util.getDefaultData();
                 }
                 
-                // REVERTED FIX: This is the "golden state" logic.
-                // It does NOT handle the "first-time sync" yet.
+                // FIX for "first-time sync"
                 if (App.state.ui.isLoggedIn) {
-                    App.state.storageDriver = 'firebase';
-                    App.util.setSplashMessage("Syncing with cloud...");
-                    await App.storage.syncData();
+                    App.util.setSplashMessage("Checking cloud data...");
+                    const hasCloudPin = await App.pin.cloudPinCheckExists();
+                    
+                    if (hasCloudPin) {
+                        // Standard sync
+                        App.state.storageDriver = 'firebase';
+                        App.util.setSplashMessage("Syncing with cloud...");
+                        await App.storage.syncData();
+                    } else {
+                        // This is the "first-time sync" flow!
+                        // User logged in via Google, then entered local PIN.
+                        // We need to upload their local data and PIN hash.
+                        console.log("First-time sync: Uploading local data to new account.");
+                        App.state.storageDriver = 'firebase';
+                        App.util.setSplashMessage("Securing your new account...");
+                        await App.pin.savePinCheckToCloud(pin);
+                        App.util.setSplashMessage("Uploading your data...");
+                        await App.storage.firestoreSaveAll(); // Upload local data
+                    }
                 }
                 
                 App.util.hideSplash();
@@ -1886,11 +1885,11 @@ pin: {
         },
         
         finishOnboarding: async function(didSignIn) {
+            // This function is now only called from the "Enable Sync?" modal
             if (didSignIn) {
-                App.state.storageDriver = 'firebase';
-                await this.savePinCheckToCloud(App.state.pin);
-                await App.storage.firestoreSaveAll();
+                // This will never be hit, as signInWithGoogle redirects
             } else {
+                // User clicked "Not Now"
                 App.state.storageDriver = 'local';
             }
             
@@ -2044,16 +2043,21 @@ pin: {
         },
 
         handleOnboardingFinish: function() {
-            // FIX: This function now holds the logic from the old handlePinConfirm
             localStorage.setItem('hauoraOnboardComplete', 'true');
             App.dom.onboarding.modal.style.display = 'none';
             
             if (App.state.fb.auth) {
+                // FIX: This is the fix for the confusing modal button text.
                 App.ui.showModal("Enable Sync?", 
                     "Would you like to sign in with Google to securely sync your encrypted data? Your PIN will be required on new devices.",
                     [
                         { text: "Not Now", type: "secondary", callback: () => App.pin.finishOnboarding(false) },
-                        { text: "Sign In", type: "primary", callback: () => App.auth.signInWithGoogle(false) } // Was: App.pin.finishOnboarding(true)
+                        { 
+                            text: "Sign In with Google", // <-- FIX 1
+                            type: "primary",
+                            id: "googleSignInBtn",     // <-- FIX 2
+                            callback: () => App.auth.signInWithGoogle(false) 
+                        }
                     ]
                 );
             } else {
