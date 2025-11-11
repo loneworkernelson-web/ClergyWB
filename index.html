@@ -1251,7 +1251,6 @@ Object.assign(window.App, {
                     const result = await AppFirebase.getRedirectResult(App.state.fb.auth);
                     if (result && result.user) {
                         console.log("Handled redirect sign-in.", result.user.uid);
-                        App.state.ui.isLoggedIn = true;
                     }
                 } catch (error) {
                     console.error("Error getting redirect result:", error);
