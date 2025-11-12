@@ -844,7 +844,9 @@ APP JAVASCRIPT - Complete & Merged
 // --- Firebase Init ---
 // FIX: Moved from <head> to run synchronously before App.init
 // This resolves the race condition.
-try {
+// FIX: Wrap in an IIAFE to allow top-level 'await' for imports
+(async function() {
+    try {
     // 1. Prioritize window.firebaseConfig (from config.js)
     const envConfig = typeof __firebase_config !== 'undefined' ? __firebase_config : '{}';
     let configToParse = envConfig;
@@ -879,9 +881,10 @@ try {
         window.AppFirebase = null;
     }
 } catch (e) {
-    console.error("Error loading or initializing Firebase:", e);
-    window.AppFirebase = null;
-}
+    console.error("Error loading or initializing Firebase:", e);
+    window.AppFirebase = null;
+    }
+})(); // <-- This closes and invokes the async function
 
 // --- App Namespace ---
 window.App = window.App || {};
