@@ -1961,58 +1961,62 @@ Object.assign(window.App, {
          * Logic for 'login' mode (on the lock screen).
          * This contains the "first-time sync" fix.
          */
-        handlePinLogin: async function(pin, pinDisplayEl) {
-            if (this.verifyLocalPin(pin)) {
-                console.log("PIN verified.");
-                App.state.pin = pin; // Store in memory
-                
-                App.dom.lockScreen.screen.style.display = 'none';
-                App.util.setSplashMessage("Loading your data...");
-                App.dom.splash.screen.style.display = 'flex';
-                
-                // Load local data
-                const localSuccess = await App.storage.localLoadAll();
-                if (!localSuccess) {
-                    console.warn("Local data load failed. This shouldn't happen if PIN was verified.");
-                    App.state.data = App.util.getDefaultData();
-                }
-                
-                // FIX for "first-time sync"
-                if (App.state.ui.isLoggedIn) {
-                    App.util.setSplashMessage("Checking cloud data...");
-                    const hasCloudPin = await App.pin.cloudPinCheckExists();
-                    
-                    if (hasCloudPin) {
-                        // Standard sync for returning user
-                        console.log("Cloud PIN found. Performing standard sync.");
-                        App.state.storageDriver = 'firebase';
-                        App.util.setSplashMessage("Syncing with cloud...");
-                        await App.storage.syncData();
-                    } else {
-                        // This is the "first-time sync" flow!
-                        // User logged in via Google (in settings), then entered local PIN.
-                        // We need to upload their local data and PIN hash.
-                        console.log("First-time sync: Uploading local data to new account.");
-                        App.state.storageDriver = 'firebase';
-                        App.util.setSplashMessage("Securing your new account...");
-                        await App.pin.savePinCheckToCloud(pin);
-                        App.util.setSplashMessage("Uploading your data...");
-                        await App.storage.firestoreSaveAll(); // Upload local data
-                    }
-                }
-                // End of "first-time sync" fix
-                
-                // Finish loading
-                App.util.hideSplash();
-                App.navigation.updateViewContent(App.state.ui.currentView); 
+               handlePinLogin: async function(pin, pinDisplayEl) {
+            if (this.verifyLocalPin(pin)) {
+                console.log("PIN verified.");
+                App.state.pin = pin; // Store in memory
+                
+                App.dom.lockScreen.screen.style.display = 'none';
+                App.util.setSplashMessage("Loading your data...");
+                App.dom.splash.screen.style.display = 'flex';
+                
+                // Load local data
+                const localSuccess = await App.storage.localLoadAll();
+                if (!localSuccess) {
+                    console.warn("Local data load failed. This shouldn't happen if PIN was verified.");
+                    App.state.data = App.util.getDefaultData();
+                }
+                
+                // FIX for "first-time sync"
+                if (App.state.ui.isLoggedIn) {
+                    App.util.setSplashMessage("Checking cloud data...");
+                    const hasCloudPin = await App.pin.cloudPinCheckExists();
+                    
+                    if (hasCloudPin) {
+                        // Standard sync for returning user
+                        console.log("Cloud PIN found. Performing standard sync.");
+                        App.state.storageDriver = 'firebase';
+                        App.util.setSplashMessage("Syncing with cloud...");
+                        await App.storage.syncData();
+                    } else {
+                        // This is the "first-time sync" flow!
+                        // User logged in via Google (in settings), then entered local PIN.
+                _**This is the "first-time sync" flow!**_
 
-            } else {
-                // Wrong PIN
-                console.log("Wrong PIN.");
-                this.showPinError(pinDisplayEl);
-                App.dom.lockScreen.message.textContent = "Wrong PIN. Try again.";
-            }
-        },
+
+// User logged in via Google (in settings), then entered local PIN.
+// We need to upload their local data and PIN hash.
+                        console.log("First-time sync: Uploading local data to new account.");
+                        App.state.storageDriver = 'firebase';
+                        App.util.setSplashMessage("Securing your new account...");
+                        await App.pin.savePinCheckToCloud(pin);
+                        App.util.setSplashMessage("Uploading your data...");
+                        await App.storage.firestoreSaveAll(); // Upload local data
+                    }
+                }
+                // End of "first-time sync" fix
+                
+                // Finish loading
+                App.util.hideSplash();
+                App.navigation.updateViewContent(App.state.ui.currentView);V
+
+            } else {
+                // Wrong PIN
+                console.log("Wrong PIN.");
+                this.showPinError(pinDisplayEl);
+                App.dom.lockScreen.message.textContent = "Wrong PIN. Try again.";
+            }
+        },
         
         /**
          * Logic for 'create' mode (Onboarding)
