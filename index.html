@@ -300,6 +300,7 @@
             @apply w-full p-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:border-indigo-400;
         }
     </style>
+</head>
 <body class="bg-slate-50">
 
     <!-- 
@@ -435,7 +436,7 @@
             <button id="onboardingFinishBtn" class="btn btn-success" style="display: none;">Finish</button>
         </div>
     </div>
-    <!-- --- Main App Wrapper (for views) --- -->
+   <!-- --- Main App Wrapper (for views) --- -->
     <main id="appWrapper" class="relative">
 
         <!-- --- Welcome View (Home) --- -->
@@ -839,7 +840,8 @@
     ================================================================
     -->
     <script type="module">
-      /*
+        // THIS IS PART 2. PASTE ALL JS CODE (2a, 2b, 2c...) HERE.
+        /*
 ================================================================
 APP JAVASCRIPT - Complete & Merged
 ================================================================
@@ -892,8 +894,7 @@ window.App = window.App || {};
 
 // --- Merge All Modules ---
 Object.assign(window.App, {
-
-    /* ================================================================
+  /* ================================================================
     App Logic: Storage
     ================================================================
     */
@@ -1219,9 +1220,8 @@ Object.assign(window.App, {
             }
         }
     }, // End of App.storage
-
     /* ================================================================
-    App Logic: Auth, State, Config, DOM, Utils
+    App Logic: Auth
     ================================================================
     */
     auth: {
@@ -1414,7 +1414,6 @@ Object.assign(window.App, {
         }
         
     }, // End of App.auth
-
     /* ================================================================
     App Logic: State, Config, DOM, Utils
     ================================================================
@@ -1443,7 +1442,7 @@ Object.assign(window.App, {
             pinInput: '',
             pinMode: 'login', // 'login', 'create', 'confirm', 'change'
             tempPin: '',
-            chart: null,
+            chart: null, // For Chart.js instance on dashboard
         },
         
         // --- Main Application Data (this is what gets encrypted) ---
@@ -1760,7 +1759,7 @@ Object.assign(window.App, {
             });
         }
     }, // End of App.util
-   /* ================================================================
+    /* ================================================================
     App Logic: PIN Module
     ================================================================
     */
@@ -1879,7 +1878,7 @@ Object.assign(window.App, {
             App.dom.lockScreen.message.textContent = message;
             App.dom.lockScreen.screen.style.display = 'flex';
         },
-    /**
+        /**
          * Starts the onboarding PIN creation flow.
          */
         startOnboarding: function() {
@@ -2137,7 +2136,6 @@ Object.assign(window.App, {
             return null;
         }
     }, // End of App.moduleCheckin
-
     /* --- Handlers Module (Grok: was missing) --- */
     handlers: {
         /**
@@ -2433,7 +2431,6 @@ Object.assign(window.App, {
             App.ui.updateResourcesView(); // Refresh list
             App.ui.showAlert("Resource saved!", "success");
         },
-        
         /**
          * Deletes a resource.
          */
@@ -2450,7 +2447,8 @@ Object.assign(window.App, {
                 }}
             ]);
         },
-    /**
+
+        /**
          * Exports the user's encrypted data blob as a JSON file.
          */
         exportData: function() {
@@ -2568,8 +2566,8 @@ Object.assign(window.App, {
             );
         }
         
-    }, // End of App.handlers    
-    /* ================================================================
+    }, // End of App.handlers
+/* ================================================================
     App Logic: UI Module
     ================================================================
     */
@@ -3045,7 +3043,7 @@ Object.assign(window.App, {
             App.dom.checkin.burnoutPromptModal.style.display = 'flex';
             setTimeout(() => App.dom.checkin.burnoutPromptModal.classList.add('visible'), 10);
         },
-        hideBurnoutPrompt: function() {
+  hideBurnoutPrompt: function() {
             const modal = App.dom.checkin.burnoutPromptModal;
             modal.classList.remove('visible');
             setTimeout(() => modal.style.display = 'none', 300);
@@ -3108,6 +3106,7 @@ Object.assign(window.App, {
         }
         
     }, // End of App.ui
+
     /* ================================================================
     App Logic: Navigation
     ================================================================
@@ -3237,6 +3236,7 @@ Object.assign(window.App, {
                 if(App.dom.settings.syncSection) { // Check if cacheDOM has run
                     App.dom.settings.syncSection.style.display = 'none';
                 }
+S
             }
         } catch (e) {
             console.error("Firebase state initialization error:", e);
@@ -3272,7 +3272,7 @@ Object.assign(window.App, {
 
 // --- Start the App ---
 // FIX: Remove DOMContentLoaded, call init directly
-App.init();
+App.init();      
     </script>
 </body>
 </html>
