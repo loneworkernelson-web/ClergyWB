@@ -815,17 +815,32 @@
         <a href="#" class="nav-link active" data-view="welcomeView">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" /></svg>
             <span>Home</span>
-        </a>
-     <a href="#" class="nav-link" data-view="ruleView">
+<!-- ... (the 'history' link) ... -->
+        </a>
+        <a href="#" class="nav-link" data-view="ruleView">
             <svg xmlns="[http://www.w3.org/2000/svg](http://www.w3.org/2000/svg)" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-MAIN-LOGIC
+            <span>Rule</span>
+        </a>
+        <a href="#" class="nav-link" data-view="resourcesView">
+            <svg xmlns="[http://www.w3.org/2000/svg](http://www.w3.org/2000/svg)" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 18.75a6 6 0 006-6v-1.5m-6 7.5a6 6 0 01-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 01-3-3V4.5a3 3 0 116 0v8.25a3 3 0 01-3 3z" /></svg>
+            <span>Resources</span>
+        </a>
+        <a href="#" class="nav-link" data-view="settingsView">
+            <svg xmlns="[http://www.w3.org/2000/svg](http://www.w3.org/2000/svg)" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-1.003 1.11-1.226.55-.223 1.156-.223 1.706 0 .55.223 1.02.684 1.11-1.226M10.344 18.06c.09.542.56 1.003 1.11 1.226.55.223 1.156-.223 1.706 0 .55-.223 1.02-.684 1.11-1.226m-4.662-5.748c.09-.542.56-1.003 1.11-1.226.55-.223 1.156-.223 1.706 0 .55.223 1.02-.684 1.11-1.226M18 10.344c.09.542.56 1.003 1.11 1.226.55.223 1.156-.223 1.706 0 .55-.223 1.02-.684 1.11-1.226M10.344 6c.09-.542.56-1.003 1.11-1.226.55-.223 1.156-.223 1.706 0 .55.223 1.02-.684 1.11-1.226M6 10.344c.09.542.56 1.003 1.11 1.226.55.223 1.156-.223 1.706 0 .55.223 1.02-.684 1.11-1.226M12 6.75a2.25 2.25 0 100 4.5 2.25 2.25 0 000-4.5zM12 12.75a2.25 2.25 0 100 4.5 2.25 2.25 0 000-4.5z" /></svg>
+            <span>Settings</span>
+        </a>
+    </nav>
+        <!-- END OF NAV SECTION -->
+    <!-- 
+    ================================================================
+    APP JAVASCRIPT (MOVED TO THE CORRECT LOCATION)
+    ================================================================
+    -->
     <script type="module">
 /*
 ================================================================
 APP JAVASCRIPT - Complete & Merged
 ================================================================
-*/
-
 // --- Firebase Init ---
 // FIX: Moved from <head> to run synchronously before App.init
 // This resolves the race condition.
@@ -3252,6 +3267,6 @@ S
 // --- Start the App ---
 // FIX: Remove DOMContentLoaded, call init directly
 App.init();      
-    </script>
+</script>
 </body>
 </html>
