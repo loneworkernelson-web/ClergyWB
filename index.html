@@ -842,11 +842,11 @@
 ================================================================
 APP JAVASCRIPT - Complete & Merged
 ================================================================
+(async function() {
 // --- Firebase Init ---
 // FIX: Moved from <head> to run synchronously before App.init
 // This resolves the race condition.
 // FIX: Wrap in an IIAFE to allow top-level 'await' for imports
-(async function() {
     try {
     // 1. Prioritize window.firebaseConfig (from config.js)
     const envConfig = typeof __firebase_config !== 'undefined' ? __firebase_config : '{}';
@@ -882,14 +882,17 @@ APP JAVASCRIPT - Complete & Merged
         window.AppFirebase = null;
     }
 } catch (e) {
-    console.error("Error loading or initializing Firebase:", e);
-    window.AppFirebase = null;
+        console.error("Error loading or initializing Firebase:", e);
+        window.AppFirebase = null;
     }
-// --- Start the App ---
-// MOVED HERE: Now App.init() only runs AFTER Firebase is loaded.
-App.init();
-})(); // <-- This closes and invokes the async function
++ 
++     // --- Start the App ---
++     // MOVED HERE: Now App.init() only runs AFTER Firebase is loaded.
++     App.init();
++ })(); // <-- This closes and invokes the async function
 
+// --- App Namespace ---
+window.App = window.App || {};
 // --- App Namespace ---
 window.App = window.App || {};
 
@@ -3270,8 +3273,6 @@ Object.assign(window.App, {
     }
 }); // End of Object.assign
 
-// --- Start the App ---
-// FIX: Remove DOMContentLoaded, call init directly   
 </script>
 </body>
 </html>
